@@ -1,39 +1,27 @@
-# hackson
+# 离谱发明所
 
-#### 介绍
-{**以下是 Gitee 平台说明，您可以替换此简介**
-Gitee 是 OSCHINA 推出的基于 Git 的代码托管平台（同时支持 SVN）。专为开发者提供稳定、高效、安全的云端软件开发协作平台
-无论是个人、团队、或是企业，都能够用 Gitee 实现代码托管、项目管理、协作开发。企业项目请看 [https://gitee.com/enterprises](https://gitee.com/enterprises)}
+把每天完成的小事，炼成一件毫无用处但值得收藏的离谱发明。
 
-#### 软件架构
-软件架构说明
+当前版本为 Tauri 2 + React + TypeScript Windows 桌面原型：
 
+- 64px 圆形头像，拖动松手后吸附当前屏幕最近的左右边缘。
+- 单击头像打开／收起静态控制面板，拖动时自动收起。
+- 参考产品图的科研蓝玻璃界面、身份区、统计区、胶囊任务和发明机入口。
+- 任务、卡牌、史莱姆均使用固定示例数据，不绑定业务事件。
 
-#### 安装教程
+## 开始使用
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+准备 Rust、Windows C++ 构建工具和 WebView2 后，在项目目录执行：
 
-#### 使用说明
+```powershell
+npm install
+npm run desktop
+```
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+面板右上角减号收起，电源按钮退出整个应用。
 
-#### 参与贡献
+仅预览界面：`npm run dev`。
+构建桌面可执行文件：`npm run desktop:build`，不生成安装包。
 
-1.  Fork 本仓库
-2.  新建 Feat_xxx 分支
-3.  提交代码
-4.  新建 Pull Request
-
-
-#### 特技
-
-1.  使用 Readme\_XXX.md 来支持不同的语言，例如 Readme\_en.md, Readme\_zh.md
-2.  Gitee 官方博客 [blog.gitee.com](https://blog.gitee.com)
-3.  你可以 [https://gitee.com/explore](https://gitee.com/explore) 这个地址来了解 Gitee 上的优秀开源项目
-4.  [GVP](https://gitee.com/gvp) 全称是 Gitee 最有价值开源项目，是综合评定出的优秀开源项目
-5.  Gitee 官方提供的使用手册 [https://gitee.com/help](https://gitee.com/help)
-6.  Gitee 封面人物是一档用来展示 Gitee 会员风采的栏目 [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+完整环境准备、构建和验证说明见 [DEVELOPMENT.md](DEVELOPMENT.md)。
+产品方向见 [PRODUCT_MEMORY.md](PRODUCT_MEMORY.md)。
