@@ -1,27 +1,37 @@
 # 离谱发明所
 
-把每天完成的小事，炼成一件毫无用处但值得收藏的离谱发明。
+> 一个待定方向的新项目，由团队成员协作共建。
 
-当前版本为 Tauri 2 + React + TypeScript Windows 桌面原型：
+## 项目简介
 
-- 64px 圆形头像，拖动松手后吸附当前屏幕最近的左右边缘。
-- 单击头像打开／收起静态控制面板，拖动时自动收起。
-- 参考产品图的科研蓝玻璃界面、身份区、统计区、胶囊任务和发明机入口。
-- 任务、卡牌、史莱姆均使用固定示例数据，不绑定业务事件。
+这里将描述这个新项目要解决什么问题、面向什么用户、核心价值是什么。
 
-## 开始使用
+## 技术栈
 
-准备 Rust、Windows C++ 构建工具和 WebView2 后，在项目目录执行：
+待定，例如：
 
-```powershell
-npm install
-npm run desktop
+- 前端：HTML / CSS / JavaScript
+- 工具：Git、VS Code
+
+## 快速开始
+
+```bash
+git clone https://gitee.com/moyanyanyanyan/hackson.git
+cd hackson
 ```
 
-面板右上角减号收起，电源按钮退出整个应用。
+## 分支策略
 
-仅预览界面：`npm run dev`。
-构建桌面可执行文件：`npm run desktop:build`，不生成安装包。
+- `master`：稳定版本
+- `feat/xxx`：新功能开发
+- `fix/xxx`：问题修复
 
-完整环境准备、构建和验证说明见 [DEVELOPMENT.md](DEVELOPMENT.md)。
-产品方向见 [PRODUCT_MEMORY.md](PRODUCT_MEMORY.md)。
+## 贡献方式
+
+1. 拉取最新代码
+2. 创建功能分支
+3. 提交代码并发起 Pull Request
+
+## 许可证
+
+[MulanPSL2](LICENSE)
