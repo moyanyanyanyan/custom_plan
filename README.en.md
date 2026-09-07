@@ -1,36 +1,37 @@
 # hackson
 
-#### Description
-{**When you're done, you can delete the content in this README and update the file with details for others getting started with your repository**}
+> A new collaborative project. More details coming soon.
 
-#### Software Architecture
-Software architecture description
+## Overview
 
-#### Installation
+This repository is being prepared for a new project. The goal, features, and tech stack will be defined by the team.
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+## Tech Stack
 
-#### Instructions
+To be determined, for example:
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+- Frontend: HTML / CSS / JavaScript
+- Tools: Git, VS Code
 
-#### Contribution
+## Getting Started
 
-1.  Fork the repository
-2.  Create Feat_xxx branch
-3.  Commit your code
-4.  Create Pull Request
+```bash
+git clone https://gitee.com/moyanyanyanyan/hackson.git
+cd hackson
+```
 
+## Branching Model
 
-#### Gitee Feature
+- `master`: stable release
+- `feat/xxx`: new features
+- `fix/xxx`: bug fixes
 
-1.  You can use Readme\_XXX.md to support different languages, such as Readme\_en.md, Readme\_zh.md
-2.  Gitee blog [blog.gitee.com](https://blog.gitee.com)
-3.  Explore open source project [https://gitee.com/explore](https://gitee.com/explore)
-4.  The most valuable open source project [GVP](https://gitee.com/gvp)
-5.  The manual of Gitee [https://gitee.com/help](https://gitee.com/help)
-6.  The most popular members  [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+## Contributing
+
+1. Pull the latest code
+2. Create a feature branch
+3. Commit and open a Pull Request
+
+## License
+
+[MulanPSL2](LICENSE)
