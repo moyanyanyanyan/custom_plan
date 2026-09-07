@@ -1,0 +1,9 @@
+* { box-sizing: border-box; }
+:root { font-family: "Segoe UI", "Microsoft YaHei UI", sans-serif; color: #eff4ff; font-synthesis: none; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; background: transparent; }
+body { margin: 0; background: transparent; }
+button { font: inherit; color: inherit; }
+button:disabled { opacity: 1; cursor: default; }
+button:focus-visible { outline: 2px solid #ffd590; outline-offset: 2px; }
+h1, h2, h3, h4, p { margin: 0; }
+svg { flex-shrink: 0; vertical-align: middle; }
+body:has(.avatar-surface) { overflow: hidden; user-select: none; }

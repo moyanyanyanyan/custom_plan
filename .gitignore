@@ -105,6 +105,14 @@ dist
 # TernJS port file
 .tern-port
 
+# Tauri build artifacts
+src-tauri/target/
+src-tauri/gen/schemas/
+.artifacts/
+src-tauri/icons/*
+!src-tauri/icons/icon.png
+!src-tauri/icons/icon.ico
+
 # Stores VSCode versions used for testing VSCode extensions
 .vscode-test
 
