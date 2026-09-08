@@ -44,11 +44,11 @@ npm run desktop:build
 
 ## 结构与约束
 
-- `src-tauri/src/components/`：头像、控制面板、任务带和对应样式。
-- `src-tauri/src/hooks/`：头像点击与拖动阈值判断。
-- `src-tauri/src/constants/`、`src-tauri/src/types/`、`src-tauri/src/utils/`：预览数据、类型、桌面通信封装。
+- `src/components/`：头像、控制面板、任务带和对应样式。
+- `src/hooks/`：头像点击与拖动阈值判断。
+- `src/constants/`、`src/types/`、`src/utils/`：预览数据、类型、桌面通信封装。
 - `src-tauri/src/`（Rust 侧）：窗口命令、显示器定位与几何测试。
-- `index.html`：前端入口，加载 `src-tauri/src/index.tsx`。
+- `index.html`：前端入口，加载 `src/index.tsx`。
 - `public/lab-icon.svg`：本地占位图标源文件。
 - 每个手写代码文件不超过 150 行，入口只做组装。
 
