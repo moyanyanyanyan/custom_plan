@@ -5,8 +5,11 @@ import { ExperimentList } from './ExperimentList';
 import { CardCollection } from './CardCollection';
 import { completedCount, experiments } from '../constants/preview';
 import { desktopCommand, isDesktop } from '../utils/desktop';
-import { generateCardFromTasks } from '../utils/cardGenerator';
+import type { InventionCard } from '../types/card';
+import { generateCardFromTasks, remainingTasksForCard } from '../utils/cardGenerator';
 import { addCard, canGenerateToday } from '../utils/cardStorage';
+import { generateAICopy } from '../utils/stepfun';
+import { generateCardImage } from '../utils/cardImage';
 import './panel.css';
 import './experiments.css';
 import './collection.css';
@@ -15,23 +18,39 @@ import './collection.css';
 export function ControlPanel() {
   const [error, setError] = useState('');
   const [cardsGenerated, setCardsGenerated] = useState(false);
+  const [inventing, setInventing] = useState(false);
   const windowAction = (command: 'hide_panel' | 'exit_app' | 'drag_panel') => {
     void desktopCommand(command).catch((reason) => setError(String(reason)));
   };
 
-  const handleGenerateCard = () => {
-    const card = generateCardFromTasks(experiments);
-    if (!card) {
-      alert('今日还没有完成任务，先完成一项再启动发明机吧');
+  const handleGenerateCard = async () => {
+    if (inventing) return;
+    const remaining = remainingTasksForCard(experiments);
+    if (remaining > 0) {
+      alert(`今日研究进度 ${completedCount}/${experiments.length}，还差 ${remaining} 个任务完成才能启动发明机`);
       return;
     }
     if (!canGenerateToday()) {
       alert('今天已经获得过卡牌了，明天再来吧');
       return;
     }
-    addCard(card);
-    setCardsGenerated(true);
-    alert(`获得新卡牌：${card.name}`);
+    setInventing(true);
+    try {
+      const base = generateCardFromTasks(experiments);
+      if (!base) return;
+      // ① AI 命名与描述（失败保留模板降级，模板卡同名可跨天堆叠）
+      const ai = await generateAICopy(base.sourceTasks);
+      const named: InventionCard = ai
+        ? { ...base, name: ai.name, description: ai.description, stackKey: ai.name }
+        : base;
+      // ② AI 插画（阶跃 Image API，b64 本地化；失败降级 canvas 占位）
+      const art = await generateCardImage(named);
+      addCard({ ...named, imagePath: art.imagePath });
+      setCardsGenerated(true);
+      alert(`获得新发明卡牌「${named.name}」${art.fromAI ? '（AI 生成插画）' : '（离线占位插画）'}`);
+    } finally {
+      setInventing(false);
+    }
   };
 
   return <main className="panel-shell">
@@ -75,13 +94,15 @@ export function ControlPanel() {
       </div>
       <ExperimentList />
     </section>
-    <button className="invention-button static-button" onClick={handleGenerateCard}>
+    <button className={`invention-button static-button${inventing ? ' inventing' : ''}`} onClick={handleGenerateCard} disabled={inventing}>
       <span className="machine-symbol"><Icon name="flask" size={28} /></span>
-      <span><strong>启动今日发明机</strong><small>让今天的小事，变成不必要的大发明</small></span>
+      <span>
+        <strong>{inventing ? '发明机运转中…' : '启动今日发明机'}</strong>
+        <small>{inventing ? 'AI 正在命名与绘制卡牌，通常需要 1 分钟左右' : '让今天的小事，变成不必要的大发明'}</small>
+      </span>
       <Icon name="arrow" size={25} />
     </button>
     <footer className="panel-footer"><span><i />研究所运行正常</span><span>认真生活 · 胡乱发明</span><span>VOL. 001</span></footer>
     <CardCollection />
   </main>;
 }
-
