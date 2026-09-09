@@ -8,6 +8,13 @@ function storageKey(): string {
   return isDemoMode() ? DEMO_STORAGE_KEY : STORAGE_KEY;
 }
 
+function localDateKey(date: Date = new Date()): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 function loadRaw(): CardCollection | null {
   const key = storageKey();
   try {
@@ -42,8 +49,8 @@ export function addCard(card: InventionCard) {
 export function canGenerateToday(): boolean {
   if (isDemoMode()) return true;
   const collection = loadCollection();
-  const today = new Date().toISOString().slice(0, 10);
-  return !collection.cards.some((c) => c.earnedAt.slice(0, 10) === today);
+  const today = localDateKey();
+  return !collection.cards.some((c) => localDateKey(new Date(c.earnedAt)) === today);
 }
 
 export function getStackedCards(collection: CardCollection, stackKey: string): InventionCard[] {

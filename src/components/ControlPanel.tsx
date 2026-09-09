@@ -1,36 +1,49 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import type { Experiment } from '../types/experiment';
+import type { InventionCard } from '../types/card';
 import { AvatarArt } from './AvatarArt';
 import { Icon } from './Icon';
 import { ExperimentList } from './ExperimentList';
 import { CardCollection } from './CardCollection';
 import { CardRevealModal } from './CardRevealModal';
-import { completedCount, experiments } from '../constants/preview';
 import { desktopCommand, isDesktop } from '../utils/desktop';
 import { generateCardFromTasks, remainingTasksForCard } from '../utils/cardGenerator';
 import { addCard, canGenerateToday } from '../utils/cardStorage';
 import { generateAICopy } from '../utils/stepfun';
 import { generateCardImage } from '../utils/cardImage';
 import { isDemoMode } from '../utils/demoMode';
+import { todayTasks, onTaskChange } from '../utils/taskStore';
+import { experiments as previewExperiments } from '../constants/preview';
 import './panel.css';
 import './experiments.css';
 import './collection.css';
 import './reveal.css';
 
-/** 仅窗口按钮可交互，业务区域完全由固定预览数据构成。 */
+/** 仅窗口按钮可交互，业务区域完全由真实任务数据构成；demo 模式回退预览。 */
 export function ControlPanel() {
   const [error, setError] = useState('');
   const [inventing, setInventing] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [revealedCard, setRevealedCard] = useState<InventionCard | null>(null);
+  const [tasks, setTasks] = useState<Experiment[]>([]);
+
+  useEffect(() => {
+    const load = () => setTasks(isDemoMode() ? previewExperiments : todayTasks());
+    load();
+    return onTaskChange(load);
+  }, []);
+
+  const completedCount = tasks.filter((t) => t.completed).length;
+  const remaining = remainingTasksForCard(tasks);
+
   const windowAction = (command: 'hide_panel' | 'exit_app' | 'drag_panel') => {
     void desktopCommand(command).catch((reason) => setError(String(reason)));
   };
 
   const handleGenerateCard = async () => {
     if (inventing) return;
-    const remaining = remainingTasksForCard(experiments);
     if (remaining > 0) {
-      alert(`今日研究进度 ${completedCount}/${experiments.length}，还差 ${remaining} 个任务完成才能启动发明机`);
+      alert(`今日研究进度 ${completedCount}/${tasks.length}，还差 ${remaining} 个任务完成才能启动发明机`);
       return;
     }
     if (!canGenerateToday() && !isDemoMode()) {
@@ -39,18 +52,15 @@ export function ControlPanel() {
     }
     setInventing(true);
     try {
-      const base = generateCardFromTasks(experiments);
+      const base = generateCardFromTasks(tasks);
       if (!base) return;
-      // ① AI 命名与描述（失败保留模板降级，模板卡同名可跨天堆叠）
       const ai = await generateAICopy(base.sourceTasks);
       const named: InventionCard = ai
         ? { ...base, name: ai.name, description: ai.description, stackKey: ai.name }
         : base;
-      // ② AI 插画（阶跃 Image API，b64 本地化；失败降级 canvas 占位）
       const art = await generateCardImage(named);
       const created = { ...named, imagePath: art.imagePath };
       addCard(created);
-      // 生成成功后先展示新卡，关闭后再刷新收藏视图
       setRevealedCard(created);
     } finally {
       setInventing(false);
@@ -78,9 +88,9 @@ export function ControlPanel() {
       <div className="profile-avatar"><AvatarArt /><span>RESEARCHER / 001</span></div>
       <div className="profile-info">
         <div className="identity"><h2>墨言</h2><span>代理所长</span></div>
-        <div className="progress-label"><span>今日研究进度</span><strong>{completedCount}<small> / {experiments.length}</small></strong></div>
-        <div className="progress-track" role="progressbar" aria-label="今日研究进度" aria-valuenow={completedCount} aria-valuemin={0} aria-valuemax={experiments.length}>
-          <span style={{ width: `${completedCount / experiments.length * 100}%` }} />
+        <div className="progress-label"><span>今日研究进度</span><strong>{completedCount}<small> / {tasks.length}</small></strong></div>
+        <div className="progress-track" role="progressbar" aria-label="今日研究进度" aria-valuenow={completedCount} aria-valuemin={0} aria-valuemax={tasks.length}>
+          <span style={{ width: `${tasks.length ? completedCount / tasks.length * 100 : 0}%` }} />
         </div>
         <p className="assistant-message"><span className="signal-dot" />检测到新的行动余波。<Icon name="arrow" size={15} /></p>
       </div>
@@ -95,16 +105,16 @@ export function ControlPanel() {
       </div>
       <div className="metrics">
         <div><i className="metric-dot stable" /><span>稳定余波</span><strong>{completedCount}</strong></div>
-        <div><i className="metric-dot stagnant" /><span>停滞能量</span><strong>{experiments.length - completedCount}</strong></div>
+        <div><i className="metric-dot stagnant" /><span>停滞能量</span><strong>{tasks.length - completedCount}</strong></div>
         <div className="slime-metric"><Icon name="slime" size={20} /><span>史莱姆图鉴</span><Icon name="arrow" size={16} /></div>
       </div>
       <ExperimentList />
     </section>
-    <button className={`invention-button static-button${inventing ? ' inventing' : ''}`} onClick={handleGenerateCard} disabled={inventing}>
+    <button className={`invention-button static-button${inventing ? ' inventing' : ''}`} onClick={handleGenerateCard} disabled={inventing || remaining > 0}>
       <span className="machine-symbol"><Icon name="flask" size={28} /></span>
       <span>
         <strong>{inventing ? '发明机运转中…' : '启动今日发明机'}</strong>
-        <small>{inventing ? 'AI 正在命名与绘制卡牌，通常需要 1 分钟左右' : '让今天的小事，变成不必要的大发明'}</small>
+        <small>{inventing ? 'AI 正在命名与绘制卡牌，通常需要 1 分钟左右' : remaining > 0 ? `还差 ${remaining} 个任务完成才能启动发明机` : '让今天的小事，变成不必要的大发明'}</small>
       </span>
       <Icon name="arrow" size={25} />
     </button>

@@ -16,7 +16,9 @@ fn main() {
             commands::hide_panel,
             commands::drag_avatar,
             commands::drag_panel,
-            commands::exit_app
+            commands::exit_app,
+            commands::generate_ai_copy,
+            commands::generate_artwork
         ])
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
