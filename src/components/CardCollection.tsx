@@ -1,5 +1,5 @@
 import type { CardCollection, InventionCard } from '../types/card';
-import { loadCollection, saveCollection, splitCard } from '../utils/cardStorage';
+import { loadCollection } from '../utils/cardStorage';
 import { useState } from 'react';
 import './collection.css';
 
@@ -22,14 +22,27 @@ function CardArt({ card, count }: { card: InventionCard; count: number }) {
 export function CardCollection() {
   const [collection, setCollection] = useState<CardCollection>(loadCollection);
 
-  const handleSplit = (stackKey: string) => {
-    const result = splitCard(collection, stackKey);
-    if (!result) {
-      alert('该卡牌只有一张，无法分化');
-      return;
-    }
-    setCollection(result);
-    saveCollection(result);
+  const [expanding, setExpanding] = useState<{ stackKey: string; cards: InventionCard[]; index: number } | null>(null);
+
+  const closeExpand = () => setExpanding(null);
+
+  const handleBrowseClick = (stack: InventionCard[]) => {
+    const sorted = [...stack].sort((a, b) => new Date(b.earnedAt).getTime() - new Date(a.earnedAt).getTime());
+    setExpanding({ stackKey: sorted[0].stackKey, cards: sorted, index: 0 });
+  };
+
+  const prevCard = () => {
+    setExpanding((prev) => {
+      if (!prev) return prev;
+      return { ...prev, index: (prev.index - 1 + prev.cards.length) % prev.cards.length };
+    });
+  };
+
+  const nextCard = () => {
+    setExpanding((prev) => {
+      if (!prev) return prev;
+      return { ...prev, index: (prev.index + 1) % prev.cards.length };
+    });
   };
 
   // 按 stackKey 分组统计数量
@@ -71,16 +84,43 @@ export function CardCollection() {
               </div>
               <button
                 className="static-button split-button"
-                onClick={() => handleSplit(representative.stackKey)}
-                disabled={count <= 1}
-                title={count <= 1 ? '同款卡牌堆叠超过一张后才能分化' : '把堆叠的卡牌分化为独立单张'}
+                onClick={() => handleBrowseClick(stack)}
+                title="浏览堆叠卡牌"
               >
-                分化
+                浏览
               </button>
             </article>
           );
         })}
       </div>
+
+      {expanding && (
+        <div className="expand-overlay" onClick={closeExpand}>
+          <div className="expand-carousel" onClick={(e) => e.stopPropagation()}>
+            <button className="expand-nav" onClick={prevCard} aria-label="上一张">‹</button>
+            <div className="expand-card">
+              <div className="card-art">
+                {expanding.cards[expanding.index].imagePath ? (
+                  <img src={expanding.cards[expanding.index].imagePath} alt={expanding.cards[expanding.index].name} />
+                ) : (
+                  <span className="card-placeholder">{expanding.cards[expanding.index].name.slice(0, 2)}</span>
+                )}
+              </div>
+              <div className="card-info">
+                <h4>{expanding.cards[expanding.index].name}</h4>
+                <p>{expanding.cards[expanding.index].description}</p>
+                <time>{new Date(expanding.cards[expanding.index].earnedAt).toLocaleString()}</time>
+                <div className="expand-meta">
+                  <span className="expand-count">拥有 {expanding.cards.length} 张</span>
+                  <span className="expand-index">{expanding.index + 1}/{expanding.cards.length}</span>
+                </div>
+              </div>
+            </div>
+            <button className="expand-nav" onClick={nextCard} aria-label="下一张">›</button>
+          </div>
+          <p className="expand-hint">点击任意位置关闭浏览</p>
+        </div>
+      )}
     </section>
   );
 }

@@ -3,22 +3,25 @@ import { AvatarArt } from './AvatarArt';
 import { Icon } from './Icon';
 import { ExperimentList } from './ExperimentList';
 import { CardCollection } from './CardCollection';
+import { CardRevealModal } from './CardRevealModal';
 import { completedCount, experiments } from '../constants/preview';
 import { desktopCommand, isDesktop } from '../utils/desktop';
-import type { InventionCard } from '../types/card';
 import { generateCardFromTasks, remainingTasksForCard } from '../utils/cardGenerator';
 import { addCard, canGenerateToday } from '../utils/cardStorage';
 import { generateAICopy } from '../utils/stepfun';
 import { generateCardImage } from '../utils/cardImage';
+import { isDemoMode } from '../utils/demoMode';
 import './panel.css';
 import './experiments.css';
 import './collection.css';
+import './reveal.css';
 
 /** 仅窗口按钮可交互，业务区域完全由固定预览数据构成。 */
 export function ControlPanel() {
   const [error, setError] = useState('');
-  const [cardsGenerated, setCardsGenerated] = useState(false);
   const [inventing, setInventing] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [revealedCard, setRevealedCard] = useState<InventionCard | null>(null);
   const windowAction = (command: 'hide_panel' | 'exit_app' | 'drag_panel') => {
     void desktopCommand(command).catch((reason) => setError(String(reason)));
   };
@@ -30,7 +33,7 @@ export function ControlPanel() {
       alert(`今日研究进度 ${completedCount}/${experiments.length}，还差 ${remaining} 个任务完成才能启动发明机`);
       return;
     }
-    if (!canGenerateToday()) {
+    if (!canGenerateToday() && !isDemoMode()) {
       alert('今天已经获得过卡牌了，明天再来吧');
       return;
     }
@@ -45,15 +48,18 @@ export function ControlPanel() {
         : base;
       // ② AI 插画（阶跃 Image API，b64 本地化；失败降级 canvas 占位）
       const art = await generateCardImage(named);
-      addCard({ ...named, imagePath: art.imagePath });
-      setCardsGenerated(true);
-      alert(`获得新发明卡牌「${named.name}」${art.fromAI ? '（AI 生成插画）' : '（离线占位插画）'}`);
+      const created = { ...named, imagePath: art.imagePath };
+      addCard(created);
+      // 生成成功后先展示新卡，关闭后再刷新收藏视图
+      setRevealedCard(created);
     } finally {
       setInventing(false);
     }
   };
 
-  return <main className="panel-shell">
+  return (
+    <>
+      <main className="panel-shell" key={refreshKey}>
     <header className="brand-bar panel-drag-area" title="按住此处拖动面板" onPointerDown={(event) => {
       if (event.button !== 0 || (event.target as HTMLElement).closest('button')) return;
       event.preventDefault();
@@ -104,5 +110,8 @@ export function ControlPanel() {
     </button>
     <footer className="panel-footer"><span><i />研究所运行正常</span><span>认真生活 · 胡乱发明</span><span>VOL. 001</span></footer>
     <CardCollection />
-  </main>;
+    <CardRevealModal card={revealedCard} open={!!revealedCard} onClose={() => { setRevealedCard(null); setRefreshKey((k) => k + 1); }} />
+      </main>
+    </>
+  );
 }
