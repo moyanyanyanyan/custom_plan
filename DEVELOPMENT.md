@@ -46,7 +46,8 @@ npm run desktop:build
 
 - `src-tauri/src/components/`：头像、控制面板、任务带和对应样式。
 - `src-tauri/src/hooks/`：头像点击与拖动阈值判断。
-- `src-tauri/src/constants/`、`src-tauri/src/types/`、`src-tauri/src/utils/`：预览数据、类型、桌面通信封装。
+- `src-tauri/src/constants/`、`src-tauri/src/types/`：任务种子模板、类型定义。
+- `src-tauri/src/utils/`：桌面通信封装与本地存储数据层（`storage.ts` 读写封装、`tasks.ts` 按天分桶的任务数据层）。
 - `src-tauri/src/`（Rust 侧）：窗口命令、显示器定位与几何测试。
 - `index.html`：前端入口，加载 `src-tauri/src/index.tsx`。
 - `public/lab-icon.svg`：本地占位图标源文件。

@@ -2,16 +2,26 @@ import { useState } from 'react';
 import { AvatarArt } from './AvatarArt';
 import { Icon } from './Icon';
 import { ExperimentList } from './ExperimentList';
-import { completedCount, experiments } from '../constants/preview';
+import { useTasks } from '../hooks/useTasks';
 import { desktopCommand, isDesktop } from '../utils/desktop';
 import './panel.css';
 import './experiments.css';
 
-/** 仅窗口按钮可交互，业务区域完全由固定预览数据构成。 */
+/** 控制面板：任务来自本地存储数据层，窗口操作仍走原生命令。 */
 export function ControlPanel() {
   const [error, setError] = useState('');
+  const [draft, setDraft] = useState('');
+  const { tasks, add, toggle, remove } = useTasks();
+  const completed = tasks.filter((task) => task.completed).length;
   const windowAction = (command: 'hide_panel' | 'exit_app' | 'drag_panel') => {
     void desktopCommand(command).catch((reason) => setError(String(reason)));
+  };
+  const submitTask = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const name = draft.trim();
+    if (!name) return;
+    add({ name, icon: 'flask', minutes: 10, completed: false, group: 'A' });
+    setDraft('');
   };
   return <main className="panel-shell">
     <header className="brand-bar panel-drag-area" title="按住此处拖动面板" onPointerDown={(event) => {
@@ -32,9 +42,9 @@ export function ControlPanel() {
       <div className="profile-avatar"><AvatarArt /><span>RESEARCHER / 001</span></div>
       <div className="profile-info">
         <div className="identity"><h2>墨言</h2><span>代理所长</span></div>
-        <div className="progress-label"><span>今日研究进度</span><strong>{completedCount}<small> / {experiments.length}</small></strong></div>
-        <div className="progress-track" role="progressbar" aria-label="今日研究进度" aria-valuenow={completedCount} aria-valuemin={0} aria-valuemax={experiments.length}>
-          <span style={{ width: `${completedCount / experiments.length * 100}%` }} />
+        <div className="progress-label"><span>今日研究进度</span><strong>{completed}<small> / {tasks.length}</small></strong></div>
+        <div className="progress-track" role="progressbar" aria-label="今日研究进度" aria-valuenow={completed} aria-valuemin={0} aria-valuemax={tasks.length}>
+          <span style={{ width: tasks.length ? `${completed / tasks.length * 100}%` : '0%' }} />
         </div>
         <p className="assistant-message"><span className="signal-dot" />检测到新的行动余波。<Icon name="arrow" size={15} /></p>
       </div>
@@ -44,15 +54,19 @@ export function ControlPanel() {
       </div>
     </section>
     <section className="console" aria-labelledby="console-title">
-      <div className="console-heading"><div><span className="eyebrow">DAILY RESEARCH</span><h2 id="console-title">今日控制台</h2></div>
-        <button className="static-button add-task" disabled><span>＋</span> 添加任务</button>
+      <div className="console-heading">
+        <div><span className="eyebrow">DAILY RESEARCH</span><h2 id="console-title">今日控制台</h2></div>
+        <form className="add-form" onSubmit={submitTask}>
+          <input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="新实验名称…" aria-label="新实验名称" maxLength={30} />
+          <button type="submit" className="add-task" disabled={!draft.trim()}>＋ 添加任务</button>
+        </form>
       </div>
       <div className="metrics">
-        <div><i className="metric-dot stable" /><span>稳定余波</span><strong>{completedCount}</strong></div>
-        <div><i className="metric-dot stagnant" /><span>停滞能量</span><strong>{experiments.length - completedCount}</strong></div>
+        <div><i className="metric-dot stable" /><span>稳定余波</span><strong>{completed}</strong></div>
+        <div><i className="metric-dot stagnant" /><span>停滞能量</span><strong>{tasks.length - completed}</strong></div>
         <div className="slime-metric"><Icon name="slime" size={20} /><span>史莱姆图鉴</span><Icon name="arrow" size={16} /></div>
       </div>
-      <ExperimentList />
+      <ExperimentList tasks={tasks} onToggle={toggle} onRemove={remove} />
     </section>
     <button className="invention-button static-button" disabled>
       <span className="machine-symbol"><Icon name="flask" size={28} /></span>
