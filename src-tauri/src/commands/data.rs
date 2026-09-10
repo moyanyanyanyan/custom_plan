@@ -53,7 +53,13 @@ pub fn import_legacy_data(
 #[tauri::command]
 pub fn load_asset_data_url(store: State<'_, AppStore>, asset_id: String) -> Result<String, String> {
     let bytes = store.load_asset(&asset_id)?;
-    let mime = if asset_id.ends_with(".jpg") { "image/jpeg" } else { "image/png" };
+    let mime = if asset_id.ends_with(".jpg") || asset_id.ends_with(".jpeg") {
+        "image/jpeg"
+    } else if asset_id.ends_with(".webp") {
+        "image/webp"
+    } else {
+        "image/png"
+    };
     Ok(format!("data:{mime};base64,{}", base64::engine::general_purpose::STANDARD.encode(bytes)))
 }
 

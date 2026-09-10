@@ -29,7 +29,8 @@ export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () =>
   const { settings, save } = useSettings();
   const [draft, setDraft] = useState<AppSettings>(settings);
   const [error, setError] = useState('');
-  useEffect(() => { if (open) setDraft(settings); }, [open, settings]);
+  const [saving, setSaving] = useState(false);
+  useEffect(() => { if (open && !saving) setDraft(settings); }, [open, saving, settings]);
   useEffect(() => {
     if (!open) return;
     void applyTheme(draft);
@@ -59,6 +60,17 @@ export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () =>
     } catch (reason) { setError(String(reason)); }
   };
 
+  const submit = async () => {
+    setSaving(true);
+    setError('');
+    try {
+      await save(draft);
+      onClose();
+    } catch (reason) {
+      setError(`设置保存失败，请重试：${String(reason)}`);
+    } finally { setSaving(false); }
+  };
+
   return <div className="settings-overlay" role="dialog" aria-modal="true" aria-label="研究所设置">
     <section className="settings-panel">
       <header><div><span>LAB SETTINGS</span><h2>研究所设置</h2></div>
@@ -69,7 +81,7 @@ export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () =>
         <label><AssetPreview assetId={draft.wallpaperAssetId} label="面板壁纸" />面板壁纸<input type="file" accept="image/png,image/jpeg,image/webp"
           onChange={(event) => void importImage(event, 'wallpaper')} /></label>
       </div>
-      <label className="opacity-setting">面板透明度
+      <label className="opacity-setting">主题遮罩强度
         <input type="range" min="0.4" max="1" step="0.02" value={draft.panelOpacity}
           onChange={(event) => setDraft({ ...draft, panelOpacity: Number(event.target.value) })} />
         <output>{Math.round(draft.panelOpacity * 100)}%</output>
@@ -82,9 +94,9 @@ export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () =>
       <label className="sound-setting"><input type="checkbox" checked={draft.soundEnabled}
         onChange={(event) => setDraft({ ...draft, soundEnabled: event.target.checked })} />完成任务时播放提示音</label>
       {error && <p role="alert">{error}</p>}
-      <footer><button onClick={() => setDraft(createDefaultData().settings)}>恢复默认</button>
-        <button onClick={() => { setDraft(settings); onClose(); }}>取消</button>
-        <button className="settings-save" onClick={() => { save(draft); onClose(); }}>应用设置</button></footer>
+      <footer><button disabled={saving} onClick={() => setDraft(createDefaultData().settings)}>恢复默认</button>
+        <button disabled={saving} onClick={() => { setDraft(settings); onClose(); }}>取消</button>
+        <button disabled={saving} className="settings-save" onClick={() => void submit()}>{saving ? '保存中…' : '应用设置'}</button></footer>
     </section>
   </div>;
 }

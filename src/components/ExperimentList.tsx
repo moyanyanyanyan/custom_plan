@@ -69,7 +69,7 @@ export function ExperimentList({ tasks, onToggle, onRemove }: {
           }}
           className={`task-pill depth-${depth} ${focused ? 'focused' : ''} ${task.completed ? 'completed' : ''} ${pulseId === task.id ? 'task-pulse' : ''}`}>
           <span className={`task-icon icon-${task.icon}`}><Icon name={task.completed ? 'check' : task.icon} size={focused ? 34 : 22} /></span>
-          <span className="task-description"><h4>{task.name}</h4>{focused && <p><Icon name="clock" size={15} />预计用时 {task.minutes} 分钟</p>}</span>
+          <span className="task-description"><h4>{task.name}</h4></span>
           <span className="task-state">{task.completed ? '✓ 已完成' : '○ 未完成'}</span>
           {task.completed && focused && <span className="completion-stamp">采集完成</span>}
           {focused && <button type="button" className="task-delete" aria-label={`删除 ${task.name}`}

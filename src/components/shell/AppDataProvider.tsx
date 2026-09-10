@@ -38,12 +38,19 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let dispose: () => void = () => undefined;
+    const acceptLatest = (incoming: AppData) => {
+      if (pending.current > 0 || incoming.revision <= dataRef.current.revision) return;
+      dataRef.current = incoming;
+      setData(incoming);
+    };
     void listenForAppData((incoming) => {
       if (incoming.sourceId === sourceId.current || pending.current > 0) return;
-      if (incoming.data.revision <= dataRef.current.revision) return;
-      dataRef.current = incoming.data;
-      setData(incoming.data);
-    }).then((unlisten) => { dispose = unlisten; });
+      acceptLatest(incoming.data);
+    }).then(async (unlisten) => {
+      dispose = unlisten;
+      // 监听建立后再校验一次，补回窗口启动阶段可能错过的广播。
+      acceptLatest(await loadAppData());
+    }).catch((reason) => setError(String(reason)));
     return () => dispose();
   }, []);
 
@@ -57,7 +64,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     setData(next);
     pending.current += 1;
     setSaveStatus('pending');
-    writeQueue.current = writeQueue.current.then(async () => {
+    const result = writeQueue.current.then(async () => {
       let lastError: unknown;
       for (let attempt = 0; attempt < 2; attempt += 1) {
         try {
@@ -71,13 +78,16 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
             setError('');
             setSaveStatus('saved');
           }
-          return;
+          return saved;
         } catch (reason) { lastError = reason; }
       }
       pending.current -= 1;
       setError(`数据尚未保存：${String(lastError)}`);
       setSaveStatus('failed');
+      throw lastError;
     });
+    writeQueue.current = result.then(() => undefined, () => undefined);
+    return result;
   }, []);
 
   const runAtomic = useCallback((action: () => Promise<AppData>) => {

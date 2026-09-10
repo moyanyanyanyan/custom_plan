@@ -8,7 +8,7 @@ export interface AppDataContextValue {
   ready: boolean;
   error: string;
   saveStatus: SaveStatus;
-  update: (recipe: (current: AppData) => AppData) => void;
+  update: (recipe: (current: AppData) => AppData) => Promise<AppData>;
   claimDailyCard: (dateKey: string, card: InventionCard) => Promise<AppData>;
   updateCard: (cardId: string, patch: Partial<InventionCard>) => Promise<AppData>;
   retrySave: () => Promise<void>;

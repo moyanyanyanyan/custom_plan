@@ -19,7 +19,6 @@
 .task-description { min-width: 0; flex: 1; }
 .task-description h4 { font-size: 14px; font-weight: 550; letter-spacing: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .focused h4 { font-size: 23px; font-weight: 600; }
-.task-description p { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #617ead; margin-top: 5px; }
 .task-state { background: #7f9ac14a; padding: 4px 10px; border: 1px solid #ffffff73; border-radius: 20px; color: #3b5684; font-size: 10px; flex-shrink: 0; }
 .focused .task-state { padding: 6px 12px; font-size: 12px; }
 .completed { background: linear-gradient(120deg, #fff0daab, #e9c6a2a3); }
@@ -65,7 +64,6 @@
 .focused .task-icon { width: 43px; height: 43px; margin: 0 3px; }
 .focused h4 { font-size: 17px; }
 .focused .task-state { padding: 4px 8px; font-size: 9px; }
-.task-description p { margin-top: 3px; font-size: 9px; }
 .belt-arrow { position: sticky; flex: 0 0 auto; left: auto; width: 100%; height: 10px; line-height: 9px; }
 .belt-arrow.up { top: 0; }
 .belt-arrow.down { bottom: 0; }

@@ -13,33 +13,33 @@ export function useTasks() {
       id: crypto.randomUUID(), name: name.trim(), icon: 'flask' as const, minutes: 10,
       completed: false, group: 'A', createdAt: now.toISOString(), completedAt: null,
     };
-    update((current) => ({
+    void update((current) => ({
       ...current, tasksByDate: {
         ...current.tasksByDate, [dateKey]: [...(current.tasksByDate[dateKey] ?? []), task],
       },
-    }));
+    })).catch(() => undefined);
   }, [dateKey, update]);
   const toggle = useCallback((id: string) => {
     const now = new Date();
-    update((current) => ({ ...current, tasksByDate: {
+    void update((current) => ({ ...current, tasksByDate: {
       ...current.tasksByDate,
       [dateKey]: (current.tasksByDate[dateKey] ?? []).map((task) => task.id === id
         ? { ...task, completed: !task.completed, completedAt: task.completed ? null : now.toISOString() }
         : task),
-    } }));
+    } })).catch(() => undefined);
   }, [dateKey, update]);
   const remove = useCallback((id: string) => {
-    update((current) => ({ ...current, tasksByDate: {
+    void update((current) => ({ ...current, tasksByDate: {
       ...current.tasksByDate, [dateKey]: (current.tasksByDate[dateKey] ?? []).filter((task) => task.id !== id),
-    } }));
+    } })).catch(() => undefined);
   }, [dateKey, update]);
   const completeHistorical = useCallback((id: string) => {
     const completedAt = new Date().toISOString();
-    update((current) => ({ ...current, tasksByDate: Object.fromEntries(
+    void update((current) => ({ ...current, tasksByDate: Object.fromEntries(
       Object.entries(current.tasksByDate).map(([date, entries]) => [date,
         entries.map((task) => task.id === id
           ? { ...task, completed: true, completedAt } : task)]),
-    ) }));
+    ) })).catch(() => undefined);
   }, [update]);
   return { tasks, add, toggle, remove, completeHistorical };
 }

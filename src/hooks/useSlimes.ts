@@ -20,7 +20,7 @@ export function useSlimes() {
       }));
     });
     const needsContainment = data.slimes.some((slime) => !slime.containedAt && completed.has(slime.sourceTaskId));
-    if (additions.length || needsContainment) update((current) => {
+    if (additions.length || needsContainment) void update((current) => {
       const known = new Set(current.slimes.map((slime) => slime.sourceTaskId));
       return {
         ...current,
@@ -29,7 +29,7 @@ export function useSlimes() {
             ? { ...slime, containedAt: now.toISOString() } : slime),
         ...additions.filter((slime) => !known.has(slime.sourceTaskId))],
       };
-    });
+    }).catch(() => undefined);
   }, [data.slimes, data.tasksByDate, now, dateKey, ready, update]);
 
   return data.slimes.map((slime) => ({

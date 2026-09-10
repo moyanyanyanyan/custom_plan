@@ -1,53 +1,53 @@
-.panel-shell { min-height: 100vh; padding: 18px 28px 12px; overflow: hidden; border: 1px solid #d2dfff60; border-radius: 20px; background-image: linear-gradient(rgb(from var(--theme-primary) r g b / var(--panel-opacity)), rgb(from var(--theme-secondary) r g b / var(--panel-opacity))), var(--panel-wallpaper); background-size: cover; background-position: center; position: relative; }
+.panel-shell { min-height: 100vh; padding: 18px 28px 12px; overflow: hidden; border: 1px solid var(--theme-border); border-radius: 20px; background-image: radial-gradient(circle at 50% 20%, transparent 35%, #0005 100%), linear-gradient(rgb(from var(--theme-primary) r g b / var(--panel-overlay-opacity)), rgb(from var(--theme-secondary) r g b / var(--panel-overlay-opacity))), var(--panel-wallpaper), linear-gradient(var(--theme-primary), var(--theme-secondary)); background-size: cover; background-position: center; position: relative; }
 .panel-shell::before { content: ''; position: absolute; width: 270px; height: 270px; border: 1px solid #c7daff13; border-radius: 50%; top: -180px; left: 45%; pointer-events: none; }
-.brand-bar, .brand, .window-actions, .identity, .progress-label, .console-heading, .metrics, .panel-footer { display: flex; align-items: center; }
+.brand-bar, .brand, .window-actions, .identity, .progress-label, .console-heading, .metrics { display: flex; align-items: center; }
 .brand-bar { justify-content: space-between; margin-bottom: 14px; }
 .panel-drag-area { cursor: move; user-select: none; touch-action: none; }
 .panel-drag-area .window-actions { cursor: default; }
 .brand { gap: 12px; }
-.brand-mark { position: relative; font: 700 43px Georgia, serif; width: 37px; line-height: 42px; color: #ecf2ff; }
+.brand-mark { position: relative; font: 700 43px Georgia, serif; width: 37px; line-height: 42px; color: var(--theme-text); }
 .brand-mark span { position: absolute; font-size: 27px; color: var(--theme-card-highlight); left: 11px; bottom: -2px; }
 .brand h1 { font-size: 24px; letter-spacing: 3px; font-weight: 650; }
-.brand p { font-size: 7px; letter-spacing: 2px; color: #a1b6db; margin-top: 5px; }
+.brand p { font-size: 7px; letter-spacing: 2px; color: var(--theme-muted-text); margin-top: 5px; }
 .window-actions { gap: 5px; align-self: flex-start; }
-.window-actions button { display: grid; place-items: center; width: 27px; height: 27px; padding: 0; border: 0; background: transparent; border-radius: 7px; color: #becde7; cursor: pointer; }
+.window-actions button { display: grid; place-items: center; width: 27px; height: 27px; padding: 0; border: 0; background: transparent; border-radius: 7px; color: var(--theme-muted-text); cursor: pointer; }
 .window-actions button:not(:disabled):hover { background: #ffffff19; color: white; }
 .preview-label { font-size: 10px; color: #abbddb; margin-right: 7px; border: 1px solid #ffffff23; border-radius: 20px; padding: 4px 9px; }
 .overview { display: grid; grid-template-columns: 112px 1fr 170px; align-items: center; gap: 20px; margin-bottom: 14px; }
-.profile-avatar { width: 108px; height: 108px; padding: 6px; border: 1px solid #a1bfe25c; border-radius: 50%; position: relative; }
+.profile-avatar { width: 108px; height: 108px; padding: 6px; border: 1px solid var(--theme-border); border-radius: 50%; position: relative; }
 .profile-avatar > span:last-child { position: absolute; white-space: nowrap; top: 116px; left: 8px; font-size: 7px; letter-spacing: 1px; color: #90a7cd; }
 .identity { gap: 13px; margin-bottom: 8px; }
 .identity h2 { font-size: 26px; letter-spacing: 4px; font-weight: 600; }
 .identity > span { font-size: 11px; padding: 4px 9px; border: 1px solid #a3c3ff4a; border-radius: 20px; background: #81aaff22; }
-.progress-label { justify-content: space-between; font-size: 13px; color: #ccd9ef; }
-.progress-label strong { font-size: 20px; color: #f6f8ff; font-weight: 500; }
+.progress-label { justify-content: space-between; font-size: 13px; color: var(--theme-muted-text); }
+.progress-label strong { font-size: 20px; color: var(--theme-text); font-weight: 500; }
 .progress-label small { font-size: 13px; color: #abbce0; }
 .progress-track { height: 9px; background: #b7c8ef35; border-radius: 8px; margin: 7px 0 10px; overflow: hidden; }
-.progress-track > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #6a8cee, #a1c5ff); box-shadow: 0 0 12px #82b3ff85; }
-.assistant-message { padding: 10px; background: #b5c8fa16; border: 1px solid #ffffff0b; border-radius: 9px; display: flex; align-items: center; gap: 7px; font-size: 11px; color: #d7e2f6; }
+.progress-track > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--theme-secondary), var(--theme-accent)); box-shadow: 0 0 12px color-mix(in srgb, var(--theme-accent) 52%, transparent); }
+.assistant-message { padding: 10px; background: color-mix(in srgb, var(--theme-accent) 9%, transparent); border: 1px solid var(--theme-border); border-radius: 9px; display: flex; align-items: center; gap: 7px; font-size: 11px; color: var(--theme-muted-text); }
 .assistant-message svg { margin-left: auto; color: #a4b7da; }
 .signal-dot { height: 5px; width: 5px; border-radius: 50%; background: #aacbff; flex-shrink: 0; }
-.collection { min-height: 132px; align-self: stretch; padding: 13px 17px; position: relative; overflow: hidden; text-align: left; cursor: pointer; background: linear-gradient(140deg, #7dadd080, #44708e5e 55%, #253d687a); border: 1px solid #c4e3ff4a; border-radius: 12px; }
+.collection { min-height: 132px; align-self: stretch; padding: 13px 17px; position: relative; overflow: hidden; text-align: left; cursor: pointer; background: linear-gradient(140deg, var(--theme-soft-surface), color-mix(in srgb, var(--theme-primary) 65%, transparent)); border: 1px solid var(--theme-border); border-radius: 12px; }
 .eyebrow { display: block; font-size: 8px; letter-spacing: 2px; color: #b1c6e5; }
 .collection h3 { font-size: 17px; font-weight: 500; margin: 8px 0 4px; position: relative; }
 .collection > div { display: flex; justify-content: space-between; align-items: center; position: relative; }
 .collection strong { font-size: 42px; line-height: 1.1; font-weight: 400; }
 .collection-caption { font-size: 9px; color: #bed2e8; display: block; margin-top: 9px; }
 .collection-orbit { position: absolute; border-radius: 50%; width: 105px; height: 105px; top: -49px; right: -23px; background: linear-gradient(135deg, #ffe5ab, #ffc264c2); }
-.console { border: 1px solid #b9cffa4d; background: #122a552e; border-radius: 15px; overflow: hidden; box-shadow: 0 12px 30px #07183018; }
+.console { border: 1px solid var(--theme-border); background: var(--theme-soft-surface); border-radius: 15px; overflow: hidden; box-shadow: 0 12px 30px #07183018; }
 .console-heading { justify-content: space-between; padding: 10px 22px 8px; }
 .console-heading h2 { font-size: 22px; font-weight: 550; letter-spacing: 2px; margin-top: 4px; }
-.add-task { padding: 7px 13px; font-size: 12px; background: #7d9ddd40; border: 1px solid #9db9f256; border-radius: 6px; cursor: pointer; }
+.add-task { padding: 7px 13px; font-size: 12px; background: color-mix(in srgb, var(--theme-accent) 24%, transparent); border: 1px solid var(--theme-border); border-radius: 6px; cursor: pointer; }
 .add-task > span { font-size: 16px; margin-right: 4px; }
 .add-form { display: flex; align-items: center; gap: 6px; }
-.add-form input { width: 138px; padding: 7px 11px; font-size: 12px; color: #ecf2ff; background: #122a5566; border: 1px solid #9db9f256; border-radius: 6px; outline: none; }
+.add-form input { width: 138px; padding: 7px 11px; font-size: 12px; color: var(--theme-text); background: color-mix(in srgb, var(--theme-primary) 55%, transparent); border: 1px solid var(--theme-border); border-radius: 6px; outline: none; }
 .add-form input::placeholder { color: #8ba3c9; }
 .add-form input:focus { border-color: #a1c5ff; }
 .add-cancel { padding: 7px 9px; border: 1px solid #ffffff26; border-radius: 6px; background: transparent; color: #b9c8e2; cursor: pointer; font-size: 11px; }
 .energy-toast { position: fixed; z-index: 20; top: 155px; left: 50%; transform: translateX(-50%); padding: 7px 13px; border: 1px solid #ffd09680; border-radius: 20px; background: #172d57ed; color: #ffd096; font-size: 12px; animation: energyRise 1.1s ease both; }
 @keyframes energyRise { to { opacity: 0; transform: translate(-50%, -18px); } }
 .metrics { gap: 12px; padding: 0 22px 12px; }
-.metrics > div, .metrics > button { flex: 1; display: flex; align-items: center; gap: 10px; border: 0; border-radius: 9px; background: #8baaff20; padding: 7px 13px; font-size: 12px; white-space: nowrap; }
+.metrics > div, .metrics > button { flex: 1; display: flex; align-items: center; gap: 10px; border: 0; border-radius: 9px; background: color-mix(in srgb, var(--theme-accent) 12%, transparent); padding: 7px 13px; font-size: 12px; white-space: nowrap; }
 .metrics > button { cursor: pointer; }
 .metrics strong { font-size: 18px; font-weight: 500; margin-left: auto; }
 .metric-dot { width: 9px; height: 9px; border-radius: 50%; }
@@ -55,10 +55,9 @@
 .stagnant { background: var(--theme-pending); }
 .slime-metric > svg:first-child { color: var(--theme-slime); }
 .slime-metric > svg:last-child { margin-left: auto; color: #adbfdf; }
-.invention-button { width: 100%; margin-top: 14px; display: flex; align-items: center; justify-content: center; gap: 18px; padding: 10px 24px; border: 1px solid #c8d6ff65; border-radius: 10px; background: linear-gradient(115deg, #688ab336, #a2b1e12e 65%, #f1c68024); position: relative; overflow: hidden; }
+.invention-button { width: 100%; margin-top: 14px; display: flex; align-items: center; justify-content: center; gap: 18px; padding: 10px 24px; border: 1px solid var(--theme-border); border-radius: 10px; background: linear-gradient(115deg, color-mix(in srgb, var(--theme-accent) 22%, transparent), color-mix(in srgb, var(--theme-secondary) 30%, transparent) 65%, color-mix(in srgb, var(--theme-card-highlight) 18%, transparent)); position: relative; overflow: hidden; }
 .invention-button::after { content: ''; position: absolute; border: 1px solid #e8c98550; border-radius: 50%; width: 105px; height: 105px; right: -35px; top: 5px; }
 .invention-button strong { display: block; font-size: 23px; letter-spacing: 3px; font-weight: 500; }
-.invention-button small { display: block; color: #aebfe0; font-size: 9px; letter-spacing: 1px; margin-top: 6px; }
 .invention-button > svg { color: #c4d7f6; margin-left: 8px; }
 .invention-button:disabled { opacity: 0.85; cursor: default; }
 .invention-button.ready { border-color: var(--theme-card-highlight); box-shadow: 0 0 18px color-mix(in srgb, var(--theme-card-highlight) 35%, transparent); cursor: pointer; }
@@ -66,8 +65,6 @@
 .invention-button.inventing .machine-symbol svg { animation: spin 1.4s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .machine-symbol { color: #f3d49d; }
-.panel-footer { justify-content: space-between; margin-top: 9px; font-size: 8px; letter-spacing: 1px; color: #94aaca; }
-.panel-footer i { display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: #91c9b9; margin-right: 6px; vertical-align: middle; }
 .window-error { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; padding: 8px; color: #ffd1c0; }
 .window-error button { padding: 4px 8px; border: 1px solid #ffd1c066; border-radius: 5px; background: transparent; cursor: pointer; }
 @media (max-width: 600px) {
@@ -92,7 +89,7 @@
 }
 
 /* 紧凑桌面模式把主要空间留给任务，仍保留触控友好的点击区域。 */
-.panel-shell { height: 100vh; min-height: 0; padding: 11px 16px 8px; border-radius: 17px; }
+.panel-shell { height: 100vh; min-height: 0; padding: 11px 16px 8px; border-radius: 17px; display: flex; flex-direction: column; }
 .brand-bar { min-height: 36px; margin-bottom: 7px; }
 .brand { gap: 8px; }
 .brand-mark { width: 28px; font-size: 32px; line-height: 31px; }
@@ -116,7 +113,7 @@
 .collection strong { font-size: 24px; }
 .collection-caption { display: none; }
 .collection-orbit { width: 72px; height: 72px; top: -39px; right: -19px; }
-.console { height: 438px; display: flex; flex-direction: column; border-color: #c6d9ff66; box-shadow: 0 14px 30px #06142d70, inset 0 1px #ffffff17; }
+.console { min-height: 0; flex: 1; display: flex; flex-direction: column; border-color: #c6d9ff66; box-shadow: 0 14px 30px #06142d70, inset 0 1px #ffffff17; }
 .console-heading { flex: 0 0 auto; padding: 7px 12px 5px; }
 .console-heading h2 { margin-top: 2px; font-size: 16px; letter-spacing: 1px; }
 .add-task { padding: 5px 9px; font-size: 10px; box-shadow: 0 5px 12px #07162f45, inset 0 1px #ffffff1f; }
@@ -127,8 +124,6 @@
 .metrics strong { font-size: 13px; }
 .metric-dot { width: 6px; height: 6px; }
 .slime-metric svg { width: 14px; height: 14px; }
-.invention-button { width: 72%; min-height: 44px; margin: 7px auto 0; gap: 10px; padding: 6px 15px; border-radius: 9px; box-shadow: 0 9px 22px #06142d60, inset 0 1px #ffffff1f; }
+.invention-button { width: 72%; height: 44px; min-height: 44px; flex: 0 0 44px; margin: 7px auto 0; gap: 10px; padding: 6px 15px; border-radius: 9px; box-shadow: 0 9px 22px #06142d60, inset 0 1px #ffffff1f; }
 .invention-button strong { font-size: 16px; letter-spacing: 1px; }
-.invention-button small { margin-top: 2px; font-size: 7px; }
 .machine-symbol svg { width: 20px; height: 20px; }
-.panel-footer { margin-top: 5px; font-size: 6px; }

@@ -57,10 +57,9 @@ export function ControlPanel() {
       : !tasks.length ? '先登记一项今天想完成的小事吧。'
         : generation.state === 'ready' ? '研究数据充足，今日发明机已经就绪。'
           : `还差 ${generation.remaining} 份稳定余波即可启动发明机。`;
-  const machineCopy = generation.state === 'generating' ? ['发明机运转中…', 'AI 正在命名与绘制卡牌']
-    : generation.state === 'completed' ? ['今日发明已完成', '卡牌已经安全收入档案馆']
-      : generation.state === 'locked' ? ['启动今日发明机', `还差 ${generation.remaining} 个任务完成才能启动`]
-        : ['启动今日发明机', '研究数据充足，点击开始荒诞发明'];
+  const machineCopy = generation.state === 'generating' ? '发明机运转中…'
+    : generation.state === 'completed' ? '今日发明已完成'
+      : '启动今日发明机';
 
   return (
     <>
@@ -116,12 +115,9 @@ export function ControlPanel() {
     <button className={`invention-button ${generation.state}`} onClick={handleGenerateCard}
       disabled={generation.state !== 'ready'}>
       <span className="machine-symbol"><Icon name="flask" size={28} /></span>
-      <span>
-        <strong>{machineCopy[0]}</strong><small>{machineCopy[1]}</small>
-      </span>
+      <strong>{machineCopy}</strong>
       <Icon name="arrow" size={25} />
     </button>
-    <footer className="panel-footer"><span><i />{saveStatus === 'pending' ? '数据保存中' : saveStatus === 'failed' ? '数据尚未保存' : '研究所运行正常'}</span><span>认真生活 · 胡乱发明</span><span>VOL. 001</span></footer>
     {energyToast && <div className="energy-toast" role="status">稳定余波 +1</div>}
     <CardRevealModal card={generation.revealedCard} open={!!generation.revealedCard}
       onClose={() => generation.setRevealedCard(null)} />
