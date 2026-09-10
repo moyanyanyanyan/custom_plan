@@ -1,18 +1,17 @@
 import { useCallback } from 'react';
 import type { InventionCard } from '../types/card';
 import { useAppData } from './useAppData';
-import { localDateKey } from '../utils/date';
 import { isDemoMode } from '../utils/demoMode';
+import { useCurrentDate } from './useCurrentDate';
 
 export function useCards() {
-  const { data, update } = useAppData();
-  const add = useCallback((card: InventionCard) => {
-    update((current) => ({ ...current, cards: [...current.cards, card] }));
-  }, [update]);
-  const canGenerate = useCallback((date = new Date()) => {
+  const { data, claimDailyCard, updateCard } = useAppData();
+  const { dateKey } = useCurrentDate();
+  const claim = useCallback((card: InventionCard) => claimDailyCard(dateKey, card),
+    [claimDailyCard, dateKey]);
+  const canGenerate = useCallback(() => {
     if (isDemoMode()) return true;
-    const today = localDateKey(date);
-    return !data.cards.some((card) => localDateKey(new Date(card.earnedAt)) === today);
-  }, [data.cards]);
-  return { cards: data.cards, add, canGenerate };
+    return !data.cards.some((card) => card.dailyKey === dateKey);
+  }, [data.cards, dateKey]);
+  return { cards: data.cards, claim, updateCard, canGenerate, dateKey };
 }

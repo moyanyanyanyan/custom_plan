@@ -1,9 +1,10 @@
 import type { Experiment } from '../types/experiment';
 import type { InventionCard } from '../types/card';
 import { DAILY_CARD_THRESHOLD } from '../constants/generation';
+import { localDateKey } from './date';
 
 function generateId() {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+  return crypto.randomUUID();
 }
 
 /** 剩余所需任务数（>0 = 还没到门槛）。 */
@@ -37,6 +38,7 @@ export function generateCardFromTasks(tasks: Experiment[], date = new Date()): I
     description,
     sourceTasks: completedTasks,
     earnedAt: date.toISOString(),
+    dailyKey: localDateKey(date),
     type: 'daily',
     stackKey: name,
   };

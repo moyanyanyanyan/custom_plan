@@ -24,7 +24,7 @@ export function ControlPanel() {
   const completedCount = tasks.filter((t) => t.completed).length;
   const generation = useCardGeneration(tasks);
   const slimes = useSlimes();
-  const { error: storageError } = useAppData();
+  const { error: storageError, saveStatus } = useAppData();
 
   const windowAction = (command: 'hide_panel' | 'exit_app' | 'drag_panel') => {
     void desktopCommand(command).catch((reason) => setError(String(reason)));
@@ -68,8 +68,10 @@ export function ControlPanel() {
         <button disabled={!isDesktop} onClick={() => windowAction('exit_app')} title="退出应用" aria-label="退出应用"><Icon name="power" size={16} /></button>
       </div>
     </header>
-    {(error || storageError || generation.warning) && <p role="alert" className="window-error">
-      {error || storageError || generation.warning}</p>}
+    {(error || storageError || generation.warning || saveStatus === 'pending') &&
+      <p role="alert" className="window-error">
+        {error || storageError || generation.warning || '数据保存中…'}
+      </p>}
     <section className="overview" aria-label="研究所概况">
       <div className="profile-avatar"><AvatarArt /><span>RESEARCHER / 001</span></div>
       <div className="profile-info">

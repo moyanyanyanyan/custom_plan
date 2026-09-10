@@ -9,7 +9,7 @@ export function useCardGeneration(tasks: Experiment[]) {
   const [inventing, setInventing] = useState(false);
   const [warning, setWarning] = useState('');
   const [revealedCard, setRevealedCard] = useState<InventionCard | null>(null);
-  const { cards, add, canGenerate } = useCards();
+  const { cards, claim, updateCard, canGenerate } = useCards();
   const remaining = remainingTasksForCard(tasks);
 
   const generate = async () => {
@@ -19,6 +19,12 @@ export function useCardGeneration(tasks: Experiment[]) {
     try {
       const base = generateCardFromTasks(tasks);
       if (!base) return;
+      try {
+        await claim(base);
+      } catch {
+        setWarning('今天的卡牌已在另一个窗口生成，请查看收藏册。');
+        return;
+      }
       let card = base;
       try {
         const copy = await generateCardCopy(base.sourceTasks);
@@ -32,7 +38,7 @@ export function useCardGeneration(tasks: Experiment[]) {
       } catch (reason) {
         setWarning((current) => current || `AI 插画暂不可用：${String(reason)}`);
       }
-      add(card);
+      await updateCard(card.id, card);
       setRevealedCard(card);
     } finally {
       setInventing(false);

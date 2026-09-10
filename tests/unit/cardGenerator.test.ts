@@ -15,6 +15,7 @@ describe('cardGenerator', () => {
     const date = new Date('2026-09-10T12:00:00.000Z');
     const card = generateCardFromTasks([0, 1, 2, 3, 4].map(task), date);
     expect(card?.earnedAt).toBe(date.toISOString());
+    expect(card?.dailyKey).toBe('2026-09-10');
     expect(card?.sourceTasks).toHaveLength(5);
   });
 

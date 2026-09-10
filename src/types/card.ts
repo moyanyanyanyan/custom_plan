@@ -4,6 +4,7 @@ export type InventionCard = {
   description: string;
   sourceTasks: string[];
   earnedAt: string; // ISO datetime
+  dailyKey: string;
   imageAssetId?: string;
   imagePath?: string;
   type: 'daily';

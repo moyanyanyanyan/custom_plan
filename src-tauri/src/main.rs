@@ -29,6 +29,8 @@ fn main() {
             commands::window::exit_app,
             commands::data::load_app_data,
             commands::data::save_app_data,
+            commands::data::claim_daily_card,
+            commands::data::update_card,
             commands::data::import_legacy_data,
             commands::data::load_asset_data_url,
             commands::data::save_user_asset,
