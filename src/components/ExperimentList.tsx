@@ -11,6 +11,8 @@ export function ExperimentList({ tasks, onToggle, onRemove }: {
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [pulseId, setPulseId] = useState<string | null>(null);
   const previousCount = useRef(0);
+  const beltRef = useRef<HTMLDivElement>(null);
+  const taskElements = useRef(new Map<string, HTMLDivElement>());
   useEffect(() => {
     if (!tasks.length) { previousCount.current = 0; setFocusedId(null); return; }
     if (tasks.length > previousCount.current && previousCount.current > 0) {
@@ -20,6 +22,10 @@ export function ExperimentList({ tasks, onToggle, onRemove }: {
     }
     previousCount.current = tasks.length;
   }, [focusedId, tasks]);
+  useEffect(() => {
+    if (!focusedId) return;
+    taskElements.current.get(focusedId)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [focusedId]);
   const center = Math.max(0, tasks.findIndex((task) => task.id === focusedId));
   const move = (offset: number) => {
     if (!tasks.length) return;
@@ -37,8 +43,9 @@ export function ExperimentList({ tasks, onToggle, onRemove }: {
   };
   return <section className="experiments" aria-labelledby="experiments-title">
     <header><h3 id="experiments-title">今日实验 <span>EXPERIMENTS</span></h3><span className="experiment-group">今日任务</span></header>
-    <div className="task-belt" onWheel={(event) => {
-      if (Math.abs(event.deltaY) > 8) move(event.deltaY > 0 ? 1 : -1);
+    <div className="task-belt" ref={beltRef} onWheel={(event) => {
+      event.preventDefault();
+      beltRef.current?.scrollBy({ top: event.deltaY * 0.7, behavior: 'smooth' });
     }} onKeyDown={(event) => {
       if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
         event.preventDefault(); move(event.key === 'ArrowDown' ? 1 : -1);
@@ -47,9 +54,12 @@ export function ExperimentList({ tasks, onToggle, onRemove }: {
       <button type="button" className="belt-arrow up" aria-label="上一个任务"
         disabled={center <= 0} onClick={() => move(-1)}>⌃</button>
       {tasks.map((task, index) => {
-        if (Math.abs(index - center) > 2) return null;
         const focused = index === center;
-        return <div key={task.id} role="button" tabIndex={0} aria-pressed={task.completed}
+        const depth = Math.min(2, Math.abs(index - center));
+        return <div key={task.id} ref={(element) => {
+          if (element) taskElements.current.set(task.id, element);
+          else taskElements.current.delete(task.id);
+        }} data-task-id={task.id} role="button" tabIndex={0} aria-pressed={task.completed}
           onClick={() => focused ? toggle(task.id) : setFocusedId(task.id)}
           onKeyDown={(event) => {
             if (event.key === 'Enter' || event.key === ' ') {
@@ -57,7 +67,7 @@ export function ExperimentList({ tasks, onToggle, onRemove }: {
               focused ? toggle(task.id) : setFocusedId(task.id);
             }
           }}
-          className={`task-pill depth-${Math.abs(index - center)} ${focused ? 'focused' : ''} ${task.completed ? 'completed' : ''} ${pulseId === task.id ? 'task-pulse' : ''}`}>
+          className={`task-pill depth-${depth} ${focused ? 'focused' : ''} ${task.completed ? 'completed' : ''} ${pulseId === task.id ? 'task-pulse' : ''}`}>
           <span className={`task-icon icon-${task.icon}`}><Icon name={task.completed ? 'check' : task.icon} size={focused ? 34 : 22} /></span>
           <span className="task-description"><h4>{task.name}</h4>{focused && <p><Icon name="clock" size={15} />预计用时 {task.minutes} 分钟</p>}</span>
           <span className="task-state">{task.completed ? '✓ 已完成' : '○ 未完成'}</span>

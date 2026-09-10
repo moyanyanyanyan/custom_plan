@@ -51,3 +51,22 @@
   .task-pill.focused { min-height: 76px; }
   .task-pill.depth-1 { height: 43px; }
 }
+
+/* 任务区使用真实滚动容器，避免滚轮每次只跳一项带来的卡顿感。 */
+.experiments { min-height: 0; flex: 1; display: flex; flex-direction: column; padding: 8px 12px 7px; border-radius: 13px 13px 0 0; box-shadow: inset 0 12px 22px #ffffff45, 0 -5px 16px #07162f20; }
+.experiments h3 { font-size: 14px; }
+.task-belt { min-height: 0; flex: 1; overflow-y: auto; overscroll-behavior: contain; scroll-behavior: smooth; scroll-snap-type: y proximity; scrollbar-width: thin; scrollbar-color: #7895c477 transparent; gap: 5px; padding: 18px 5px; }
+.task-belt::-webkit-scrollbar { width: 5px; }
+.task-belt::-webkit-scrollbar-thumb { border-radius: 8px; background: #7895c477; }
+.task-pill { flex: 0 0 auto; scroll-snap-align: center; gap: 9px; padding: 6px 11px; box-shadow: 0 7px 15px #324f8130, inset 0 1px 7px #fff9; transition: width .2s ease, opacity .2s ease, box-shadow .2s ease; }
+.task-pill.depth-1 { width: 94%; height: 38px; }
+.task-pill.depth-2 { width: 87%; height: 31px; opacity: .58; padding: 3px 11px; }
+.task-pill.focused { min-height: 62px; box-shadow: 0 0 0 3px #a7c5f567, 0 10px 22px #2d559d55, inset 0 0 13px white; }
+.focused .task-icon { width: 43px; height: 43px; margin: 0 3px; }
+.focused h4 { font-size: 17px; }
+.focused .task-state { padding: 4px 8px; font-size: 9px; }
+.task-description p { margin-top: 3px; font-size: 9px; }
+.belt-arrow { position: sticky; flex: 0 0 auto; left: auto; width: 100%; height: 10px; line-height: 9px; }
+.belt-arrow.up { top: 0; }
+.belt-arrow.down { bottom: 0; }
+.belt-caption { margin-top: 3px; font-size: 7px; }
