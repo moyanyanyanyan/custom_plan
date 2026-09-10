@@ -6,6 +6,7 @@ import {
 } from '../types/experiment';
 import { experiments as seedTemplates } from '../constants/preview';
 import { hasKey, loadJson, saveJson } from './storage';
+import { isDemoMode } from './demoMode';
 
 /** 今日任务存储键：按天分桶，为“今日实验 / 连续研究天数 / 历史回顾”预留。 */
 export function todayKey(date = new Date()): string {
@@ -44,10 +45,13 @@ function seedIfEmpty(date: Date): Experiment[] {
   return seeded;
 }
 
-/** 读取今日任务；当天还没有数据时用默认任务播种。 */
+/** 读取今日任务；正常模式首次启动返回空列表，演示模式保留默认任务播种。 */
 export function loadToday(date = new Date()): Experiment[] {
   const key = todayKey(date);
-  if (!hasKey(key)) return seedIfEmpty(date);
+  if (!hasKey(key)) {
+    if (isDemoMode()) return seedIfEmpty(date);
+    return [];
+  }
   return loadJson<Experiment[]>(key, []).filter(isExperiment);
 }
 
