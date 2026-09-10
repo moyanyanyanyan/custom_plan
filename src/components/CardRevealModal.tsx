@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { InventionCard } from '../types/card';
+import { AssetImage } from './cards/AssetImage';
 import './reveal.css';
 
 interface CardRevealModalProps {
@@ -28,8 +29,8 @@ export function CardRevealModal({ card, open, onClose }: CardRevealModalProps) {
       <div className="reveal-card" onClick={(e) => e.stopPropagation()}>
         <button ref={closeRef} className="reveal-close" onClick={onClose} aria-label="关闭">×</button>
         <div className="reveal-art">
-          {card.imagePath ? (
-            <img src={card.imagePath} alt={card.name} />
+          {(card.imageAssetId || card.imagePath) ? (
+            <AssetImage card={card} />
           ) : (
             <span className="card-placeholder">{card.name.slice(0, 2)}</span>
           )}

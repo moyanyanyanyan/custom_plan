@@ -1,4 +1,4 @@
-const { chromium } = require(process.env.PLAYWRIGHT_PATH || 'playwright');
+const { chromium } = require('@playwright/test');
 const { execFileSync } = require('node:child_process');
 const assert = require('node:assert/strict');
 const path = require('node:path');

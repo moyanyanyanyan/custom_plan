@@ -1,7 +1,8 @@
 # 离谱发明所 · 开发说明
 
 当前版本是 Windows 桌面原型：可拖动贴边的头像，以及带本地任务操作的控制面板。
-任务支持添加、完成、取消完成、删除和按日期本地保存；收藏、史莱姆和发明机仍为预览内容。
+任务支持添加、完成、取消完成、删除和按日期保存；卡牌生成、收藏及外观设置已接入统一数据层。
+史莱姆目前完成跨日生成与收容的数据基础，图鉴页面仍待实现。
 
 ## 环境
 
@@ -44,11 +45,13 @@ npm run desktop:build
 
 ## 结构与约束
 
-- `src/components/`：头像、控制面板、任务带和对应样式。
-- `src/hooks/`：头像交互与任务状态 Hook。
-- `src/constants/`、`src/types/`：任务种子模板、类型定义。
-- `src/utils/`：桌面通信封装与本地存储数据层（`storage.ts` 读写封装、`tasks.ts` 按天分桶的任务数据层）。
-- `src-tauri/src/`：仅存放 Rust 窗口命令、显示器定位与几何测试。
+- `src/components/`：按 shell、settings、cards 等业务域组织界面。
+- `src/hooks/`：任务、卡牌、史莱姆、设置与生成流程的业务状态入口。
+- `src/constants/`、`src/types/`：默认设置、业务常量和领域类型。
+- `src/utils/appRepository.ts`：统一数据仓储边界；组件不得直接访问 localStorage。
+- `src-tauri/src/data/`：版本化 JSON 文件存储及资产目录。
+- `src-tauri/src/ai/`：供应商配置、提示词、响应模型和阶跃星辰实现。
+- `src-tauri/src/commands/`：窗口、数据和 AI 命令入口。
 - `index.html`：前端入口，加载 `src/index.tsx`。
 - `public/lab-icon.svg`：本地占位图标源文件。
 - 每个手写代码文件不超过 150 行，入口只做组装。
@@ -60,9 +63,10 @@ npm run desktop:build
 
 ## 验证
 
-`npm run test:native` 覆盖左右贴边、上下边界、负坐标屏幕、任务栏偏移及 150% 缩放。
-可选浏览器检查需要 Playwright 和 Edge：设置 `PLAYWRIGHT_PATH` 指向本机 Playwright 包后，
-运行 `node scripts/preview-check.cjs`，截图保存在 `.artifacts/`。
+`npm test` 运行前端单元和组件测试，`npm run test:e2e` 自动启动预览服务并运行浏览器检查。
+`npm run test:native` 覆盖 AI 响应解析、左右贴边、上下边界、负坐标屏幕、任务栏偏移及 150% 缩放。
+浏览器检查由项目内 Playwright 配置自动启动 Vite；运行 `npm run test:e2e` 即可。
+截图类人工验收仍可运行 `node scripts/preview-check.cjs`，产物保存在 `.artifacts/`。
 浏览器截图不替代 Windows 上真实拖动、跨屏和退出操作的验收。
 
 ### 本次验证记录（2026-09-07）

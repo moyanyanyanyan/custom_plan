@@ -1,4 +1,4 @@
-.panel-shell { min-height: 100vh; padding: 18px 28px 12px; overflow: hidden; border: 1px solid #d2dfff60; border-radius: 20px; background: radial-gradient(ellipse at 97% 0%, #ada1ce65, transparent 43%), radial-gradient(ellipse at 0% 80%, #3c79b25c, transparent 50%), linear-gradient(145deg, #142953f7, #27376af5 55%, #344c7df7); position: relative; }
+.panel-shell { min-height: 100vh; padding: 18px 28px 12px; overflow: hidden; border: 1px solid #d2dfff60; border-radius: 20px; background-image: linear-gradient(rgb(from var(--theme-primary) r g b / var(--panel-opacity)), rgb(from var(--theme-secondary) r g b / var(--panel-opacity))), var(--panel-wallpaper); background-size: cover; background-position: center; position: relative; }
 .panel-shell::before { content: ''; position: absolute; width: 270px; height: 270px; border: 1px solid #c7daff13; border-radius: 50%; top: -180px; left: 45%; pointer-events: none; }
 .brand-bar, .brand, .window-actions, .identity, .progress-label, .console-heading, .metrics, .panel-footer { display: flex; align-items: center; }
 .brand-bar { justify-content: space-between; margin-bottom: 14px; }
@@ -6,7 +6,7 @@
 .panel-drag-area .window-actions { cursor: default; }
 .brand { gap: 12px; }
 .brand-mark { position: relative; font: 700 43px Georgia, serif; width: 37px; line-height: 42px; color: #ecf2ff; }
-.brand-mark span { position: absolute; font-size: 27px; color: #fbc375; left: 11px; bottom: -2px; }
+.brand-mark span { position: absolute; font-size: 27px; color: var(--theme-card-highlight); left: 11px; bottom: -2px; }
 .brand h1 { font-size: 24px; letter-spacing: 3px; font-weight: 650; }
 .brand p { font-size: 7px; letter-spacing: 2px; color: #a1b6db; margin-top: 5px; }
 .window-actions { gap: 5px; align-self: flex-start; }
@@ -47,9 +47,9 @@
 .metrics > div { flex: 1; display: flex; align-items: center; gap: 10px; border-radius: 9px; background: #8baaff20; padding: 7px 13px; font-size: 12px; white-space: nowrap; }
 .metrics strong { font-size: 18px; font-weight: 500; margin-left: auto; }
 .metric-dot { width: 9px; height: 9px; border-radius: 50%; }
-.stable { background: #ffb276; box-shadow: 0 0 10px #ffb27628; }
-.stagnant { background: #f5d183; }
-.slime-metric > svg:first-child { color: #8cd3bd; }
+.stable { background: var(--theme-completed); box-shadow: 0 0 10px #ffb27628; }
+.stagnant { background: var(--theme-pending); }
+.slime-metric > svg:first-child { color: var(--theme-slime); }
 .slime-metric > svg:last-child { margin-left: auto; color: #adbfdf; }
 .invention-button { width: 100%; margin-top: 14px; display: flex; align-items: center; justify-content: center; gap: 18px; padding: 10px 24px; border: 1px solid #c8d6ff65; border-radius: 10px; background: linear-gradient(115deg, #688ab336, #a2b1e12e 65%, #f1c68024); position: relative; overflow: hidden; }
 .invention-button::after { content: ''; position: absolute; border: 1px solid #e8c98550; border-radius: 50%; width: 105px; height: 105px; right: -35px; top: 5px; }
