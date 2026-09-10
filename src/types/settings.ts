@@ -13,5 +13,6 @@ export interface AppSettings {
   avatarAssetId: string | null;
   wallpaperAssetId: string | null;
   panelOpacity: number;
+  soundEnabled: boolean;
   theme: ThemeSettings;
 }

@@ -109,7 +109,23 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   const updateCard = useCallback((cardId: string, patch: Partial<InventionCard>) =>
     runAtomic(() => updateStoredCard(cardId, patch, sourceId.current)), [runAtomic]);
 
-  const value = useMemo(() => ({ data, ready, error, saveStatus, update, claimDailyCard, updateCard }),
-    [data, ready, error, saveStatus, update, claimDailyCard, updateCard]);
+  const retrySave = useCallback(async () => {
+    setSaveStatus('pending');
+    try {
+      const latest = await loadAppData();
+      const saved = await saveAppData(dataRef.current, latest.revision, sourceId.current);
+      dataRef.current = saved;
+      setData(saved);
+      setError('');
+      setSaveStatus('saved');
+    } catch (reason) {
+      setError(`数据尚未保存：${String(reason)}`);
+      setSaveStatus('failed');
+    }
+  }, []);
+
+  const value = useMemo(() => ({
+    data, ready, error, saveStatus, update, claimDailyCard, updateCard, retrySave,
+  }), [data, ready, error, saveStatus, update, claimDailyCard, updateCard, retrySave]);
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;
 }

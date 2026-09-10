@@ -34,6 +34,7 @@ export function useSlimes() {
 
   return data.slimes.map((slime) => ({
     ...slime,
-    wanderingDays: slime.containedAt ? 0 : elapsedDays(slime.discoveredAt, now),
+    wanderingDays: elapsedDays(slime.discoveredAt,
+      slime.containedAt ? new Date(slime.containedAt) : now),
   }));
 }

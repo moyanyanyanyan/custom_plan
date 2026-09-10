@@ -38,6 +38,7 @@ export function CardRevealModal({ card, open, onClose }: CardRevealModalProps) {
         <div className="reveal-info">
           <h3>{card.name}</h3>
           <p>{card.description}</p>
+          <p className="reveal-sources">来源任务：{card.sourceTasks.join('、')}</p>
           <time>{new Date(card.earnedAt).toLocaleString()}</time>
         </div>
       </div>

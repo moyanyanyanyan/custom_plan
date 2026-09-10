@@ -15,3 +15,5 @@ export type CardCollection = {
   cards: InventionCard[];
   updatedAt: string;
 };
+
+export type InventionMachineState = 'locked' | 'ready' | 'generating' | 'completed';

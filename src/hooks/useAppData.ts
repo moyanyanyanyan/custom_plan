@@ -11,6 +11,7 @@ export interface AppDataContextValue {
   update: (recipe: (current: AppData) => AppData) => void;
   claimDailyCard: (dateKey: string, card: InventionCard) => Promise<AppData>;
   updateCard: (cardId: string, patch: Partial<InventionCard>) => Promise<AppData>;
+  retrySave: () => Promise<void>;
 }
 
 export const AppDataContext = createContext<AppDataContextValue | null>(null);

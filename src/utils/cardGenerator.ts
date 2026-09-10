@@ -2,6 +2,7 @@ import type { Experiment } from '../types/experiment';
 import type { InventionCard } from '../types/card';
 import { DAILY_CARD_THRESHOLD } from '../constants/generation';
 import { localDateKey } from './date';
+import type { InventionMachineState } from '../types/card';
 
 function generateId() {
   return crypto.randomUUID();
@@ -11,6 +12,14 @@ function generateId() {
 export function remainingTasksForCard(tasks: { completed: boolean }[]): number {
   const done = tasks.filter((t) => t.completed).length;
   return Math.max(0, DAILY_CARD_THRESHOLD - done);
+}
+
+export function getMachineState(
+  remaining: number, generated: boolean, inventing: boolean,
+): InventionMachineState {
+  if (inventing) return 'generating';
+  if (generated) return 'completed';
+  return remaining > 0 ? 'locked' : 'ready';
 }
 
 /**

@@ -46,6 +46,15 @@ function isSettings(value: unknown): value is AppSettings {
     && typeof settings.theme === 'object';
 }
 
+function normalizeSettings(value: unknown, fallback: AppSettings): AppSettings {
+  if (!isSettings(value)) return fallback;
+  return {
+    ...fallback, ...value,
+    soundEnabled: typeof value.soundEnabled === 'boolean' ? value.soundEnabled : true,
+    theme: { ...fallback.theme, ...value.theme },
+  };
+}
+
 /** 持久化边界逐项过滤，避免一个坏记录拖垮整个应用。 */
 export function normalizeData(value: unknown, fallback: AppData): AppData {
   if (!value || typeof value !== 'object') return fallback;
@@ -58,7 +67,7 @@ export function normalizeData(value: unknown, fallback: AppData): AppData {
     tasksByDate,
     cards: normalizeCards(source.cards),
     slimes: Array.isArray(source.slimes) ? source.slimes : [],
-    settings: isSettings(source.settings) ? source.settings : fallback.settings,
+    settings: normalizeSettings(source.settings, fallback.settings),
     updatedAt: typeof source.updatedAt === 'string' ? source.updatedAt : fallback.updatedAt,
     storageWarning: source.storageWarning,
   };

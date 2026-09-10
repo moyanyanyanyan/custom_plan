@@ -4,7 +4,8 @@
 .experiments h3 span { font-size: 7px; font-weight: 500; color: #6178a1; letter-spacing: 1px; margin-left: 8px; }
 .experiment-group { display: flex; align-items: center; gap: 7px; font-size: 11px; color: #536ba0; }
 .task-belt { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 15px 4px 14px; position: relative; }
-.belt-arrow { position: absolute; left: calc(50% - 7px); font-size: 23px; color: #718ac0; line-height: 12px; }
+.belt-arrow { position: absolute; z-index: 2; left: calc(50% - 14px); width: 28px; padding: 0; border: 0; background: transparent; font-size: 23px; color: #718ac0; line-height: 12px; cursor: pointer; }
+.belt-arrow:disabled { opacity: .25; }
 .belt-arrow.up { top: 8px; }
 .belt-arrow.down { bottom: 0; }
 .task-pill { width: 100%; display: flex; align-items: center; gap: 15px; padding: 9px 19px; border-radius: 100px; border: 1px solid #ffffffb0; background: linear-gradient(120deg, #edf5ff99, #c1d2eeb3); box-shadow: 0 6px 13px #324f8120, inset 0 1px 7px #fff9; cursor: pointer; }
@@ -24,6 +25,10 @@
 .completed { background: linear-gradient(120deg, #fff0daab, #e9c6a2a3); }
 .completed .task-icon { background: #d99d68; }
 .completed .task-state { background: #eac39c; color: #7c4d28; }
+.completed .task-description h4 { text-decoration: line-through; text-decoration-thickness: 1px; }
+.completion-stamp { position: absolute; right: 78px; bottom: 7px; padding: 2px 7px; border: 1px solid #b96c3f; border-radius: 3px; color: #a95b32; font-size: 8px; font-weight: 700; transform: rotate(-7deg); }
+.task-pulse { animation: taskBounce .4s ease; }
+@keyframes taskBounce { 45% { transform: scale(.975); } 75% { transform: scale(1.012); } }
 .depth-2 .task-icon { width: 23px; height: 23px; }
 .depth-2 .task-icon svg { width: 16px; height: 16px; }
 .depth-2 h4 { font-size: 12px; }

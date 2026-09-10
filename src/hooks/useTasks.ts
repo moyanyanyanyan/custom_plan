@@ -1,5 +1,4 @@
 import { useCallback } from 'react';
-import type { ExperimentSeed } from '../types/experiment';
 import { useAppData } from './useAppData';
 import { useCurrentDate } from './useCurrentDate';
 
@@ -8,10 +7,11 @@ export function useTasks() {
   const { data, update } = useAppData();
   const { dateKey } = useCurrentDate();
   const tasks = data.tasksByDate[dateKey] ?? [];
-  const add = useCallback((template: Omit<ExperimentSeed, 'id'>) => {
+  const add = useCallback((name: string) => {
     const now = new Date();
     const task = {
-      ...template, id: crypto.randomUUID(), createdAt: now.toISOString(), completedAt: null,
+      id: crypto.randomUUID(), name: name.trim(), icon: 'flask' as const, minutes: 10,
+      completed: false, group: 'A', createdAt: now.toISOString(), completedAt: null,
     };
     update((current) => ({
       ...current, tasksByDate: {
@@ -33,5 +33,13 @@ export function useTasks() {
       ...current.tasksByDate, [dateKey]: (current.tasksByDate[dateKey] ?? []).filter((task) => task.id !== id),
     } }));
   }, [dateKey, update]);
-  return { tasks, add, toggle, remove };
+  const completeHistorical = useCallback((id: string) => {
+    const completedAt = new Date().toISOString();
+    update((current) => ({ ...current, tasksByDate: Object.fromEntries(
+      Object.entries(current.tasksByDate).map(([date, entries]) => [date,
+        entries.map((task) => task.id === id
+          ? { ...task, completed: true, completedAt } : task)]),
+    ) }));
+  }, [update]);
+  return { tasks, add, toggle, remove, completeHistorical };
 }
