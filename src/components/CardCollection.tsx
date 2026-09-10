@@ -21,6 +21,7 @@ function CardArt({ card, count }: { card: InventionCard; count: number }) {
 
 export function CardCollection() {
   const [collection, setCollection] = useState<CardCollection>(loadCollection);
+  const [flippedId, setFlippedId] = useState<string | null>(null);
 
   const [expanding, setExpanding] = useState<{ stackKey: string; cards: InventionCard[]; index: number } | null>(null);
 
@@ -74,9 +75,27 @@ export function CardCollection() {
         {stacks.map((stack) => {
           const representative = stack[0];
           const count = stack.length;
+          const flipped = flippedId === representative.id;
           return (
             <article key={representative.stackKey} className="card-slot">
-              <CardArt card={representative} count={count} />
+              <div className="card-art-wrapper" onClick={() => setFlippedId(flipped ? null : representative.id)}>
+                <div className={`card-flipper${flipped ? ' flipped' : ''}`}>
+                  <div className="card-face card-front">
+                    <CardArt card={representative} count={count} />
+                  </div>
+                  <div className="card-face card-back">
+                    <div className="card-back-content">
+                      <h4>任务来源</h4>
+                      <ul>
+                        {representative.backTasks.map((task, idx) => (
+                          <li key={idx}>{idx + 1}. {task}</li>
+                        ))}
+                      </ul>
+                      <time>{representative.date}</time>
+                    </div>
+                  </div>
+                </div>
+              </div>
               <div className="card-info">
                 <h4>{representative.name}</h4>
                 <p>{representative.description}</p>
