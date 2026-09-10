@@ -39,13 +39,22 @@ function b64DataUrlToBlob(dataUrl: string): Blob {
   return new Blob([bytes], { type: 'image/png' });
 }
 
-/** 生图提示词：把卡牌名称与描述翻译成可绘制的画面，禁止文字。 */
+/** 生图提示词：固定为 Yu-Gi-Oh! 卡牌封面风格，禁止文字/字母/水印。 */
 function buildArtPrompt(card: InventionCard): string {
-  return (
-    `荒诞发明卡牌的方形插画，主题："${card.name}"（${card.description}）。` +
-    '深蓝夜色实验室背景，神秘发明装置为主体，蒸汽朋克 + 霓虹线条风格，' +
-    '构图居中、留出卡牌边框余量，画面不得出现任何文字或字母。'
-  );
+  return [
+    'Yu-Gi-Oh! trading card game cover art style',
+    `theme: "${card.name}"`,
+    `${card.description}`,
+    'fantasy illustration',
+    'dramatic lighting',
+    'highly detailed',
+    'vibrant colors',
+    'dynamic composition',
+    'centered subject with space for text overlay',
+    'no text',
+    'no letters',
+    'no watermark',
+  ].join(', ');
 }
 
 /** AI 原图 → 缩小 + 叠加中央预制装饰 → dataURL */
