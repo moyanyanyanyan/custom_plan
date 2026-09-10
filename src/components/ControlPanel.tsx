@@ -1,43 +1,43 @@
-import { useState, useEffect } from 'react';
-import type { Experiment } from '../types/experiment';
+import { useState } from 'react';
 import type { InventionCard } from '../types/card';
 import { AvatarArt } from './AvatarArt';
 import { Icon } from './Icon';
 import { ExperimentList } from './ExperimentList';
 import { CardCollection } from './CardCollection';
 import { CardRevealModal } from './CardRevealModal';
+import { useTasks } from '../hooks/useTasks';
 import { desktopCommand, isDesktop } from '../utils/desktop';
 import { generateCardFromTasks, remainingTasksForCard } from '../utils/cardGenerator';
 import { addCard, canGenerateToday } from '../utils/cardStorage';
 import { generateAICopy } from '../utils/stepfun';
 import { generateCardImage } from '../utils/cardImage';
 import { isDemoMode } from '../utils/demoMode';
-import { todayTasks, onTaskChange } from '../utils/taskStore';
-import { experiments as previewExperiments } from '../constants/preview';
 import './panel.css';
 import './experiments.css';
 import './collection.css';
 import './reveal.css';
 
-/** 仅窗口按钮可交互，业务区域完全由真实任务数据构成；demo 模式回退预览。 */
+/** 控制面板统一持有任务状态，并将真实完成任务交给卡牌生成流程。 */
 export function ControlPanel() {
   const [error, setError] = useState('');
+  const [draft, setDraft] = useState('');
   const [inventing, setInventing] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [revealedCard, setRevealedCard] = useState<InventionCard | null>(null);
-  const [tasks, setTasks] = useState<Experiment[]>([]);
-
-  useEffect(() => {
-    const load = () => setTasks(isDemoMode() ? previewExperiments : todayTasks());
-    load();
-    return onTaskChange(load);
-  }, []);
-
+  const { tasks, add, toggle, remove } = useTasks();
   const completedCount = tasks.filter((t) => t.completed).length;
   const remaining = remainingTasksForCard(tasks);
 
   const windowAction = (command: 'hide_panel' | 'exit_app' | 'drag_panel') => {
     void desktopCommand(command).catch((reason) => setError(String(reason)));
+  };
+
+  const submitTask = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const name = draft.trim();
+    if (!name) return;
+    add({ name, icon: 'flask', minutes: 10, completed: false, group: 'A' });
+    setDraft('');
   };
 
   const handleGenerateCard = async () => {
@@ -100,15 +100,19 @@ export function ControlPanel() {
       </div>
     </section>
     <section className="console" aria-labelledby="console-title">
-      <div className="console-heading"><div><span className="eyebrow">DAILY RESEARCH</span><h2 id="console-title">今日控制台</h2></div>
-        <button className="static-button add-task" disabled><span>＋</span> 添加任务</button>
+      <div className="console-heading">
+        <div><span className="eyebrow">DAILY RESEARCH</span><h2 id="console-title">今日控制台</h2></div>
+        <form className="add-form" onSubmit={submitTask}>
+          <input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="新实验名称…" aria-label="新实验名称" maxLength={30} />
+          <button type="submit" className="add-task" disabled={!draft.trim()}>＋ 添加任务</button>
+        </form>
       </div>
       <div className="metrics">
         <div><i className="metric-dot stable" /><span>稳定余波</span><strong>{completedCount}</strong></div>
         <div><i className="metric-dot stagnant" /><span>停滞能量</span><strong>{tasks.length - completedCount}</strong></div>
         <div className="slime-metric"><Icon name="slime" size={20} /><span>史莱姆图鉴</span><Icon name="arrow" size={16} /></div>
       </div>
-      <ExperimentList />
+      <ExperimentList tasks={tasks} onToggle={toggle} onRemove={remove} />
     </section>
     <button className={`invention-button static-button${inventing ? ' inventing' : ''}`} onClick={handleGenerateCard} disabled={inventing || remaining > 0}>
       <span className="machine-symbol"><Icon name="flask" size={28} /></span>
