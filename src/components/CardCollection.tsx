@@ -128,14 +128,9 @@ export function CardCollection() {
                   <span className="card-placeholder">{expanding.cards[expanding.index].name.slice(0, 2)}</span>
                 )}
               </div>
-              <div className="card-info">
-                <h4>{expanding.cards[expanding.index].name}</h4>
-                <p>{expanding.cards[expanding.index].description}</p>
-                <time>{new Date(expanding.cards[expanding.index].earnedAt).toLocaleString()}</time>
-                <div className="expand-meta">
-                  <span className="expand-count">拥有 {expanding.cards.length} 张</span>
-                  <span className="expand-index">{expanding.index + 1}/{expanding.cards.length}</span>
-                </div>
+              <div className="expand-meta">
+                <span className="expand-count">拥有 {expanding.cards.length} 张</span>
+                <span className="expand-index">{expanding.index + 1}/{expanding.cards.length}</span>
               </div>
             </div>
             <button className="expand-nav" onClick={nextCard} aria-label="下一张">›</button>
