@@ -4,7 +4,8 @@ export type InventionCard = {
   description: string;
   sourceTasks: string[];
   earnedAt: string; // ISO datetime
-  imagePath?: string; // 本地保存路径或占位符
+  imageAssetId?: string;
+  imagePath?: string;
   type: 'daily';
   stackKey: string; // 同类型堆叠用，这里简单用 name 做 key
 };

@@ -1,23 +1,25 @@
 # 离谱发明所
 
-> 一个待定方向的新项目，由团队成员协作共建。
+> 把每天完成的小事，炼成毫无用处但值得收藏的荒诞发明。
 
 ## 项目简介
 
-这里将描述这个新项目要解决什么问题、面向什么用户、核心价值是什么。
+一款基于 Tauri、React 和 TypeScript 的 Windows 桌面任务工具，包含悬浮头像、
+今日任务、荒诞发明卡牌和本地个性化主题。
 
 ## 技术栈
 
-待定，例如：
-
-- 前端：HTML / CSS / JavaScript
-- 工具：Git、VS Code
+- 前端：React 19、TypeScript、Vite
+- 桌面端：Tauri 2、Rust
+- 测试：Vitest、Testing Library、Playwright、Cargo Test
 
 ## 快速开始
 
 ```bash
 git clone https://gitee.com/moyanyanyanyan/hackson.git
 cd hackson
+npm install
+npm run desktop
 ```
 
 ## 分支策略

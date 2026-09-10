@@ -1,5 +1,5 @@
 * { box-sizing: border-box; }
-:root { font-family: "Segoe UI", "Microsoft YaHei UI", sans-serif; color: #eff4ff; font-synthesis: none; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; background: transparent; }
+:root { --theme-primary: #142953; --theme-secondary: #27376a; --theme-accent: #a1c5ff; --theme-completed: #ffb276; --theme-pending: #f5d183; --theme-text: #eff4ff; --theme-card-highlight: #fbc375; --theme-slime: #8cd3bd; --panel-opacity: .96; --panel-wallpaper: none; font-family: "Segoe UI", "Microsoft YaHei UI", sans-serif; color: var(--theme-text); font-synthesis: none; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; background: transparent; }
 body { margin: 0; background: transparent; }
 button { font: inherit; color: inherit; }
 button:disabled { opacity: 1; cursor: default; }

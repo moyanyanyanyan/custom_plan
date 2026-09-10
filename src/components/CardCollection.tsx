@@ -1,16 +1,18 @@
-import type { CardCollection, InventionCard } from '../types/card';
-import { loadCollection } from '../utils/cardStorage';
+import type { InventionCard } from '../types/card';
 import { useState } from 'react';
+import { useCards } from '../hooks/useCards';
+import { AssetImage } from './cards/AssetImage';
 import './collection.css';
+import './cards/browser.css';
 
 /** 单张卡面：有图（dataURL 或 http URL）则渲染 <img>，加载失败/无图时回退到名称占位。 */
 function CardArt({ card, count }: { card: InventionCard; count: number }) {
   const [broken, setBroken] = useState(false);
-  const showImage = !!card.imagePath && !broken;
+  const showImage = !!(card.imageAssetId || card.imagePath) && !broken;
   return (
     <div className="card-art" role="img" aria-label={card.name}>
       {showImage ? (
-        <img src={card.imagePath} alt={card.name} loading="lazy" onError={() => setBroken(true)} />
+        <AssetImage card={card} onError={() => setBroken(true)} />
       ) : (
         <span className="card-placeholder">{card.name.slice(0, 2)}</span>
       )}
@@ -20,7 +22,7 @@ function CardArt({ card, count }: { card: InventionCard; count: number }) {
 }
 
 export function CardCollection() {
-  const [collection, setCollection] = useState<CardCollection>(loadCollection);
+  const { cards } = useCards();
 
   const [expanding, setExpanding] = useState<{ stackKey: string; cards: InventionCard[]; index: number } | null>(null);
 
@@ -47,7 +49,7 @@ export function CardCollection() {
 
   // 按 stackKey 分组统计数量
   const stackMap = new Map<string, InventionCard[]>();
-  for (const card of collection.cards) {
+  for (const card of cards) {
     const list = stackMap.get(card.stackKey) || [];
     list.push(card);
     stackMap.set(card.stackKey, list);
@@ -63,7 +65,7 @@ export function CardCollection() {
           <h3>发明卡牌</h3>
         </div>
         <div className="collection-count">
-          <strong>{collection.cards.length}</strong>
+          <strong>{cards.length}</strong>
           <span>张</span>
         </div>
       </div>
@@ -100,8 +102,8 @@ export function CardCollection() {
             <button className="expand-nav" onClick={prevCard} aria-label="上一张">‹</button>
             <div className="expand-card">
               <div className="card-art">
-                {expanding.cards[expanding.index].imagePath ? (
-                  <img src={expanding.cards[expanding.index].imagePath} alt={expanding.cards[expanding.index].name} />
+                {(expanding.cards[expanding.index].imageAssetId || expanding.cards[expanding.index].imagePath) ? (
+                  <AssetImage card={expanding.cards[expanding.index]} />
                 ) : (
                   <span className="card-placeholder">{expanding.cards[expanding.index].name.slice(0, 2)}</span>
                 )}
