@@ -1,0 +1,9 @@
+* { box-sizing: border-box; }
+:root { --theme-primary: #142953; --theme-secondary: #27376a; --theme-accent: #a1c5ff; --theme-completed: #ffb276; --theme-pending: #f5d183; --theme-text: #eff4ff; --theme-card-highlight: #fbc375; --theme-slime: #8cd3bd; --theme-muted-text: #eff4ffb3; --theme-border: #a1c5ff4d; --theme-soft-surface: #27376a6b; --panel-opacity: .96; --panel-overlay-opacity: .96; --panel-wallpaper: none; font-family: "Segoe UI", "Microsoft YaHei UI", sans-serif; color: var(--theme-text); font-synthesis: none; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; background: transparent; }
+body { margin: 0; background: transparent; }
+button { font: inherit; color: inherit; }
+button:disabled { opacity: 1; cursor: default; }
+button:focus-visible { outline: 2px solid var(--theme-accent); outline-offset: 2px; }
+h1, h2, h3, h4, p { margin: 0; }
+svg { flex-shrink: 0; vertical-align: middle; }
+body:has(.avatar-surface) { overflow: hidden; user-select: none; }
