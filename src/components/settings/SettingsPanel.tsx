@@ -4,7 +4,7 @@ import { createDefaultData } from '../../constants/defaults';
 import { useSettings } from '../../hooks/useSettings';
 import type { AppSettings, ThemeSettings } from '../../types/settings';
 import { extractTheme, validateImageDimensions } from '../../utils/colorExtraction';
-import { loadAsset, saveUserAsset } from '../../utils/appRepository';
+import { loadAsset, readUserAsset, saveUserAsset } from '../../utils/appRepository';
 import { applyTheme } from '../../utils/theme';
 import './settings.css';
 
@@ -39,6 +39,7 @@ export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () =>
   if (!open) return null;
 
   const importImage = async (event: ChangeEvent<HTMLInputElement>, kind: 'avatar' | 'wallpaper') => {
+    const input = event.currentTarget;
     const file = event.target.files?.[0];
     if (!file) return;
     if (!ACCEPTED_IMAGE_TYPES.includes(file.type) || file.size > MAX_IMAGE_BYTES) {
@@ -47,17 +48,18 @@ export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () =>
     }
     setError('');
     try {
-      const preview = URL.createObjectURL(file);
-      await validateImageDimensions(preview);
-      const theme = kind === 'avatar' ? await extractTheme(preview) : draft.theme;
-      URL.revokeObjectURL(preview);
-      const assetId = await saveUserAsset(file, kind);
+      const source = await readUserAsset(file);
+      await validateImageDimensions(source);
+      const theme = kind === 'avatar' ? await extractTheme(source) : draft.theme;
+      const assetId = await saveUserAsset(file, kind, source);
       setDraft((current) => ({
         ...current, theme,
         avatarAssetId: kind === 'avatar' ? assetId : current.avatarAssetId,
         wallpaperAssetId: kind === 'wallpaper' ? assetId : current.wallpaperAssetId,
       }));
-    } catch (reason) { setError(String(reason)); }
+    } catch (reason) {
+      setError(`图片无法解码，请重新导出为 PNG、JPEG 或 WebP：${String(reason)}`);
+    } finally { input.value = ''; }
   };
 
   const submit = async () => {

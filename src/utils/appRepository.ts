@@ -107,13 +107,20 @@ export async function loadAsset(assetId: string): Promise<string> {
   return isDesktop ? invoke<string>('load_asset_data_url', { assetId }) : '';
 }
 
-export async function saveUserAsset(file: File, kind: 'avatar' | 'wallpaper'): Promise<string> {
-  const dataUrl = await new Promise<string>((resolve, reject) => {
+/** 只读取一次用户图片，避免预览、取色和落盘使用不同的临时地址。 */
+export async function readUserAsset(file: File): Promise<string> {
+  return new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result));
     reader.onerror = () => reject(new Error('图片读取失败'));
     reader.readAsDataURL(file);
   });
+}
+
+export async function saveUserAsset(
+  file: File, kind: 'avatar' | 'wallpaper', source?: string,
+): Promise<string> {
+  const dataUrl = source ?? await readUserAsset(file);
   if (!isDesktop) return dataUrl;
   const assetId = `${kind}-${Date.now().toString(36)}`;
   return invoke<string>('save_user_asset', { assetId, dataUrl });

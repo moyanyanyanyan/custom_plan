@@ -9,9 +9,9 @@ const tasks: Task[] = Array.from({ length: 6 }, (_, index) => ({
 }));
 
 describe('ExperimentList', () => {
-  it('只显示焦点附近任务并支持方向键移动', () => {
+  it('渲染全部任务并支持方向键移动焦点', () => {
     render(<ExperimentList tasks={tasks} onToggle={vi.fn()} onRemove={vi.fn()} />);
-    expect(screen.getAllByRole('button', { pressed: false })).toHaveLength(5);
+    expect(screen.getAllByRole('button', { pressed: false })).toHaveLength(6);
     const focused = screen.getByText('任务 2').closest('[role="button"]');
     fireEvent.keyDown(focused!, { key: 'ArrowDown' });
     expect(screen.getByText('任务 3').closest('[role="button"]')).toHaveClass('focused');

@@ -2,6 +2,10 @@
   "name": "absurd-invention-lab",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.33.4",
+  "engines": {
+    "node": ">=22.22.2 <23"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
@@ -14,7 +18,7 @@
     "desktop:build": "tauri build --no-bundle",
     "test:native": "cargo test --manifest-path src-tauri/Cargo.toml",
     "test:desktop": "node scripts/desktop-test.cjs",
-    "check": "npm run build && npm test && npm run test:native"
+    "check": "pnpm run build && pnpm test && pnpm run test:native"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.11.0",

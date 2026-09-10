@@ -1,5 +1,5 @@
 .avatar-art { display: block; position: relative; width: 100%; height: 100%; border-radius: 50%; overflow: hidden; background: conic-gradient(from 25deg, var(--theme-accent), var(--theme-primary) 40%, var(--theme-secondary)); box-shadow: inset 0 0 0 1px #e3edff80; }
-.avatar-art > img { width: 100%; height: 100%; object-fit: cover; }
+.avatar-art > img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; user-select: none; }
 .avatar-orbit { position: absolute; inset: 12%; border: 9px solid #c7dcf49e; border-right-color: #f5d38c; border-radius: 50%; transform: rotate(-30deg); }
 .avatar-head { position: absolute; width: 24%; height: 24%; border-radius: 50%; background: #f7eedc; left: 38%; top: 24%; }
 .avatar-body { position: absolute; width: 49%; height: 43%; border-radius: 50% 50% 0 0; background: linear-gradient(130deg, #eaf0f7, #a3b5d9); left: 25.5%; top: 53%; }

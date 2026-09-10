@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 
-export function AddTaskControl({ onAdd }: { onAdd: (name: string) => void }) {
+export function AddTaskControl({ onAdd, variant = 'toggle' }: {
+  onAdd: (name: string) => void;
+  variant?: 'toggle' | 'inline';
+}) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -15,6 +18,11 @@ export function AddTaskControl({ onAdd }: { onAdd: (name: string) => void }) {
     close();
   };
 
+  if (variant === 'inline') return <form className="add-form inline" onSubmit={submit}>
+    <input ref={inputRef} value={draft} maxLength={30} aria-label="任务内容"
+      placeholder="你准备做点什么？" onChange={(event) => setDraft(event.target.value)} />
+    <button type="submit" className="add-task" disabled={!draft.trim()}>添加</button>
+  </form>;
   if (!open) return <button type="button" className="add-task" onClick={() => setOpen(true)}>
     ＋ 添加任务
   </button>;

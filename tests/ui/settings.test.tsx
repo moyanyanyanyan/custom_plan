@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { SettingsPanel } from '../../src/components/settings/SettingsPanel';
 import { AppDataContext } from '../../src/hooks/useAppData';
@@ -14,5 +14,27 @@ describe('SettingsPanel', () => {
     fireEvent.change(screen.getByRole('slider'), { target: { value: '0.7' } });
     fireEvent.click(screen.getByRole('button', { name: '应用设置' }));
     expect(update).toHaveBeenCalledOnce();
+  });
+
+  it('导入头像后立即更新预览和自动配色', async () => {
+    const data = createDefaultData(new Date('2026-09-10T00:00:00Z'));
+    const update = vi.fn();
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      drawImage: vi.fn(),
+      getImageData: () => ({ data: new Uint8ClampedArray([210, 70, 90, 255]) }),
+    } as unknown as CanvasRenderingContext2D);
+    render(<AppDataContext.Provider value={{ data, ready: true, error: '', update }}>
+      <SettingsPanel open onClose={vi.fn()} />
+    </AppDataContext.Provider>);
+
+    const file = new File(['avatar'], 'avatar.png', { type: 'image/png' });
+    const avatarInput = screen.getByText('助手头像', { selector: 'label' })
+      .querySelector('input[type="file"]');
+    expect(avatarInput).not.toBeNull();
+    fireEvent.change(avatarInput!, { target: { files: [file] } });
+
+    await waitFor(() => expect(screen.getByAltText('助手头像预览')).toHaveAttribute('src',
+      expect.stringContaining('data:image/png;base64,')));
+    expect(screen.getByLabelText('主背景')).not.toHaveValue(data.settings.theme.primary);
   });
 });

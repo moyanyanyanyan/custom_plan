@@ -18,9 +18,17 @@
 ```bash
 git clone https://gitee.com/moyanyanyanyan/hackson.git
 cd hackson
-npm install
-npm run desktop
+pnpm install
 ```
+
+Windows 开发调试时，先退出正在运行的正式版，再执行：
+
+```powershell
+.\scripts\dev-desktop.ps1
+```
+
+脚本会切换到 Node 22.22.2 并启动 Tauri 热更新；按 `Ctrl+C` 停止。
+日常调试不需要删除或重新生成 `node_modules`、`dist` 和 `target`。
 
 ## 分支策略
 

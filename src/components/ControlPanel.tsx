@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { AvatarArt } from './AvatarArt';
 import { Icon } from './Icon';
-import { ExperimentList } from './ExperimentList';
 import { CardRevealModal } from './CardRevealModal';
 import { SettingsPanel } from './settings/SettingsPanel';
-import { AddTaskControl } from './tasks/AddTaskControl';
+import { TodayTaskBoard } from './tasks/TodayTaskBoard';
 import { ArchiveModal } from './cards/ArchiveModal';
 import { SlimeArchive } from './slimes/SlimeArchive';
 import { useTasks } from '../hooks/useTasks';
@@ -13,9 +12,9 @@ import { useCardGeneration } from '../hooks/useCardGeneration';
 import { useSlimes } from '../hooks/useSlimes';
 import { useAppData } from '../hooks/useAppData';
 import { useSettings } from '../hooks/useSettings';
+import { useCurrentDate } from '../hooks/useCurrentDate';
 import { playCompletionSound } from '../utils/feedback';
 import './panel.css';
-import './experiments.css';
 import './collection.css';
 import './reveal.css';
 
@@ -32,6 +31,7 @@ export function ControlPanel() {
   const slimes = useSlimes();
   const { error: storageError, saveStatus, retrySave } = useAppData();
   const { settings } = useSettings();
+  const { now } = useCurrentDate();
 
   const windowAction = (command: 'hide_panel' | 'exit_app' | 'drag_panel') => {
     void desktopCommand(command).catch((reason) => setError(String(reason)));
@@ -99,19 +99,9 @@ export function ControlPanel() {
         <div><strong>{generation.cards.length}</strong><Icon name="arrow" /></div><span className="collection-caption">收藏每一次认真生活</span>
       </button>
     </section>
-    <section className="console" aria-labelledby="console-title">
-      <div className="console-heading">
-        <div><span className="eyebrow">DAILY RESEARCH</span><h2 id="console-title">今日控制台</h2></div>
-        <AddTaskControl onAdd={add} />
-      </div>
-      <div className="metrics">
-        <div><i className="metric-dot stable" /><span>稳定余波</span><strong>{completedCount}</strong></div>
-        <div><i className="metric-dot stagnant" /><span>停滞能量</span><strong>{tasks.length - completedCount}</strong></div>
-        <button className="slime-metric" onClick={() => setSlimesOpen(true)}><Icon name="slime" size={20} />
-          <span>史莱姆图鉴</span><strong>{pendingSlimes}/{slimes.length}</strong></button>
-      </div>
-      <ExperimentList tasks={tasks} onToggle={handleToggle} onRemove={remove} />
-    </section>
+    <TodayTaskBoard tasks={tasks} date={now} pendingSlimeCount={pendingSlimes}
+      onAdd={add} onToggle={handleToggle} onRemove={remove}
+      onOpenSlimes={() => setSlimesOpen(true)} />
     <button className={`invention-button ${generation.state}`} onClick={handleGenerateCard}
       disabled={generation.state !== 'ready'}>
       <span className="machine-symbol"><Icon name="flask" size={28} /></span>
