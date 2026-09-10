@@ -37,8 +37,12 @@
 .console { border: 1px solid #b9cffa4d; background: #122a552e; border-radius: 15px; overflow: hidden; box-shadow: 0 12px 30px #07183018; }
 .console-heading { justify-content: space-between; padding: 10px 22px 8px; }
 .console-heading h2 { font-size: 22px; font-weight: 550; letter-spacing: 2px; margin-top: 4px; }
-.add-task { padding: 7px 13px; font-size: 12px; background: #7d9ddd40; border: 1px solid #9db9f256; border-radius: 6px; }
+.add-task { padding: 7px 13px; font-size: 12px; background: #7d9ddd40; border: 1px solid #9db9f256; border-radius: 6px; cursor: pointer; }
 .add-task > span { font-size: 16px; margin-right: 4px; }
+.add-form { display: flex; align-items: center; gap: 6px; }
+.add-form input { width: 138px; padding: 7px 11px; font-size: 12px; color: #ecf2ff; background: #122a5566; border: 1px solid #9db9f256; border-radius: 6px; outline: none; }
+.add-form input::placeholder { color: #8ba3c9; }
+.add-form input:focus { border-color: #a1c5ff; }
 .metrics { gap: 12px; padding: 0 22px 12px; }
 .metrics > div { flex: 1; display: flex; align-items: center; gap: 10px; border-radius: 9px; background: #8baaff20; padding: 7px 13px; font-size: 12px; white-space: nowrap; }
 .metrics strong { font-size: 18px; font-weight: 500; margin-left: auto; }
@@ -64,11 +68,15 @@
   .collection { padding: 12px; }
   .metrics { gap: 7px; padding-left: 13px; padding-right: 13px; }
   .metrics > div { padding: 10px 8px; gap: 6px; font-size: 11px; }
+  .add-form input { width: 112px; }
 }
 @media (max-width: 440px) {
   .brand h1 { font-size: 18px; }
   .brand p, .preview-label, .profile-avatar { display: none; }
   .overview { grid-template-columns: 1fr 120px; }
   .metrics { flex-wrap: wrap; }
+  .console-heading { flex-wrap: wrap; gap: 8px; }
+  .add-form { flex: 1; min-width: 0; }
+  .add-form input { flex: 1; width: auto; min-width: 0; }
   .invention-button strong { font-size: 19px; }
 }

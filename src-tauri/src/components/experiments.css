@@ -7,7 +7,7 @@
 .belt-arrow { position: absolute; left: calc(50% - 7px); font-size: 23px; color: #718ac0; line-height: 12px; }
 .belt-arrow.up { top: 8px; }
 .belt-arrow.down { bottom: 0; }
-.task-pill { width: 100%; display: flex; align-items: center; gap: 15px; padding: 9px 19px; border-radius: 100px; border: 1px solid #ffffffb0; background: linear-gradient(120deg, #edf5ff99, #c1d2eeb3); box-shadow: 0 6px 13px #324f8120, inset 0 1px 7px #fff9; }
+.task-pill { width: 100%; display: flex; align-items: center; gap: 15px; padding: 9px 19px; border-radius: 100px; border: 1px solid #ffffffb0; background: linear-gradient(120deg, #edf5ff99, #c1d2eeb3); box-shadow: 0 6px 13px #324f8120, inset 0 1px 7px #fff9; cursor: pointer; }
 .task-pill.depth-1 { width: 90%; height: 42px; opacity: .82; }
 .task-pill.depth-2 { width: 78%; height: 28px; opacity: .43; padding: 2px 18px; }
 .task-pill.focused { min-height: 76px; border: 2px solid #f6fcff; background: linear-gradient(120deg, #f4faffd9, #c7ddf5e6); box-shadow: 0 0 0 4px #a7c5f567, 0 9px 19px #2d559d40, inset 0 0 13px white; }
@@ -30,6 +30,9 @@
 .depth-2 .task-state { font-size: 9px; padding: 2px 7px; }
 .belt-caption { text-align: center; font-size: 9px; color: #526b98; margin-top: 6px; letter-spacing: 1px; }
 .belt-caption span { color: #7589ad; }
+.task-delete { display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border-radius: 50%; border: 1px solid #ffffff80; background: #7f9ac14a; color: #3b5684; font-size: 15px; line-height: 1; cursor: pointer; flex-shrink: 0; }
+.task-delete:hover { background: #e2744d; color: white; }
+.belt-empty { text-align: center; font-size: 12px; color: #617ead; padding: 16px 0; }
 @media (max-width: 600px) {
   .experiments { padding: 14px 10px 11px; }
   .task-pill { gap: 10px; padding-left: 12px; padding-right: 12px; }
