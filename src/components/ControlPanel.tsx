@@ -12,6 +12,7 @@ import { addCard, canGenerateToday } from '../utils/cardStorage';
 import { generateAICopy } from '../utils/stepfun';
 import { generateCardImage } from '../utils/cardImage';
 import { isDemoMode } from '../utils/demoMode';
+import { loadCollection, updateCardBackTasks } from '../utils/cardStorage';
 import './panel.css';
 import './experiments.css';
 import './collection.css';
