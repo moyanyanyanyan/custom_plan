@@ -32,13 +32,21 @@ export function generateCardFromTasks(tasks: Experiment[]): InventionCard | null
   ];
   const description = descriptions[Math.floor(Math.random() * descriptions.length)];
 
+  const today = new Date();
+  const y = today.getFullYear();
+  const m = String(today.getMonth() + 1).padStart(2, '0');
+  const d = String(today.getDate()).padStart(2, '0');
+  const date = `${y}-${m}-${d}`;
   return {
     id: generateId(),
     name,
     description,
     sourceTasks: completedTasks,
     earnedAt: new Date().toISOString(),
+    imagePath: undefined,
     type: 'daily',
     stackKey: name,
+    backTasks: completedTasks.map((t) => t.slice(0, 10)),
+    date,
   };
 }

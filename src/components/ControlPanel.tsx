@@ -67,6 +67,20 @@ export function ControlPanel() {
     }
   };
 
+  const handleToggleTask = async (id: string) => {
+    await toggle(id);
+    const updated = tasks.find((t) => t.id === id);
+    if (!updated || !updated.completed) return;
+    const lastCard = loadCollection().cards[loadCollection().cards.length - 1];
+    if (!lastCard) return;
+    const newBack = [...lastCard.backTasks, updated.name.slice(0, 10)];
+    updateCardBackTasks(lastCard.id, newBack);
+    setRevealedCard((prev) => {
+      if (!prev || prev.id !== lastCard.id) return prev;
+      return { ...prev, backTasks: newBack };
+    });
+  };
+
   return (
     <>
       <main className="panel-shell" key={refreshKey}>
@@ -112,7 +126,7 @@ export function ControlPanel() {
         <div><i className="metric-dot stagnant" /><span>停滞能量</span><strong>{tasks.length - completedCount}</strong></div>
         <div className="slime-metric"><Icon name="slime" size={20} /><span>史莱姆图鉴</span><Icon name="arrow" size={16} /></div>
       </div>
-      <ExperimentList tasks={tasks} onToggle={toggle} onRemove={remove} />
+      <ExperimentList tasks={tasks} onToggle={handleToggleTask} onRemove={remove} />
     </section>
     <button className={`invention-button static-button${inventing ? ' inventing' : ''}`} onClick={handleGenerateCard} disabled={inventing || remaining > 0}>
       <span className="machine-symbol"><Icon name="flask" size={28} /></span>
