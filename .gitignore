@@ -1,0 +1,41 @@
+# DSH 工作文件
+.dsh-handoff/
+.plugin-src/
+.tmp-upscale/
+.vfix/
+dsh-creative-plugin/
+dsh-raw-html-src/
+py-libs/
+waifu2x-temp/
+图标/
+
+# 工具包和图标
+*.zip
+*.tar.gz
+*.ico
+
+# 运维/调试脚本
+*.ps1
+*.py
+read-context*.js
+waifu2x-upscale.js
+
+# 会话与数据文件
+session-list.json
+weisan-*.jsonl
+
+# 依赖与构建产物
+node_modules/
+dist/
+.pnpm-store/
+
+# 临时目录与文件
+modsearch-temp/
+*.log
+
+# 密钥与本地配置
+.env
+*.jpg
+*.png
+*.jpeg
+*.gif
