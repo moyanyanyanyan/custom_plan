@@ -3,7 +3,7 @@ import { loadCollection } from '../utils/cardStorage';
 import { useState } from 'react';
 import './collection.css';
 
-/** 单张卡面：有图（dataURL 或 http URL）则渲染 <img>，加载失败/无图时回退到名称占位。 */
+/** 单张卡面：有图（dataURL 或 http URL）则渲染 <img>，加载失败/无图时回退到名称首字占位。 */
 function CardArt({ card, count }: { card: InventionCard; count: number }) {
   const [broken, setBroken] = useState(false);
   const showImage = !!card.imagePath && !broken;
@@ -81,7 +81,15 @@ export function CardCollection() {
               <div className="card-art-wrapper" onClick={() => setFlippedId(flipped ? null : representative.id)}>
                 <div className={`card-flipper${flipped ? ' flipped' : ''}`}>
                   <div className="card-face card-front">
-                    <CardArt card={representative} count={count} />
+                    <div className="card-front-inner">
+                      <div className="card-name">{representative.name}</div>
+                      <CardArt card={representative} count={count} />
+                      <div className="card-desc">{representative.description}</div>
+                      <div className="card-footer">
+                        <span>离谱发明所</span>
+                        <time>{representative.date}</time>
+                      </div>
+                    </div>
                   </div>
                   <div className="card-face card-back">
                     <div className="card-back-content">
@@ -95,11 +103,6 @@ export function CardCollection() {
                     </div>
                   </div>
                 </div>
-              </div>
-              <div className="card-info">
-                <h4>{representative.name}</h4>
-                <p>{representative.description}</p>
-                <time>{new Date(representative.earnedAt).toLocaleString()}</time>
               </div>
               <button
                 className="static-button split-button"

@@ -30,10 +30,26 @@
   gap: 8px;
 }
 
+.card-front-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+}
+
+.card-name {
+  text-align: center;
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: 1px;
+  color: #f3d180;
+}
+
 .card-art {
-  width: 100%;
   aspect-ratio: 1 / 1;
-  border-radius: 10px;
+  width: 72%;
+  align-self: center;
+  border-radius: 12px;
   background: linear-gradient(135deg, #2a2a3a, #1f1f2e);
   display: flex;
   align-items: center;
@@ -44,6 +60,21 @@
   letter-spacing: 2px;
   position: relative;
   overflow: hidden;
+}
+
+.card-desc {
+  font-size: 12px;
+  color: #cfcfcf;
+  line-height: 1.5;
+}
+
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: #888;
+  margin-top: auto;
 }
 
 /* AI 卡图（dataURL / http URL）铺满卡面 */
