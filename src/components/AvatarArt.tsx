@@ -10,7 +10,9 @@ export function AvatarArt() {
   useEffect(() => {
     let active = true;
     if (!settings.avatarAssetId) { setSource(''); return; }
-    void loadAsset(settings.avatarAssetId).then((value) => { if (active) setSource(value); });
+    setSource('');
+    void loadAsset(settings.avatarAssetId).then((value) => { if (active) setSource(value); })
+      .catch(() => { if (active) setSource(''); });
     return () => { active = false; };
   }, [settings.avatarAssetId]);
   if (source) return <span className="avatar-art"><img src={source} alt="" /></span>;

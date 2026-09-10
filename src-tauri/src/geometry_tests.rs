@@ -76,23 +76,23 @@ fn panel_opens_inward_on_both_edges() {
         Rect {
             x: 0,
             y: 400,
-            width: 64,
-            height: 64,
+            width: 48,
+            height: 48,
         },
         1.0,
     );
     let right = panel_rect(
         WORK,
         Rect {
-            x: 1856,
+            x: 1872,
             y: 400,
-            width: 64,
-            height: 64,
+            width: 48,
+            height: 48,
         },
         1.0,
     );
-    assert_eq!((left.x, left.width, left.height), (76, 760, 800));
-    assert_eq!((right.x, right.width, right.height), (1084, 760, 800));
+    assert_eq!((left.x, left.width, left.height), (60, 480, 680));
+    assert_eq!((right.x, right.width, right.height), (1380, 480, 680));
 }
 
 #[test]

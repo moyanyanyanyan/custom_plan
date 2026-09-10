@@ -4,6 +4,7 @@ export type InventionCard = {
   description: string;
   sourceTasks: string[];
   earnedAt: string; // ISO datetime
+  dailyKey: string;
   imageAssetId?: string;
   imagePath?: string;
   type: 'daily';
@@ -14,3 +15,5 @@ export type CardCollection = {
   cards: InventionCard[];
   updatedAt: string;
 };
+
+export type InventionMachineState = 'locked' | 'ready' | 'generating' | 'completed';

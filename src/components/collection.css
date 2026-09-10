@@ -116,3 +116,5 @@
   color: #777;
   font-size: 13px;
 }
+.card-info .card-sources { color: #d3b978; font-size: 11px; }
+.archive-library .collection-panel { padding: 0; }

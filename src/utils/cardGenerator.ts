@@ -1,15 +1,25 @@
 import type { Experiment } from '../types/experiment';
 import type { InventionCard } from '../types/card';
 import { DAILY_CARD_THRESHOLD } from '../constants/generation';
+import { localDateKey } from './date';
+import type { InventionMachineState } from '../types/card';
 
 function generateId() {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+  return crypto.randomUUID();
 }
 
 /** 剩余所需任务数（>0 = 还没到门槛）。 */
 export function remainingTasksForCard(tasks: { completed: boolean }[]): number {
   const done = tasks.filter((t) => t.completed).length;
   return Math.max(0, DAILY_CARD_THRESHOLD - done);
+}
+
+export function getMachineState(
+  remaining: number, generated: boolean, inventing: boolean,
+): InventionMachineState {
+  if (inventing) return 'generating';
+  if (generated) return 'completed';
+  return remaining > 0 ? 'locked' : 'ready';
 }
 
 /**
@@ -37,6 +47,7 @@ export function generateCardFromTasks(tasks: Experiment[], date = new Date()): I
     description,
     sourceTasks: completedTasks,
     earnedAt: date.toISOString(),
+    dailyKey: localDateKey(date),
     type: 'daily',
     stackKey: name,
   };

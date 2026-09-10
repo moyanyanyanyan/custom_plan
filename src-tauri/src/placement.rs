@@ -39,7 +39,7 @@ pub fn initialize(avatar: &WebviewWindow) -> Result<(), String> {
         .map_err(|e| e.to_string())?
         .ok_or("No primary display available")?;
     let area = monitor.work_area();
-    let side = (64.0 * monitor.scale_factor()).round() as u32;
+    let side = (48.0 * monitor.scale_factor()).round() as u32;
     avatar
         .set_size(PhysicalSize::new(side, side))
         .map_err(|e| e.to_string())?;

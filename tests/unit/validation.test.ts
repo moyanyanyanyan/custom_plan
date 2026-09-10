@@ -22,4 +22,17 @@ describe('normalizeData', () => {
     const normalized = normalizeData({ schemaVersion: 1, settings: null }, fallback);
     expect(normalized.settings).toEqual(fallback.settings);
   });
+
+  it('保留 revision 并为旧卡牌补齐本地日期', () => {
+    const fallback = createDefaultData();
+    const card = {
+      id: 'card-1', name: '旧卡', description: '迁移测试', sourceTasks: [],
+      earnedAt: new Date(2026, 8, 10, 12).toISOString(), type: 'daily', stackKey: '旧卡',
+    };
+    const normalized = normalizeData({
+      ...fallback, revision: 7, cards: [card],
+    }, fallback);
+    expect(normalized.revision).toBe(7);
+    expect(normalized.cards[0].dailyKey).toBe('2026-09-10');
+  });
 });

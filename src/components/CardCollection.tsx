@@ -49,7 +49,8 @@ export function CardCollection() {
 
   // 按 stackKey 分组统计数量
   const stackMap = new Map<string, InventionCard[]>();
-  for (const card of cards) {
+  const sortedCards = [...cards].sort((a, b) => b.earnedAt.localeCompare(a.earnedAt));
+  for (const card of sortedCards) {
     const list = stackMap.get(card.stackKey) || [];
     list.push(card);
     stackMap.set(card.stackKey, list);
@@ -82,6 +83,7 @@ export function CardCollection() {
               <div className="card-info">
                 <h4>{representative.name}</h4>
                 <p>{representative.description}</p>
+                <p className="card-sources">来源：{representative.sourceTasks.join('、')}</p>
                 <time>{new Date(representative.earnedAt).toLocaleString()}</time>
               </div>
               <button
@@ -111,6 +113,7 @@ export function CardCollection() {
               <div className="card-info">
                 <h4>{expanding.cards[expanding.index].name}</h4>
                 <p>{expanding.cards[expanding.index].description}</p>
+                <p className="card-sources">来源：{expanding.cards[expanding.index].sourceTasks.join('、')}</p>
                 <time>{new Date(expanding.cards[expanding.index].earnedAt).toLocaleString()}</time>
                 <div className="expand-meta">
                   <span className="expand-count">拥有 {expanding.cards.length} 张</span>
