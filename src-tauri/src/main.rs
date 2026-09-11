@@ -34,7 +34,7 @@ fn main() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::window::toggle_panel,
-            commands::window::hide_panel,
+            commands::window::minimize_panel,
             commands::window::drag_avatar,
             commands::window::drag_panel,
             commands::window::exit_app,
@@ -56,10 +56,18 @@ fn main() {
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 if window.label() == "panel" {
-                    // 系统关闭只收起面板，保留头像再次展开所需的窗口实例。
+                    // 系统关闭只最小化面板，保留头像再次展开所需的窗口实例。
                     api.prevent_close();
-                    if let Err(error) = window.hide() {
-                        eprintln!("Failed to hide panel: {error}");
+                    if let Ok(visible) = window.is_visible() {
+                        if visible {
+                            if let Err(error) = window.minimize() {
+                                eprintln!("Failed to minimize panel: {error}");
+                            }
+                        } else {
+                            if let Err(error) = window.hide() {
+                                eprintln!("Failed to hide panel: {error}");
+                            }
+                        }
                     }
                 } else {
                     window.app_handle().exit(0);
