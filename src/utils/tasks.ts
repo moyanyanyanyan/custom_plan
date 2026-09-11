@@ -6,6 +6,7 @@ import {
 } from '../types/experiment';
 import { experiments as seedTemplates } from '../constants/preview';
 import { hasKey, loadJson, saveJson } from './storage';
+import { createTask } from './taskModel';
 
 /** 今日任务存储键：按天分桶，为“今日实验 / 连续研究天数 / 历史回顾”预留。 */
 export function todayKey(date = new Date()): string {
@@ -35,11 +36,10 @@ function isExperiment(value: unknown): value is Experiment {
 /** 首次运行：把默认任务模板写入今天的存储，返回完整任务列表。 */
 function seedIfEmpty(date: Date): Experiment[] {
   const now = date.toISOString();
-  const seeded: Experiment[] = seedTemplates.map((template) => ({
-    ...template,
+  const seeded: Experiment[] = seedTemplates.map((template) => createTask({ ...template,
     createdAt: now,
     completedAt: template.completed ? now : null,
-  }));
+  }, date));
   saveJson(todayKey(date), seeded);
   return seeded;
 }
@@ -58,12 +58,12 @@ function nextId(date: Date): string {
 
 /** 添加今日任务，返回更新后的任务列表。 */
 export function addToday(template: Omit<ExperimentSeed, 'id'>, date = new Date()): Experiment[] {
-  const task: Experiment = {
+  const task: Experiment = createTask({
     ...template,
     id: nextId(date),
     createdAt: date.toISOString(),
     completedAt: null,
-  };
+  }, date);
   const next = [...loadToday(date), task];
   saveJson(todayKey(date), next);
   return next;

@@ -33,7 +33,7 @@ impl AppStore {
         let state = if path.exists() {
             let raw = fs::read_to_string(&path).map_err(|error| error.to_string())?;
             match serde_json::from_str::<AppData>(&raw) {
-                Ok(data) if data.schema_version <= 1 => data,
+                Ok(data) if data.schema_version <= 2 => data,
                 Ok(_) => preserve_invalid(&root, &path, "数据版本高于当前程序".into())?,
                 Err(error) => preserve_invalid(&root, &path, error.to_string())?,
             }

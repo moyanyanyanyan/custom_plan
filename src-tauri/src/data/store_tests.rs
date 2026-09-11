@@ -7,7 +7,7 @@ fn temporary_root(name: &str) -> PathBuf {
 }
 
 fn initialized() -> AppData {
-    AppData { schema_version: 1, ..AppData::default() }
+    AppData { schema_version: 2, ..AppData::default() }
 }
 
 fn cleanup(root: &PathBuf) {

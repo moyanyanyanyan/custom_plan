@@ -1,4 +1,4 @@
-use super::{models::{ChatResponse, GeneratedCopy, ImageResponse}, provider::{AiError, AiProvider}};
+use super::{models::{ChatResponse, GeneratedCopy, ImageResponse, StepSuggestion}, provider::{AiError, AiProvider}};
 use base64::Engine;
 use std::time::Duration;
 
@@ -35,6 +35,11 @@ async fn checked(response: reqwest::Response) -> Result<reqwest::Response, AiErr
 }
 
 pub async fn generate_copy(system: String, user: String) -> Result<GeneratedCopy, AiError> {
+    let raw = generate_chat(system, user).await?;
+    extract_copy(&raw).ok_or(AiError::InvalidResponse)
+}
+
+async fn generate_chat(system: String, user: String) -> Result<String, AiError> {
     let response = client()?.post(CHAT_URL).bearer_auth(key()?).json(&serde_json::json!({
         "model": CHAT_MODEL, "messages": [
             {"role": "system", "content": system}, {"role": "user", "content": user}
@@ -42,8 +47,23 @@ pub async fn generate_copy(system: String, user: String) -> Result<GeneratedCopy
     })).send().await.map_err(|e| AiError::Network(e.to_string()))?;
     let body: ChatResponse = checked(response).await?.json().await
         .map_err(|_| AiError::InvalidResponse)?;
-    let raw = body.choices.first().ok_or(AiError::InvalidResponse)?.message.content.trim();
-    extract_copy(raw).ok_or(AiError::InvalidResponse)
+    Ok(body.choices.first().ok_or(AiError::InvalidResponse)?.message.content.trim().into())
+}
+
+pub async fn generate_steps(system: String, user: String) -> Result<Vec<String>, AiError> {
+    let raw = generate_chat(system, user).await?;
+    extract_steps(&raw).ok_or(AiError::InvalidResponse)
+}
+
+pub fn extract_steps(raw: &str) -> Option<Vec<String>> {
+    let candidate = raw.trim().trim_start_matches("```json").trim_start_matches("```")
+        .trim_end_matches("```").trim();
+    let start = candidate.find('{')?;
+    let end = candidate.rfind('}')? + 1;
+    let parsed: StepSuggestion = serde_json::from_str(&candidate[start..end]).ok()?;
+    let steps: Vec<String> = parsed.steps.into_iter().map(|step| step.trim().chars().take(20).collect())
+        .filter(|step: &String| !step.is_empty()).take(6).collect();
+    (steps.len() >= 2).then_some(steps)
 }
 
 pub async fn generate_image(prompt: String) -> Result<Vec<u8>, AiError> {
@@ -69,7 +89,7 @@ pub fn extract_copy(raw: &str) -> Option<GeneratedCopy> {
 
 #[cfg(test)]
 mod tests {
-    use super::extract_copy;
+    use super::{extract_copy, extract_steps};
     #[test]
     fn extracts_json_with_or_without_fence() {
         assert_eq!(extract_copy(r#"{"name":"A","description":"B"}"#).unwrap().name, "A");
@@ -77,4 +97,9 @@ mod tests {
     }
     #[test]
     fn rejects_invalid_copy() { assert!(extract_copy("not json").is_none()); }
+    #[test]
+    fn validates_step_count() {
+        assert_eq!(extract_steps(r#"{"steps":["订酒店","买机票"]}"#).unwrap().len(), 2);
+        assert!(extract_steps(r#"{"steps":["只有一步"]}"#).is_none());
+    }
 }

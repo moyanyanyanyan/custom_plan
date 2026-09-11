@@ -3,23 +3,26 @@ import { describe, expect, it, vi } from 'vitest';
 import { AddTaskControl } from '../../src/components/tasks/AddTaskControl';
 
 describe('AddTaskControl', () => {
-  it('点击展开并提交裁剪后的任务内容', () => {
+  it('解析日期时间并提交结构化任务', () => {
     const add = vi.fn();
-    render(<AddTaskControl onAdd={add} />);
-    fireEvent.click(screen.getByRole('button', { name: /添加任务/ }));
+    render(<AddTaskControl date={new Date(2026, 8, 11, 9)} onAdd={add} />);
     const input = screen.getByRole('textbox', { name: '任务内容' });
-    expect(input).toHaveFocus();
-    fireEvent.change(input, { target: { value: '  整理桌面  ' } });
+    fireEvent.change(input, { target: { value: '明天下午三点取快递提醒我' } });
+    expect(screen.getByLabelText('计划日期')).toHaveValue('2026-09-12');
+    expect(screen.getByLabelText('计划时间')).toHaveValue('15:00');
     fireEvent.click(screen.getByRole('button', { name: '添加', exact: true }));
-    expect(add).toHaveBeenCalledWith('整理桌面');
-    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    expect(add).toHaveBeenCalledWith(expect.objectContaining({
+      title: '取快递', targetDate: '2026-09-12', time: '15:00',
+    }));
+    expect(input).toHaveValue('');
   });
 
-  it('空内容不可提交且 Escape 收起', () => {
-    render(<AddTaskControl onAdd={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: /添加任务/ }));
+  it('空内容不可提交且支持修改解析标签', () => {
+    render(<AddTaskControl date={new Date(2026, 8, 11)} onAdd={vi.fn()} />);
     expect(screen.getByRole('button', { name: '添加', exact: true })).toBeDisabled();
-    fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Escape' });
-    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: '每天喝水' } });
+    expect(screen.getByLabelText('重复规则')).toHaveValue('daily');
+    fireEvent.change(screen.getByLabelText('重复规则'), { target: { value: 'weekly' } });
+    expect(screen.getByLabelText('重复规则')).toHaveValue('weekly');
   });
 });

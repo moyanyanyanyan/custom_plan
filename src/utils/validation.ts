@@ -1,14 +1,11 @@
-import { TASK_ICONS, type Task } from '../types/task';
+import type { Task } from '../types/task';
 import type { InventionCard } from '../types/card';
 import type { AppData } from '../types/storage';
 import type { AppSettings } from '../types/settings';
+import { normalizeTask } from './taskModel';
 
 export function isTask(value: unknown): value is Task {
-  if (!value || typeof value !== 'object') return false;
-  const task = value as Record<string, unknown>;
-  return typeof task.id === 'string' && typeof task.name === 'string'
-    && TASK_ICONS.includes(task.icon as Task['icon']) && typeof task.minutes === 'number'
-    && typeof task.completed === 'boolean' && typeof task.createdAt === 'string';
+  return normalizeTask(value) !== null;
 }
 
 export function isCard(value: unknown): value is InventionCard {
@@ -60,9 +57,10 @@ export function normalizeData(value: unknown, fallback: AppData): AppData {
   if (!value || typeof value !== 'object') return fallback;
   const source = value as Partial<AppData>;
   const tasksByDate = Object.fromEntries(Object.entries(source.tasksByDate ?? {})
-    .map(([date, tasks]) => [date, safeArray(tasks, isTask)]));
+    .map(([date, tasks]) => [date, Array.isArray(tasks)
+      ? tasks.flatMap((task) => { const normalized = normalizeTask(task); return normalized ? [normalized] : []; }) : []]));
   return {
-    ...fallback, schemaVersion: 1,
+    ...fallback, schemaVersion: 2,
     revision: typeof source.revision === 'number' ? source.revision : 0,
     tasksByDate,
     cards: normalizeCards(source.cards),

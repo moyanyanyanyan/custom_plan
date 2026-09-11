@@ -13,6 +13,7 @@ import { useSlimes } from '../hooks/useSlimes';
 import { useAppData } from '../hooks/useAppData';
 import { useSettings } from '../hooks/useSettings';
 import { useCurrentDate } from '../hooks/useCurrentDate';
+import { useTaskReminders } from '../hooks/useTaskReminders';
 import { playCompletionSound } from '../utils/feedback';
 import './panel.css';
 import './collection.css';
@@ -25,13 +26,15 @@ export function ControlPanel() {
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [slimesOpen, setSlimesOpen] = useState(false);
   const [energyToast, setEnergyToast] = useState(false);
-  const { tasks, add, toggle, remove, completeHistorical } = useTasks();
+  const { tasks, laterTasks, dateKey, add, toggle, remove, patch, reschedule,
+    moveToToday, completeHistorical } = useTasks();
   const completedCount = tasks.filter((t) => t.completed).length;
   const generation = useCardGeneration(tasks);
   const slimes = useSlimes();
   const { error: storageError, saveStatus, retrySave } = useAppData();
   const { settings } = useSettings();
   const { now } = useCurrentDate();
+  const { reminderError } = useTaskReminders();
 
   const windowAction = (command: 'hide_panel' | 'exit_app' | 'drag_panel') => {
     void desktopCommand(command).catch((reason) => setError(String(reason)));
@@ -39,7 +42,7 @@ export function ControlPanel() {
 
   const handleToggle = (id: string) => {
     const completing = !tasks.find((task) => task.id === id)?.completed;
-    toggle(id);
+    toggle(dateKey, id);
     if (!completing) return;
     playCompletionSound(settings.soundEnabled);
     setEnergyToast(true);
@@ -78,9 +81,9 @@ export function ControlPanel() {
         <button disabled={!isDesktop} onClick={() => windowAction('exit_app')} title="退出应用" aria-label="退出应用"><Icon name="power" size={16} /></button>
       </div>
     </header>
-    {(error || storageError || generation.warning || saveStatus === 'pending') &&
+    {(error || storageError || reminderError || generation.warning || saveStatus === 'pending') &&
       <div role="alert" className="window-error">
-        <span>{error || storageError || generation.warning || '数据保存中…'}</span>
+        <span>{error || storageError || reminderError || generation.warning || '数据保存中…'}</span>
         {saveStatus === 'failed' && <button onClick={() => void retrySave()}>重试保存</button>}
       </div>}
     <section className="overview" aria-label="研究所概况">
@@ -99,8 +102,10 @@ export function ControlPanel() {
         <div><strong>{generation.cards.length}</strong><Icon name="arrow" /></div><span className="collection-caption">收藏每一次认真生活</span>
       </button>
     </section>
-    <TodayTaskBoard tasks={tasks} date={now} pendingSlimeCount={pendingSlimes}
-      onAdd={add} onToggle={handleToggle} onRemove={remove}
+    <TodayTaskBoard tasks={tasks} laterTasks={laterTasks} dateKey={dateKey}
+      date={now} pendingSlimeCount={pendingSlimes} onAdd={add}
+      onToggle={(date, id) => date === dateKey ? handleToggle(id) : toggle(date, id)}
+      onRemove={remove} onPatch={patch} onReschedule={reschedule} onMoveToday={moveToToday}
       onOpenSlimes={() => setSlimesOpen(true)} />
     <button className={`invention-button ${generation.state}`} onClick={handleGenerateCard}
       disabled={generation.state !== 'ready'}>

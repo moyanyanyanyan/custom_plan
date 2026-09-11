@@ -19,6 +19,7 @@ fn main() {
                 let _ = avatar.set_focus();
             }
         }))
+        .plugin(tauri_plugin_notification::init())
         .setup(|app| {
             let data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
             let position_store = data::AvatarPositionStore::open(data_dir.join("avatar-position.json"))?;
@@ -46,7 +47,10 @@ fn main() {
             commands::data::save_user_asset,
             commands::ai::generate_card_copy,
             commands::ai::generate_card_art,
-            commands::ai::generate_slime_copy
+            commands::ai::generate_slime_copy,
+            commands::ai::suggest_task_steps,
+            commands::notification::ensure_notification_permission,
+            commands::notification::send_task_notification
         ])
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
