@@ -32,8 +32,8 @@ export function TaskRow({ task, dateKey, todayKey, future = false, open, onExpan
   return <article role="listitem" className={`task-entry ${future ? 'future-task' : ''} ${task.completed ? 'completed' : ''} ${open ? 'focused' : ''} ${pulse ? 'task-pulse' : ''} ${newlyAdded ? 'task-enter' : ''}`}>
     <div className="task-entry-row">
       {future ? <span className="future-pin" aria-hidden="true" />
-        : <button type="button" className="task-check" aria-label={`${task.completed ? '取消完成' : '完成'} ${task.name}`}
-          aria-pressed={task.completed} onClick={toggle}>{task.completed ? '✓' : ''}</button>}
+        : <button type="button" className="task-check" aria-label={`${task.completed ? '已完成' : '完成'} ${task.name}`}
+          aria-pressed={task.completed} disabled={task.completed} onClick={toggle}>{task.completed ? '✓' : ''}</button>}
       <button type="button" className="task-title" aria-label={task.name} onClick={onExpand}>
         <span>{task.name}</span>
         <small className="task-meta"><span>{schedule}</span>

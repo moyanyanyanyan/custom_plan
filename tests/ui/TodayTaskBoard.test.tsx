@@ -42,6 +42,14 @@ describe('TodayTaskBoard', () => {
     expect(handlers.onToggle).toHaveBeenCalledWith('2026-09-11', '2');
   });
 
+  it('已完成任务不能取消完成', () => {
+    const handlers = setup();
+    const completedButton = screen.getByRole('button', { name: '已完成 整理桌面' });
+    expect(completedButton).toBeDisabled();
+    fireEvent.click(completedButton);
+    expect(handlers.onToggle).not.toHaveBeenCalled();
+  });
+
   it('历史备注不会单独显示展开提示', () => {
     const noteOnlyTask = { ...tasks[1], notes: '旧备注', steps: [] };
     render(<TodayTaskBoard tasks={[noteOnlyTask]} laterTasks={[]} dateKey="2026-09-11"
