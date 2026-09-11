@@ -5,7 +5,6 @@ import { CardRevealModal } from './CardRevealModal';
 import { SettingsPanel } from './settings/SettingsPanel';
 import { TodayTaskBoard } from './tasks/TodayTaskBoard';
 import { ArchiveModal } from './cards/ArchiveModal';
-import { SlimeArchive } from './slimes/SlimeArchive';
 import { useTasks } from '../hooks/useTasks';
 import { desktopCommand, isDesktop } from '../utils/desktop';
 import { useCardGeneration } from '../hooks/useCardGeneration';
@@ -25,13 +24,13 @@ export function ControlPanel() {
   const [error, setError] = useState('');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [archiveOpen, setArchiveOpen] = useState(false);
-  const [slimesOpen, setSlimesOpen] = useState(false);
   const [energyToast, setEnergyToast] = useState(false);
+  const [focusedTaskId, setFocusedTaskId] = useState<string | null>(null);
   const { tasks, laterTasks, dateKey, add, toggle, remove, patch, reschedule,
-    moveToToday, completeHistorical } = useTasks();
+    moveToToday, completeHistorical, discardHistorical } = useTasks();
   const completedCount = tasks.filter((t) => t.completed).length;
   const generation = useCardGeneration(tasks);
-  const slimes = useSlimes();
+  const slime = useSlimes();
   const { error: storageError, saveStatus, retrySave } = useAppData();
   const { settings } = useSettings();
   const { now } = useCurrentDate();
@@ -56,7 +55,7 @@ export function ControlPanel() {
     await generation.generate();
   };
 
-  const pendingSlimes = slimes.filter((slime) => !slime.containedAt).length;
+  const pendingSlimes = slime.meals.length;
   const assistantCopy = generation.state === 'completed' ? '今日发明已经归档，明天继续研究。'
     : pendingSlimes ? `检测到 ${pendingSlimes} 只过夜史莱姆仍在游荡。`
       : !tasks.length ? '先登记一项今天想完成的小事吧。'
@@ -105,10 +104,17 @@ export function ControlPanel() {
       </button>
     </section>
     <TodayTaskBoard tasks={tasks} laterTasks={laterTasks} dateKey={dateKey}
-      date={now} pendingSlimeCount={pendingSlimes} onAdd={add}
+      date={now} focusTaskId={focusedTaskId} slime={slime} onAdd={add}
       onToggle={(date, id) => date === dateKey ? handleToggle(id) : toggle(date, id)}
       onRemove={remove} onPatch={patch} onReschedule={reschedule} onMoveToday={moveToToday}
-      onOpenSlimes={() => setSlimesOpen(true)} />
+      onSlimeComplete={completeHistorical} onSlimeDiscard={discardHistorical}
+      onSlimeFocus={(date, id) => {
+        const reminderAt = new Date(Date.now() + 5 * 60_000).toISOString();
+        reschedule(date, dateKey, id, { reminderAt });
+      }} onSlimeSplit={(date, id) => {
+        moveToToday(date, id);
+        setFocusedTaskId(id);
+      }} />
     <button className={`invention-button ${generation.state}`} onClick={handleGenerateCard}
       disabled={generation.state !== 'ready'}>
       <span className="machine-symbol"><Icon name="flask" size={28} /></span>
@@ -120,8 +126,6 @@ export function ControlPanel() {
       onClose={() => generation.setRevealedCard(null)} />
     <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     <ArchiveModal open={archiveOpen} onClose={() => setArchiveOpen(false)} />
-    <SlimeArchive open={slimesOpen} slimes={slimes} onContain={completeHistorical}
-      onClose={() => setSlimesOpen(false)} />
       </main>
     </>
   );

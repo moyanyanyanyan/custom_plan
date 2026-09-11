@@ -93,6 +93,13 @@ export function useTasks() {
           ? { ...task, completed: true, completedAt } : task)]),
     ) })).catch(() => undefined);
   }, [update]);
+  const discardHistorical = useCallback((id: string) => {
+    void update((current) => ({ ...current,
+      tasksByDate: Object.fromEntries(Object.entries(current.tasksByDate).map(([date, entries]) =>
+        [date, entries.filter((task) => task.id !== id)])),
+      slimes: current.slimes.filter((meal) => meal.taskId !== id),
+    })).catch(() => undefined);
+  }, [update]);
   return { tasks, laterTasks, dateKey, add, toggle, remove, patch, reschedule,
-    moveToToday, completeHistorical };
+    moveToToday, completeHistorical, discardHistorical };
 }

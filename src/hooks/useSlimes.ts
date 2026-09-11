@@ -2,39 +2,38 @@ import { useEffect } from 'react';
 import { useAppData } from './useAppData';
 import { elapsedDays } from '../utils/date';
 import { useCurrentDate } from './useCurrentDate';
+import type { SlimeCompanion } from '../types/slime';
 
-export function useSlimes() {
+export function useSlimes(): SlimeCompanion {
   const { now, dateKey } = useCurrentDate();
   const { data, ready, update } = useAppData();
   useEffect(() => {
     if (!ready) return;
-    const existing = new Set(data.slimes.map((slime) => slime.sourceTaskId));
     const allTasks = Object.values(data.tasksByDate).flat();
-    const completed = new Set(allTasks.filter((task) => task.completed).map((task) => task.id));
+    const active = new Set(allTasks.filter((task) => !task.completed).map((task) => task.id));
+    const existing = new Set(data.slimes.map((meal) => meal.taskId));
     const additions = Object.entries(data.tasksByDate).flatMap(([date, tasks]) => {
       if (date >= dateKey) return [];
-      return tasks.filter((task) => !task.completed && !existing.has(task.id)).map((task) => ({
-        id: `slime-${task.id}`, sourceTaskId: task.id, sourceTaskName: task.name,
-        name: '明天再说史莱姆', description: `由“${task.name}”的停滞能量形成。`,
-        discoveredAt: now.toISOString(), containedAt: null,
-      }));
+      return tasks.filter((task) => !task.completed && !existing.has(task.id))
+        .map((task) => ({ taskId: task.id, swallowedAt: now.toISOString() }));
     });
-    const needsContainment = data.slimes.some((slime) => !slime.containedAt && completed.has(slime.sourceTaskId));
-    if (additions.length || needsContainment) void update((current) => {
-      const known = new Set(current.slimes.map((slime) => slime.sourceTaskId));
+    const hasDigested = data.slimes.some((meal) => !active.has(meal.taskId));
+    if (additions.length || hasDigested) void update((current) => {
+      const known = new Set(current.slimes.map((meal) => meal.taskId));
       return {
         ...current,
-        slimes: [...current.slimes.map((slime) =>
-          !slime.containedAt && completed.has(slime.sourceTaskId)
-            ? { ...slime, containedAt: now.toISOString() } : slime),
-        ...additions.filter((slime) => !known.has(slime.sourceTaskId))],
+        slimes: [...current.slimes.filter((meal) => active.has(meal.taskId)),
+          ...additions.filter((meal) => !known.has(meal.taskId))],
       };
     }).catch(() => undefined);
   }, [data.slimes, data.tasksByDate, now, dateKey, ready, update]);
 
-  return data.slimes.map((slime) => ({
-    ...slime,
-    wanderingDays: elapsedDays(slime.discoveredAt,
-      slime.containedAt ? new Date(slime.containedAt) : now),
-  }));
+  const indexed = new Map(Object.entries(data.tasksByDate).flatMap(([taskDate, tasks]) =>
+    tasks.map((task) => [task.id, { task, taskDate }] as const)));
+  const meals = data.slimes.flatMap((meal) => {
+    const source = indexed.get(meal.taskId);
+    return source && !source.task.completed ? [{ ...meal, taskName: source.task.name,
+      taskDate: source.taskDate, wanderingDays: elapsedDays(meal.swallowedAt, now) }] : [];
+  });
+  return { meals, mood: meals.length === 0 ? 'light' : meals.length < 4 ? 'content' : 'full' };
 }

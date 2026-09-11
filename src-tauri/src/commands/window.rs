@@ -16,8 +16,12 @@ pub async fn toggle_panel(
 ) -> Result<(), String> {
     authorize(&window)?;
     let panel = get_window(&app, "panel")?;
-    if panel.is_visible().map_err(|e| e.to_string())? {
+    let minimized = panel.is_minimized().map_err(|e| e.to_string())?;
+    if panel.is_visible().map_err(|e| e.to_string())? && !minimized {
         return panel.hide().map_err(|e| e.to_string());
+    }
+    if minimized {
+        panel.unminimize().map_err(|e| e.to_string())?;
     }
     let position = placement::place_panel(&get_window(&app, "avatar")?, &panel)?;
     positions.save(position)?;

@@ -3,6 +3,7 @@ import type { InventionCard } from '../types/card';
 import type { AppData } from '../types/storage';
 import type { AppSettings } from '../types/settings';
 import { normalizeTask } from './taskModel';
+import type { SlimeMeal } from '../types/slime';
 
 export function isTask(value: unknown): value is Task {
   return normalizeTask(value) !== null;
@@ -53,6 +54,23 @@ function normalizeSettings(value: unknown, fallback: AppSettings): AppSettings {
   };
 }
 
+/** 旧版每项任务一只史莱姆，迁移后只保留任务引用与吞入时间。 */
+function normalizeSlimeMeals(value: unknown): SlimeMeal[] {
+  if (!Array.isArray(value)) return [];
+  const seen = new Set<string>();
+  return value.flatMap((item) => {
+    if (!item || typeof item !== 'object') return [];
+    const source = item as Record<string, unknown>;
+    const taskId = typeof source.taskId === 'string' ? source.taskId
+      : typeof source.sourceTaskId === 'string' ? source.sourceTaskId : '';
+    const swallowedAt = typeof source.swallowedAt === 'string' ? source.swallowedAt
+      : typeof source.discoveredAt === 'string' ? source.discoveredAt : '';
+    if (!taskId || !swallowedAt || source.containedAt || seen.has(taskId)) return [];
+    seen.add(taskId);
+    return [{ taskId, swallowedAt }];
+  });
+}
+
 /** 持久化边界逐项过滤，避免一个坏记录拖垮整个应用。 */
 export function normalizeData(value: unknown, fallback: AppData): AppData {
   if (!value || typeof value !== 'object') return fallback;
@@ -65,7 +83,7 @@ export function normalizeData(value: unknown, fallback: AppData): AppData {
     revision: typeof source.revision === 'number' ? source.revision : 0,
     tasksByDate,
     cards: normalizeCards(source.cards),
-    slimes: Array.isArray(source.slimes) ? source.slimes : [],
+    slimes: normalizeSlimeMeals(source.slimes),
     settings: normalizeSettings(source.settings, fallback.settings),
     updatedAt: typeof source.updatedAt === 'string' ? source.updatedAt : fallback.updatedAt,
     storageWarning: source.storageWarning,
