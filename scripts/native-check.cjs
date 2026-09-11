@@ -29,7 +29,10 @@ async function main() {
   assert.ok(original.visible);
   assert.ok(original.frameless && original.topmost);
   await avatar.screenshot({ path: '.artifacts/native-avatar.png', omitBackground: true });
-  assert.equal(probe(panelTitle).visible, false);
+  assert.equal(probe(panelTitle).visible, true, 'Panel must be visible on startup');
+  await avatar.getByRole('button').click();
+  await panel.waitForTimeout(150);
+  assert.equal(probe(panelTitle).visible, false, 'Avatar must hide a visible panel');
   await avatar.getByRole('button').click();
   await panel.waitForTimeout(300);
   let bounds = probe(panelTitle);
@@ -48,6 +51,7 @@ async function main() {
   assert.equal(probe(panelTitle).visible, false);
   await avatar.getByRole('button').click();
   await panel.waitForTimeout(150);
+  assert.equal(probe(panelTitle).visible, true, 'Avatar must restore a minimized panel in one click');
   const dragged = probe(avatarTitle, 'Drag', 120, original.y + 32);
   assert.ok(dragged.x > 0 && dragged.x < original.x, 'Interior drag must keep a free position');
   assert.equal(probe(panelTitle).visible, false, 'Drag must hide panel without toggling it');

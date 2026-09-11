@@ -79,6 +79,7 @@ fn main() {
             commands::window::minimize_panel,
             commands::window::drag_avatar,
             commands::window::drag_panel,
+            commands::window::set_panel_mode,
             commands::window::exit_app,
             commands::data::load_app_data,
             commands::data::save_app_data,

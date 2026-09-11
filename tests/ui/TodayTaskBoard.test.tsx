@@ -4,6 +4,9 @@ import { TodayTaskBoard } from '../../src/components/tasks/TodayTaskBoard';
 import type { Task } from '../../src/types/task';
 import { createTask } from '../../src/utils/taskModel';
 
+const slimeProps = { slime: { mood: 'light' as const, meals: [] }, onSlimeFocus: vi.fn(),
+  onSlimeComplete: vi.fn(), onSlimeSplit: vi.fn(), onSlimeDiscard: vi.fn() };
+
 const tasks: Task[] = [
   createTask({ id: '1', name: '整理桌面', icon: 'grid', minutes: 10, completed: true,
     group: 'A', createdAt: '2026-09-11T01:00:00Z', completedAt: '2026-09-11T02:00:00Z' }),
@@ -11,12 +14,11 @@ const tasks: Task[] = [
     group: 'A', createdAt: '2026-09-11T01:00:00Z', completedAt: null }),
 ];
 
-const setup = (pendingSlimeCount = 0) => {
+const setup = () => {
   const handlers = { onAdd: vi.fn(), onToggle: vi.fn(), onRemove: vi.fn(), onPatch: vi.fn(),
-    onReschedule: vi.fn(), onMoveToday: vi.fn(), onOpenSlimes: vi.fn() };
+    onReschedule: vi.fn(), onMoveToday: vi.fn() };
   render(<TodayTaskBoard tasks={tasks} laterTasks={[]} dateKey="2026-09-11"
-    date={new Date(2026, 8, 11)}
-    pendingSlimeCount={pendingSlimeCount} {...handlers} />);
+    date={new Date(2026, 8, 11)} {...slimeProps} {...handlers} />);
   return handlers;
 };
 
@@ -40,12 +42,20 @@ describe('TodayTaskBoard', () => {
     expect(handlers.onToggle).toHaveBeenCalledWith('2026-09-11', '2');
   });
 
+  it('已完成任务不能取消完成', () => {
+    const handlers = setup();
+    const completedButton = screen.getByRole('button', { name: '已完成 整理桌面' });
+    expect(completedButton).toBeDisabled();
+    fireEvent.click(completedButton);
+    expect(handlers.onToggle).not.toHaveBeenCalled();
+  });
+
   it('历史备注不会单独显示展开提示', () => {
     const noteOnlyTask = { ...tasks[1], notes: '旧备注', steps: [] };
     render(<TodayTaskBoard tasks={[noteOnlyTask]} laterTasks={[]} dateKey="2026-09-11"
-      date={new Date(2026, 8, 11)} pendingSlimeCount={0} onAdd={vi.fn()}
+      date={new Date(2026, 8, 11)} {...slimeProps} onAdd={vi.fn()}
       onToggle={vi.fn()} onRemove={vi.fn()} onPatch={vi.fn()} onReschedule={vi.fn()}
-      onMoveToday={vi.fn()} onOpenSlimes={vi.fn()} />);
+      onMoveToday={vi.fn()} />);
     expect(screen.getByRole('button', { name: '提交周报' })).not.toHaveTextContent('旧备注');
   });
 
@@ -80,21 +90,12 @@ describe('TodayTaskBoard', () => {
     expect(handlers.onAdd).toHaveBeenCalledWith(expect.objectContaining({ title: '喝水' }));
   });
 
-  it('仅在存在过夜任务时提供史莱姆入口', () => {
-    const inactive = setup();
-    expect(screen.queryByRole('button', { name: /史莱姆图鉴/ })).not.toBeInTheDocument();
-    expect(inactive.onOpenSlimes).not.toHaveBeenCalled();
-    const active = setup(3);
-    fireEvent.click(screen.getByRole('button', { name: /有 3 件没做完的事/ }));
-    expect(active.onOpenSlimes).toHaveBeenCalledOnce();
-  });
-
   it('稍后任务使用简洁入口而不显示快捷工具', () => {
     const laterTask = { task: { ...tasks[1], scheduledTime: '15:00' }, dateKey: '2026-09-12' };
     render(<TodayTaskBoard tasks={[]} laterTasks={[laterTask]} dateKey="2026-09-11"
-      date={new Date(2026, 8, 11)} pendingSlimeCount={0} onAdd={vi.fn()}
+      date={new Date(2026, 8, 11)} {...slimeProps} onAdd={vi.fn()}
       onToggle={vi.fn()} onRemove={vi.fn()} onPatch={vi.fn()} onReschedule={vi.fn()}
-      onMoveToday={vi.fn()} onOpenSlimes={vi.fn()} />);
+      onMoveToday={vi.fn()} />);
     fireEvent.click(screen.getByText('稍后'));
     expect(screen.getByText('明天 15:00')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '查看 提交周报' })).toBeInTheDocument();

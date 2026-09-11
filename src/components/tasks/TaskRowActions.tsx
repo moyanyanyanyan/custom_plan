@@ -54,6 +54,7 @@ export function TaskRowActions({ taskName, reminderAt, repeatRule, onReminderCha
         ['weekdays', '工作日']] as const).map(([value, label]) =>
         <button type="button" key={value} className={(repeatRule ?? '') === value ? 'selected' : ''}
           onClick={() => { onRepeatChange(value || null); setPanel(null); }}>{label}</button>)}
+      {repeatRule && <small className="repeat-hint">完成本次后，将自动安排下一次</small>}
     </div>}
   </div>;
 }

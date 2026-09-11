@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ScheduledTask, Task, TaskDraft } from '../../types/task';
 import { AddTaskControl } from './AddTaskControl';
 import { LaterTaskSection } from './LaterTaskSection';
 import { TaskRow } from './TaskRow';
+import { SlimeDrawer } from '../slimes/SlimeDrawer';
+import type { SlimeCompanion } from '../../types/slime';
 import './today-task-board.css';
 
 interface TodayTaskBoardProps {
@@ -10,20 +12,29 @@ interface TodayTaskBoardProps {
   laterTasks: ScheduledTask[];
   dateKey: string;
   date: Date;
-  pendingSlimeCount: number;
-  onAdd: (draft: TaskDraft) => void;
+  focusTaskId?: string | null;
+  recentlyAddedTaskId?: string | null;
+  slime: SlimeCompanion;
+  onAdd: (draft: TaskDraft) => string | void;
   onToggle: (date: string, id: string) => void;
   onRemove: (date: string, id: string) => void;
   onPatch: (date: string, id: string, changes: Partial<Task>) => void;
   onReschedule: (from: string, to: string, id: string, changes?: Partial<Task>) => void;
   onMoveToday: (date: string, id: string) => void;
-  onOpenSlimes: () => void;
+  onSlimeFocus: (date: string, id: string) => void;
+  onSlimeComplete: (id: string) => void;
+  onSlimeSplit: (date: string, id: string) => void;
+  onSlimeDiscard: (id: string) => void;
 }
 
 /** 把任务、进度反馈与过夜任务入口收在同一张今日纸板中。 */
-export function TodayTaskBoard({ tasks, laterTasks, dateKey, date, pendingSlimeCount, onAdd,
-  onToggle, onRemove, onPatch, onReschedule, onMoveToday, onOpenSlimes }: TodayTaskBoardProps) {
+export function TodayTaskBoard({ tasks, laterTasks, dateKey, date, onAdd,
+  focusTaskId, recentlyAddedTaskId, slime, onToggle, onRemove, onPatch, onReschedule, onMoveToday,
+  onSlimeFocus, onSlimeComplete, onSlimeSplit, onSlimeDiscard }: TodayTaskBoardProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  useEffect(() => {
+    if (focusTaskId && tasks.some((task) => task.id === focusTaskId)) setExpandedId(focusTaskId);
+  }, [focusTaskId, tasks]);
   const completedCount = tasks.filter((task) => task.completed).length;
   const dateLabel = new Intl.DateTimeFormat('zh-CN', {
     month: 'numeric', day: 'numeric',
@@ -48,7 +59,7 @@ export function TodayTaskBoard({ tasks, laterTasks, dateKey, date, pendingSlimeC
     <AddTaskControl date={date} onAdd={onAdd} />
     <div className="today-list" role="list" aria-label="今日任务">
       {tasks.map((task) => <TaskRow key={task.id} task={task} dateKey={dateKey}
-        todayKey={dateKey} open={expandedId === task.id}
+        todayKey={dateKey} open={expandedId === task.id} newlyAdded={recentlyAddedTaskId === task.id}
         onExpand={() => setExpandedId(expandedId === task.id ? null : task.id)}
         onToggle={() => onToggle(dateKey, task.id)}
         onPatch={(changes) => onPatch(dateKey, task.id, changes)}
@@ -57,29 +68,13 @@ export function TodayTaskBoard({ tasks, laterTasks, dateKey, date, pendingSlimeC
       {!tasks.length && <p className="today-empty">今天还没有任务，先登记一件小事吧</p>}
     </div>
     <LaterTaskSection tasks={laterTasks} todayKey={dateKey} expandedId={expandedId}
+      recentlyAddedTaskId={recentlyAddedTaskId}
       onExpand={(id) => setExpandedId(expandedId === id ? null : id)} onPatch={onPatch}
       onReschedule={onReschedule}
       onRemove={onRemove} onMoveToday={onMoveToday} />
     <footer className="today-board-footer">
-      <div className="daily-scale" aria-label={`今日刻度，完成 ${completedCount} 项，共 ${tasks.length} 项`}>
-        <span>今日刻度</span>{tasks.slice(0, 10).map((task) =>
-          <i key={task.id} className={task.completed ? 'done' : ''} />)}
-        {tasks.length > 10 && <small>共 {tasks.length} 项</small>}
-      </div>
-      {pendingSlimeCount > 0
-        ? <button type="button" className="slime-corner active" onClick={onOpenSlimes}
-          aria-label={`打开史莱姆图鉴，有 ${pendingSlimeCount} 件没做完的事`}>
-          <SlimeShape awake /><span>史莱姆捡到了 {pendingSlimeCount} 件没做完的事</span>
-        </button>
-        : <div className="slime-corner" aria-label="没有过夜任务，史莱姆正在睡觉">
-          <SlimeShape /><span>没有过夜任务，史莱姆睡着了</span>
-        </div>}
+      <SlimeDrawer slime={slime} onFocus={onSlimeFocus} onComplete={onSlimeComplete}
+        onReschedule={onReschedule} onSplit={onSlimeSplit} onDiscard={onSlimeDiscard} />
     </footer>
   </section>;
-}
-
-function SlimeShape({ awake = false }: { awake?: boolean }) {
-  return <span className={`mini-slime ${awake ? 'awake' : ''}`} aria-hidden="true">
-    <i /><i /><b>{awake ? '' : 'z'}</b>
-  </span>;
 }

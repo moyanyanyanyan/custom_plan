@@ -1,8 +1,9 @@
 import type { ScheduledTask, Task } from '../../types/task';
 import { TaskRow } from './TaskRow';
 
-export function LaterTaskSection({ tasks, todayKey, expandedId, onExpand, onPatch, onReschedule, onRemove, onMoveToday }: {
+export function LaterTaskSection({ tasks, todayKey, expandedId, recentlyAddedTaskId, onExpand, onPatch, onReschedule, onRemove, onMoveToday }: {
   tasks: ScheduledTask[]; todayKey: string;
+  recentlyAddedTaskId?: string | null;
   expandedId: string | null; onExpand: (id: string) => void;
   onPatch: (date: string, id: string, changes: Partial<Task>) => void;
   onReschedule: (from: string, to: string, id: string, changes?: Partial<Task>) => void;
@@ -14,6 +15,7 @@ export function LaterTaskSection({ tasks, todayKey, expandedId, onExpand, onPatc
     <small>{tasks.length} 项</small><b aria-hidden="true">⌃</b></summary>
     <div>{tasks.map(({ task, dateKey }) => <TaskRow key={task.id} task={task}
       dateKey={dateKey} todayKey={todayKey} future open={expandedId === task.id}
+      newlyAdded={recentlyAddedTaskId === task.id}
       onExpand={() => onExpand(task.id)} onToggle={() => undefined}
       onPatch={(changes) => onPatch(dateKey, task.id, changes)}
       onReschedule={(date, changes) => onReschedule(dateKey, date, task.id, changes)}

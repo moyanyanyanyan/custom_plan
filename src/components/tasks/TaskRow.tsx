@@ -8,7 +8,8 @@ import { ensureNotificationPermission } from '../../utils/notifications';
 const repeatLabels: Record<RepeatRule, string> = { daily: '每天', weekly: '每周', weekdays: '工作日' };
 
 export function TaskRow({ task, dateKey, todayKey, future = false, open, onExpand, onToggle, onPatch,
-  onReschedule, onRemove, onMoveToday }: { task: Task; dateKey: string; todayKey: string; future?: boolean;
+  onReschedule, onRemove, onMoveToday, newlyAdded = false }: { task: Task; dateKey: string; todayKey: string; future?: boolean;
+  newlyAdded?: boolean;
   open: boolean; onExpand: () => void;
   onToggle: () => void; onPatch: (changes: Partial<Task>) => void; onRemove: () => void;
   onReschedule: (date: string, changes?: Partial<Task>) => void;
@@ -28,11 +29,11 @@ export function TaskRow({ task, dateKey, todayKey, future = false, open, onExpan
   const toggle = () => {
     setPulse(true); window.setTimeout(() => setPulse(false), 420); onToggle();
   };
-  return <article role="listitem" className={`task-entry ${future ? 'future-task' : ''} ${task.completed ? 'completed' : ''} ${open ? 'focused' : ''} ${pulse ? 'task-pulse' : ''}`}>
+  return <article role="listitem" className={`task-entry ${future ? 'future-task' : ''} ${task.completed ? 'completed' : ''} ${open ? 'focused' : ''} ${pulse ? 'task-pulse' : ''} ${newlyAdded ? 'task-enter' : ''}`}>
     <div className="task-entry-row">
       {future ? <span className="future-pin" aria-hidden="true" />
-        : <button type="button" className="task-check" aria-label={`${task.completed ? '取消完成' : '完成'} ${task.name}`}
-          aria-pressed={task.completed} onClick={toggle}>{task.completed ? '✓' : ''}</button>}
+        : <button type="button" className="task-check" aria-label={`${task.completed ? '已完成' : '完成'} ${task.name}`}
+          aria-pressed={task.completed} disabled={task.completed} onClick={toggle}>{task.completed ? '✓' : ''}</button>}
       <button type="button" className="task-title" aria-label={task.name} onClick={onExpand}>
         <span>{task.name}</span>
         <small className="task-meta"><span>{schedule}</span>

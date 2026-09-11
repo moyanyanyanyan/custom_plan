@@ -10,6 +10,8 @@ export interface ThemeSettings {
 }
 
 export interface AppSettings {
+  panelMode: 'standard' | 'compact';
+  username: string;
   avatarAssetId: string | null;
   wallpaperAssetId: string | null;
   panelOpacity: number;
@@ -24,3 +26,17 @@ export interface PendingUserAsset {
   file: File;
   previewSource: string;
 }
+
+export interface CropTarget {
+  kind: UserAssetKind;
+  file: File;
+  source: string;
+}
+
+export interface CropTransform {
+  zoom: number;
+  offsetX: number;
+  offsetY: number;
+}
+
+export interface CropResult extends PendingUserAsset {}

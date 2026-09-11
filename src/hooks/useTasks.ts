@@ -4,17 +4,24 @@ import { useCurrentDate } from './useCurrentDate';
 import type { ScheduledTask, Task, TaskDraft } from '../types/task';
 import { createTask } from '../utils/taskModel';
 import { moveReminder, nextRepeatDate } from '../utils/taskSchedule';
+import { completeTask } from '../utils/taskCompletion';
+import { sortTasks } from '../utils/taskSort';
 
 /** 今日任务状态与操作的统一入口；界面只通过它读写数据层。 */
 export function useTasks() {
   const { data, update } = useAppData();
   const { dateKey } = useCurrentDate();
-  const tasks = data.tasksByDate[dateKey] ?? [];
+  const tasks = sortTasks(data.tasksByDate[dateKey] ?? []);
   const laterTasks: ScheduledTask[] = Object.entries(data.tasksByDate)
     .filter(([date]) => date > dateKey)
     .flatMap(([date, entries]) => entries.map((task) => ({ task, dateKey: date })))
-    .sort((a, b) => `${a.dateKey}${a.task.scheduledTime ?? ''}`
-      .localeCompare(`${b.dateKey}${b.task.scheduledTime ?? ''}`));
+    .sort((a, b) => `${a.dateKey}`.localeCompare(b.dateKey))
+    .map((entry, _, all) => ({ ...entry, _index: all.indexOf(entry) }))
+    .sort((a, b) => a.dateKey.localeCompare(b.dateKey)
+      || (a.task.completed === b.task.completed ? 0 : a.task.completed ? 1 : -1)
+      || (a.task.scheduledTime ?? '99:99').localeCompare(b.task.scheduledTime ?? '99:99')
+      || a._index - b._index)
+    .map(({ _index, ...entry }) => entry);
   const add = useCallback((draft: TaskDraft) => {
     const now = new Date();
     const task = createTask({ id: crypto.randomUUID(), name: draft.title.trim(), icon: 'flask',
@@ -27,18 +34,17 @@ export function useTasks() {
         [draft.targetDate]: [...(current.tasksByDate[draft.targetDate] ?? []), task],
       },
     })).catch(() => undefined);
+    return task.id;
   }, [update]);
   const toggle = useCallback((taskDate: string, id: string) => {
     const now = new Date();
     const nextId = crypto.randomUUID();
     void update((current) => {
       const source = (current.tasksByDate[taskDate] ?? []).find((task) => task.id === id);
-      if (!source) return current;
-      const completing = !source.completed;
+      if (!source || source.completed) return current;
       const tasksByDate = { ...current.tasksByDate,
-        [taskDate]: (current.tasksByDate[taskDate] ?? []).map((task) => task.id === id
-          ? { ...task, completed: completing, completedAt: completing ? now.toISOString() : null } : task) };
-      if (completing && source.repeatRule) {
+        [taskDate]: completeTask(current.tasksByDate[taskDate] ?? [], id, now.toISOString()) };
+      if (source.repeatRule) {
         const nextDate = nextRepeatDate(taskDate, source.repeatRule);
         const seriesId = source.seriesId ?? source.id;
         const exists = (tasksByDate[nextDate] ?? []).some((task) => task.seriesId === seriesId);
@@ -93,6 +99,13 @@ export function useTasks() {
           ? { ...task, completed: true, completedAt } : task)]),
     ) })).catch(() => undefined);
   }, [update]);
+  const discardHistorical = useCallback((id: string) => {
+    void update((current) => ({ ...current,
+      tasksByDate: Object.fromEntries(Object.entries(current.tasksByDate).map(([date, entries]) =>
+        [date, entries.filter((task) => task.id !== id)])),
+      slimes: current.slimes.filter((meal) => meal.taskId !== id),
+    })).catch(() => undefined);
+  }, [update]);
   return { tasks, laterTasks, dateKey, add, toggle, remove, patch, reschedule,
-    moveToToday, completeHistorical };
+    moveToToday, completeHistorical, discardHistorical };
 }
