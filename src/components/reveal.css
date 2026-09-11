@@ -43,7 +43,7 @@
   height: 100%;
   object-fit: cover;
 }
-.card-placeholder {
+.reveal-card .card-placeholder {
   font-size: 48px;
   color: #888;
 }
@@ -64,12 +64,12 @@
   font-size: 12px;
 }
 
-.card-viewport {
+.reveal-card .card-viewport {
   perspective: 900px;
   cursor: pointer;
 }
 
-.card-face {
+.reveal-card .card-face {
   position: relative;
   width: 100%;
   min-height: 320px;
@@ -79,11 +79,11 @@
   overflow: hidden;
 }
 
-.card-face.back {
+.reveal-card .card-face.back {
   transform: rotateY(180deg);
 }
 
-.reveal-back {
+.reveal-card .reveal-back {
   padding: 16px;
   background: #181824;
   color: #e6e6e6;
@@ -91,19 +91,19 @@
   border-radius: 12px;
 }
 
-.reveal-back h3 {
+.reveal-card .reveal-back h3 {
   margin: 0 0 10px;
   font-size: 16px;
 }
 
-.reveal-back ul {
+.reveal-card .reveal-back ul {
   margin: 0;
   padding-left: 18px;
   line-height: 1.6;
   font-size: 13px;
 }
 
-.reveal-back time {
+.reveal-card .reveal-back time {
   display: block;
   margin-top: 12px;
   font-size: 12px;

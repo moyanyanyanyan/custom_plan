@@ -6,6 +6,9 @@ import { generateCardFromTasks, getMachineState, remainingTasksForCard } from '.
 import { generateCardArt, generateCardCopy } from '../utils/aiClient';
 import { useCards } from './useCards';
 
+// 图片生成依赖外部服务，先关闭默认调用，避免原生图片命令影响主窗口生命周期。
+const ENABLE_CARD_ART = false;
+
 export function useCardGeneration(tasks: Experiment[]) {
   const [inventing, setInventing] = useState(false);
   const [warning, setWarning] = useState('');
@@ -41,6 +44,7 @@ export function useCardGeneration(tasks: Experiment[]) {
       }
       console.info('[invention] opening reveal', card.id);
       setRevealedCard(card);
+      if (!ENABLE_CARD_ART) return;
       void generateCardArt(card).then(async (imageAssetId) => {
         if (!imageAssetId) return;
         const withArt = { ...card, imageAssetId };

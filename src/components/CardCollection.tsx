@@ -11,13 +11,14 @@ function CardArt({ card, count }: { card: InventionCard; count: number }) {
   const [broken, setBroken] = useState(false);
   // 必须稳定引用：AssetImage 的 effect 依赖 onError，内联箭头会导致每帧重新读取资源。
   const failImage = useCallback(() => setBroken(true), []);
+  const name = card.name || '无用功粒子';
   const showImage = !broken && (!!card.imageAssetId || !!card.imagePath);
   return (
-    <div className="card-art" role="img" aria-label={card.name}>
+    <div className="card-art" role="img" aria-label={name}>
       {showImage ? (
         <AssetImage card={card} onError={failImage} />
       ) : (
-        <span className="card-placeholder">{card.name.slice(0, 2)}</span>
+        <span className="card-placeholder">{name.slice(0, 2)}</span>
       )}
       {count > 1 && <span className="stack-badge">×{count}</span>}
     </div>
@@ -54,9 +55,10 @@ export function CardCollection({ cards }: { cards: InventionCard[] }) {
   // 按 stackKey 分组统计数量
   const stackMap = new Map<string, InventionCard[]>();
   for (const card of collection.cards) {
-    const list = stackMap.get(card.stackKey) || [];
+    const key = card.stackKey || card.name || card.id;
+    const list = stackMap.get(key) || [];
     list.push(card);
-    stackMap.set(card.stackKey, list);
+    stackMap.set(key, list);
   }
 
   const stacks = Array.from(stackMap.values());
@@ -87,12 +89,12 @@ export function CardCollection({ cards }: { cards: InventionCard[] }) {
                 <div className={`card-flipper${flipped ? ' flipped' : ''}`}>
                   <div className="card-face card-front">
                     <div className="card-front-inner">
-                      <div className="card-name">{representative.name}</div>
+                      <div className="card-name">{representative.name || '无用功粒子'}</div>
                       <CardArt card={representative} count={count} />
                       <div className="card-desc">{representative.description}</div>
                       <div className="card-footer">
                         <span>离谱发明所</span>
-                        <time>{representative.date}</time>
+                        <time>{representative.date || representative.dailyKey || '未知日期'}</time>
                       </div>
                     </div>
                   </div>
@@ -100,11 +102,11 @@ export function CardCollection({ cards }: { cards: InventionCard[] }) {
                     <div className="card-back-content">
                       <h4>任务来源</h4>
                       <ul>
-                        {representative.backTasks.map((task, idx) => (
+                        {(Array.isArray(representative.backTasks) ? representative.backTasks : []).map((task, idx) => (
                           <li key={idx}>{idx + 1}. {task}</li>
                         ))}
                       </ul>
-                      <time>{representative.date}</time>
+                      <time>{representative.date || representative.dailyKey || '未知日期'}</time>
                     </div>
                   </div>
                 </div>
