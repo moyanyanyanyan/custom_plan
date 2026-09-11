@@ -25,4 +25,14 @@ describe('AddTaskControl', () => {
     fireEvent.change(screen.getByLabelText('重复规则'), { target: { value: 'weekly' } });
     expect(screen.getByLabelText('重复规则')).toHaveValue('weekly');
   });
+
+  it('清空计划日期时回退到当天，避免任务写入空日期', () => {
+    const add = vi.fn();
+    render(<AddTaskControl date={new Date(2026, 8, 11)} onAdd={add} />);
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: '整理资料' } });
+    fireEvent.change(screen.getByLabelText('计划日期'), { target: { value: '' } });
+    expect(screen.getByLabelText('计划日期')).toHaveValue('2026-09-11');
+    fireEvent.click(screen.getByRole('button', { name: '添加', exact: true }));
+    expect(add).toHaveBeenCalledWith(expect.objectContaining({ targetDate: '2026-09-11' }));
+  });
 });

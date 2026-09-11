@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAppData } from './useAppData';
 import { ensureNotificationPermission, sendTaskNotification } from '../utils/notifications';
 
@@ -6,14 +6,16 @@ import { ensureNotificationPermission, sendTaskNotification } from '../utils/not
 export function useTaskReminders() {
   const { data, ready, update } = useAppData();
   const [error, setError] = useState('');
+  const scanning = useRef(false);
   const scan = useCallback(async () => {
-    if (!ready) return;
-    const now = Date.now();
-    const due = Object.values(data.tasksByDate).flat().filter((task) =>
-      !task.completed && !task.remindedAt && task.reminderAt
-      && new Date(task.reminderAt).getTime() <= now);
-    if (!due.length) return;
+    if (!ready || scanning.current) return;
+    scanning.current = true;
     try {
+      const now = Date.now();
+      const due = Object.values(data.tasksByDate).flat().filter((task) =>
+        !task.completed && !task.remindedAt && task.reminderAt
+        && new Date(task.reminderAt).getTime() <= now);
+      if (!due.length) return;
       if (!await ensureNotificationPermission()) {
         setError('系统通知权限未开启，任务提醒已保留'); return;
       }
@@ -29,6 +31,7 @@ export function useTaskReminders() {
       ) }));
       setError('');
     } catch (reason) { setError(`提醒发送失败：${String(reason)}`); }
+    finally { scanning.current = false; }
   }, [data.tasksByDate, ready, update]);
 
   useEffect(() => {

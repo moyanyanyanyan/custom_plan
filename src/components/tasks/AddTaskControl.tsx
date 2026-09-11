@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { RepeatRule, TaskDraft } from '../../types/task';
 import { suggestTaskSteps } from '../../utils/aiClient';
+import { localDateKey } from '../../utils/date';
 import { parseTaskInput } from '../../utils/taskParser';
 
 export function AddTaskControl({ date, onAdd }: { date: Date; onAdd: (draft: TaskDraft) => void }) {
@@ -22,7 +23,7 @@ export function AddTaskControl({ date, onAdd }: { date: Date; onAdd: (draft: Tas
   const changeRaw = (value: string) => { setRaw(value); setDraft(parseTaskInput(value, date)); };
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
-    if (!draft.title.trim()) return;
+    if (!draft.title.trim() || !draft.targetDate) return;
     onAdd(draft); setRaw(''); setDraft(parseTaskInput('', date)); setSuggestion([]);
   };
   const setRepeat = (value: string) => setDraft((current) => ({ ...current,
@@ -35,7 +36,8 @@ export function AddTaskControl({ date, onAdd }: { date: Date; onAdd: (draft: Tas
     {raw && <div className="parse-tags" aria-label="解析结果">
       <button type="button" title="任务标题" onClick={() => { inputRef.current?.focus(); inputRef.current?.select(); }}>{draft.title}</button>
       <label>日期<input aria-label="计划日期" type="date" value={draft.targetDate}
-        onChange={(event) => setDraft({ ...draft, targetDate: event.target.value })} /></label>
+        onChange={(event) => setDraft({ ...draft,
+          targetDate: event.target.value || localDateKey(date) })} /></label>
       <label>时间<input aria-label="计划时间" type="time" value={draft.time ?? ''}
         onChange={(event) => setDraft({ ...draft, time: event.target.value || null })} /></label>
       <label>提醒<input aria-label="提醒时间" type="datetime-local"
