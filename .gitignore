@@ -28,6 +28,8 @@ weisan-*.jsonl
 node_modules/
 dist/
 .pnpm-store/
+src-tauri/target/
+.artifacts/
 
 # 临时目录与文件
 modsearch-temp/
