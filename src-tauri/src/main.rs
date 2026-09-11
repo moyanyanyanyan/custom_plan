@@ -13,11 +13,21 @@ use tauri::Manager;
 /** 隐藏窗口完成定位后再展示，避免启动时在屏幕中央闪现。 */
 fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            if let Some(avatar) = app.get_webview_window("avatar") {
+                let _ = avatar.show();
+                let _ = avatar.set_focus();
+            }
+        }))
         .setup(|app| {
             let data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+            let position_store = data::AvatarPositionStore::open(data_dir.join("avatar-position.json"))?;
+            let saved_position = position_store.load()?;
             app.manage(data::AppStore::open(data_dir)?);
+            app.manage(position_store);
             let avatar = app.get_webview_window("avatar").ok_or("Avatar window missing")?;
-            placement::initialize(&avatar)?;
+            let initial_position = placement::initialize(&avatar, saved_position)?;
+            app.state::<data::AvatarPositionStore>().save(initial_position)?;
             avatar.show()?;
             Ok(())
         })

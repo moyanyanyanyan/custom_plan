@@ -16,3 +16,10 @@ export interface AppSettings {
   soundEnabled: boolean;
   theme: ThemeSettings;
 }
+
+export type UserAssetKind = 'avatar' | 'wallpaper';
+
+export interface PendingUserAsset {
+  file: File;
+  previewSource: string;
+}
