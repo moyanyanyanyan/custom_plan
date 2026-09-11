@@ -16,15 +16,17 @@ export function TaskDetails({ task, dateKey, onPatch, onReschedule }: {
     setStepTitle('');
   };
   return <div className="task-details">
-    <label>任务名称<input value={task.name} maxLength={100}
-      onChange={(event) => onPatch({ name: event.target.value })} /></label>
-    <label>计划日期<input type="date" value={dateKey}
-      onChange={(event) => onReschedule(event.target.value)} /></label>
-    <label>计划时间<input type="time" value={task.scheduledTime ?? ''}
-      onChange={(event) => onPatch({ scheduledTime: event.target.value || null })} /></label>
-    <label>备注<textarea value={task.notes} placeholder="补充一点上下文…"
-      onChange={(event) => onPatch({ notes: event.target.value })} /></label>
-    <div className="steps" aria-label="任务步骤">{task.steps.map((step) =>
+    <div className="task-fields">
+      <label><span>任务名称</span><input value={task.name} maxLength={100}
+        onChange={(event) => onPatch({ name: event.target.value })} /></label>
+      <label><span>计划日期</span><input type="date" value={dateKey}
+        onChange={(event) => onReschedule(event.target.value)} /></label>
+      <label><span>计划时间</span><input type="time" value={task.scheduledTime ?? ''}
+        onChange={(event) => onPatch({ scheduledTime: event.target.value || null })} /></label>
+    </div>
+    <div className="steps" aria-label="任务步骤">
+      <h3>步骤</h3>
+      {task.steps.map((step) =>
       <div key={step.id}><input type="checkbox" checked={step.completed}
         aria-label={`完成步骤 ${step.title}`} onChange={(event) => updateStep(step.id,
           { completed: event.target.checked })} />
@@ -32,7 +34,7 @@ export function TaskDetails({ task, dateKey, onPatch, onReschedule }: {
           onChange={(event) => updateStep(step.id, { title: event.target.value })} />
         <button type="button" aria-label={`删除步骤 ${step.title}`}
           onClick={() => onPatch({ steps: task.steps.filter((item) => item.id !== step.id) })}>×</button></div>)}
-      <div><input value={stepTitle} aria-label="新步骤" placeholder="添加一个步骤"
+      <div className="step-composer"><input value={stepTitle} aria-label="新步骤" placeholder="添加一个步骤"
         onChange={(event) => setStepTitle(event.target.value)}
         onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); addStep(); } }} />
         <button type="button" onClick={addStep}>添加</button></div>

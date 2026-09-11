@@ -10,7 +10,8 @@ export function LaterTaskSection({ tasks, todayKey, expandedId, onExpand, onPatc
   onMoveToday: (date: string, id: string) => void;
 }) {
   if (!tasks.length) return null;
-  return <details className="later-section"><summary>稍后 <span>{tasks.length} 项 ›</span></summary>
+  return <details className="later-section"><summary><span><i aria-hidden="true" />稍后</span>
+    <small>{tasks.length} 项</small><b aria-hidden="true">⌃</b></summary>
     <div>{tasks.map(({ task, dateKey }) => <TaskRow key={task.id} task={task}
       dateKey={dateKey} todayKey={todayKey} future open={expandedId === task.id}
       onExpand={() => onExpand(task.id)} onToggle={() => undefined}

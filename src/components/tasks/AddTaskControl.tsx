@@ -32,7 +32,8 @@ export function AddTaskControl({ date, onAdd }: { date: Date; onAdd: (draft: Tas
   return <form className="smart-add" onSubmit={submit}>
     <div className="smart-add-main"><input ref={inputRef} value={raw} maxLength={100} aria-label="任务内容"
       placeholder="你准备做点什么？" onChange={(event) => changeRaw(event.target.value)} />
-      <button type="submit" disabled={!draft.title.trim()}>添加</button></div>
+      <button type="submit" aria-label="添加" title="添加任务"
+        disabled={!draft.title.trim()}><span aria-hidden="true">＋</span></button></div>
     {raw && <div className="parse-tags" aria-label="解析结果">
       <button type="button" title="任务标题" onClick={() => { inputRef.current?.focus(); inputRef.current?.select(); }}>{draft.title}</button>
       <label>日期<input aria-label="计划日期" type="date" value={draft.targetDate}

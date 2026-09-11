@@ -18,6 +18,6 @@ test('任务面板在常用尺寸下可用', async ({ page }) => {
   await page.getByRole('button', { name: '添加', exact: true }).click();
   await expect(page.locator('.later-section summary')).toContainText('1 项');
   await page.locator('.later-section summary').click();
-  await expect(page.getByRole('button', { name: '取快递' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '取快递', exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });

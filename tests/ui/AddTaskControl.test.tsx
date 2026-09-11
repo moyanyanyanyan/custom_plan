@@ -19,7 +19,10 @@ describe('AddTaskControl', () => {
 
   it('空内容不可提交且支持修改解析标签', () => {
     render(<AddTaskControl date={new Date(2026, 8, 11)} onAdd={vi.fn()} />);
-    expect(screen.getByRole('button', { name: '添加', exact: true })).toBeDisabled();
+    const addButton = screen.getByRole('button', { name: '添加', exact: true });
+    expect(addButton).toBeDisabled();
+    expect(addButton).toHaveAttribute('title', '添加任务');
+    expect(addButton).toHaveTextContent('＋');
     fireEvent.change(screen.getByRole('textbox'), { target: { value: '每天喝水' } });
     expect(screen.getByLabelText('重复规则')).toHaveValue('daily');
     fireEvent.change(screen.getByLabelText('重复规则'), { target: { value: 'weekly' } });
