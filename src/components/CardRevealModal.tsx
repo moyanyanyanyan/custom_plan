@@ -25,6 +25,10 @@ export function CardRevealModal({ card, open, onClose }: CardRevealModalProps) {
   }, [open, onClose]);
 
   if (!open || !card) return null;
+  const name = card.name || '无用功粒子';
+  const description = card.description || '把今天的微小行动，编译成一场荒诞实验。';
+  const date = card.date || card.dailyKey || '未知日期';
+  const backTasks = Array.isArray(card.backTasks) ? card.backTasks : [];
 
   return (
     <div className="reveal-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label="新卡揭示">
@@ -38,13 +42,13 @@ export function CardRevealModal({ card, open, onClose }: CardRevealModalProps) {
                   {(card.imageAssetId || card.imagePath) ? (
                     <AssetImage card={card} />
                   ) : (
-                    <span className="card-placeholder">{card.name.slice(0, 2)}</span>
+                    <span className="card-placeholder">{name.slice(0, 2)}</span>
                   )}
                 </div>
                 <div className="reveal-info">
-                  <h3>{card.name}</h3>
-                  <p>{card.description}</p>
-                  <time>{card.date}</time>
+                  <h3>{name}</h3>
+                  <p>{description}</p>
+                  <time>{date}</time>
                 </div>
               </>
             )}
@@ -52,11 +56,11 @@ export function CardRevealModal({ card, open, onClose }: CardRevealModalProps) {
               <div className="reveal-back">
                 <h3>任务来源</h3>
                 <ul>
-                  {card.backTasks.map((task, idx) => (
+                  {backTasks.map((task, idx) => (
                     <li key={idx}>{idx + 1}. {task}</li>
                   ))}
                 </ul>
-                <time>{card.date}</time>
+                <time>{date}</time>
               </div>
             )}
           </div>

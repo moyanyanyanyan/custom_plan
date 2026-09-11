@@ -146,7 +146,9 @@ export function ControlPanel() {
         moveToToday(date, id);
         setFocusedTaskId(id);
       }} />
-    <button className={`invention-button secondary-content ${generation.state}`} onClick={handleGenerateCard}
+    <button type="button" className={`invention-button secondary-content ${generation.state}`}
+      onPointerDown={(event) => event.stopPropagation()}
+      onClick={(event) => { event.stopPropagation(); void handleGenerateCard(); }}
       disabled={generation.state !== 'ready'}>
       <span className="machine-symbol"><Icon name="flask" size={28} /></span>
       <strong>{machineCopy}</strong>
