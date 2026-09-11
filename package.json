@@ -20,6 +20,9 @@
     "test:desktop": "node scripts/desktop-test.cjs",
     "check": "pnpm run build && pnpm test && pnpm run test:native"
   },
+  "tauri": {
+    "devCommand": "pnpm dev"
+  },
   "dependencies": {
     "@tauri-apps/api": "^2.11.0",
     "react": "^19.0.0",

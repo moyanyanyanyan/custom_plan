@@ -1,4 +1,4 @@
-use tauri::AppHandle;
+﻿use tauri::AppHandle;
 use tauri_plugin_notification::{NotificationExt, PermissionState};
 
 #[tauri::command]
