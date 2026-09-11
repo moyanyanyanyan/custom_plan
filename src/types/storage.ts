@@ -4,13 +4,21 @@ import type { Slime } from './slime';
 import type { Task } from './task';
 
 export interface AppData {
-  schemaVersion: 1;
+  schemaVersion: 2;
+  revision: number;
   tasksByDate: Record<string, Task[]>;
   cards: InventionCard[];
   slimes: Slime[];
   settings: AppSettings;
   updatedAt: string;
   storageWarning?: string | null;
+}
+
+export type SaveStatus = 'saved' | 'pending' | 'failed';
+
+export interface AppDataEvent {
+  sourceId: string;
+  data: AppData;
 }
 
 export interface LegacyData {

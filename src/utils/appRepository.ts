@@ -1,9 +1,11 @@
 import { invoke } from '@tauri-apps/api/core';
-import { emit, listen, type UnlistenFn } from '@tauri-apps/api/event';
+import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { experiments } from '../constants/preview';
 import { createDefaultData } from '../constants/defaults';
-import type { AppData, LegacyData } from '../types/storage';
-import { isCard, isTask, normalizeData, safeArray } from './validation';
+import type { AppData, AppDataEvent, LegacyData } from '../types/storage';
+import type { InventionCard } from '../types/card';
+import { normalizeCards, normalizeData } from './validation';
+import { createTask, normalizeTask } from './taskModel';
 import { isDesktop } from './desktop';
 import { localDateKey } from './date';
 
@@ -14,16 +16,16 @@ const DEMO_CARD_KEY = 'hackathon-card-collection-demo';
 function seededDefaults(now = new Date()): AppData {
   const data = createDefaultData(now);
   const timestamp = now.toISOString();
-  data.tasksByDate[localDateKey(now)] = experiments.map((task) => ({
+  data.tasksByDate[localDateKey(now)] = experiments.map((task) => createTask({
     ...task, createdAt: timestamp, completedAt: task.completed ? timestamp : null,
-  }));
+  }, now));
   return data;
 }
 
 function parseCards(key: string) {
   try {
     const value = JSON.parse(localStorage.getItem(key) || '{}') as { cards?: unknown };
-    return safeArray(value.cards, isCard);
+    return normalizeCards(value.cards);
   } catch { return []; }
 }
 
@@ -35,7 +37,10 @@ function readLegacy(): LegacyData {
       const key = localStorage.key(index);
       if (!key?.startsWith('absurd.tasks.')) continue;
       const date = key.slice('absurd.tasks.'.length);
-      tasksByDate[date] = safeArray(JSON.parse(localStorage.getItem(key) || '[]'), isTask);
+      const stored = JSON.parse(localStorage.getItem(key) || '[]');
+      tasksByDate[date] = Array.isArray(stored) ? stored.flatMap((item) => {
+        const task = normalizeTask(item); return task ? [task] : [];
+      }) : [];
     }
   } catch { /* 损坏的旧记录不会阻止其他数据迁移。 */ }
   return { tasksByDate, cards: parseCards(CARD_KEY), demoCards: parseCards(DEMO_CARD_KEY) };
@@ -53,9 +58,11 @@ function mergeLegacy(defaults: AppData, legacy: LegacyData): AppData {
 export async function loadAppData(): Promise<AppData> {
   const defaults = seededDefaults();
   if (isDesktop) {
-    const current = await invoke<AppData>('load_app_data');
-    if (current.schemaVersion === 1) return normalizeData(current, defaults);
-    return invoke<AppData>('import_legacy_data', { legacy: readLegacy(), defaults });
+    const current = await invoke<{ schemaVersion?: number }>('load_app_data');
+    if (!current.schemaVersion) {
+      return invoke<AppData>('import_legacy_data', { legacy: readLegacy(), defaults });
+    }
+    return normalizeData(current, defaults);
   }
   try {
     const saved = localStorage.getItem(WEB_STATE_KEY);
@@ -66,18 +73,39 @@ export async function loadAppData(): Promise<AppData> {
   return migrated;
 }
 
-export async function saveAppData(data: AppData): Promise<void> {
+export async function saveAppData(data: AppData, expectedRevision: number, sourceId: string): Promise<AppData> {
   if (isDesktop) {
-    await invoke('save_app_data', { data });
-    await emit('app-data-changed', data);
-    return;
+    return invoke<AppData>('save_app_data', { data, expectedRevision, sourceId });
   }
-  localStorage.setItem(WEB_STATE_KEY, JSON.stringify(data));
+  const current = await loadAppData();
+  if (current.revision !== expectedRevision) throw new Error('STATE_CONFLICT');
+  const saved = { ...data, revision: expectedRevision + 1 };
+  localStorage.setItem(WEB_STATE_KEY, JSON.stringify(saved));
+  return saved;
 }
 
-export async function listenForAppData(handler: (data: AppData) => void): Promise<UnlistenFn> {
-  if (!isDesktop) return () => undefined;
-  return listen<AppData>('app-data-changed', (event) => handler(event.payload));
+export async function listenForAppData(handler: (event: AppDataEvent) => void): Promise<UnlistenFn> {
+  if (isDesktop) return listen<AppDataEvent>('app-data-changed', (event) => handler(event.payload));
+  const onStorage = (event: StorageEvent) => {
+    if (event.key !== WEB_STATE_KEY || !event.newValue) return;
+    try { handler({ sourceId: 'browser', data: JSON.parse(event.newValue) as AppData }); } catch { /* 忽略损坏事件。 */ }
+  };
+  window.addEventListener('storage', onStorage);
+  return () => window.removeEventListener('storage', onStorage);
+}
+
+export async function claimDailyCard(dateKey: string, card: InventionCard, sourceId: string) {
+  if (isDesktop) return invoke<AppData>('claim_daily_card', { dateKey, card, sourceId });
+  const current = await loadAppData();
+  if (current.cards.some((item) => item.dailyKey === dateKey)) throw new Error('DAILY_CARD_EXISTS');
+  return saveAppData({ ...current, cards: [...current.cards, card] }, current.revision, sourceId);
+}
+
+export async function updateStoredCard(cardId: string, patch: Partial<InventionCard>, sourceId: string) {
+  if (isDesktop) return invoke<AppData>('update_card', { cardId, patch, sourceId });
+  const current = await loadAppData();
+  const cards = current.cards.map((card) => card.id === cardId ? { ...card, ...patch } : card);
+  return saveAppData({ ...current, cards }, current.revision, sourceId);
 }
 
 export async function loadAsset(assetId: string): Promise<string> {
@@ -85,13 +113,20 @@ export async function loadAsset(assetId: string): Promise<string> {
   return isDesktop ? invoke<string>('load_asset_data_url', { assetId }) : '';
 }
 
-export async function saveUserAsset(file: File, kind: 'avatar' | 'wallpaper'): Promise<string> {
-  const dataUrl = await new Promise<string>((resolve, reject) => {
+/** 只读取一次用户图片，避免预览、取色和落盘使用不同的临时地址。 */
+export async function readUserAsset(file: File): Promise<string> {
+  return new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result));
     reader.onerror = () => reject(new Error('图片读取失败'));
     reader.readAsDataURL(file);
   });
+}
+
+export async function saveUserAsset(
+  file: File, kind: 'avatar' | 'wallpaper', source?: string,
+): Promise<string> {
+  const dataUrl = source ?? await readUserAsset(file);
   if (!isDesktop) return dataUrl;
   const assetId = `${kind}-${Date.now().toString(36)}`;
   return invoke<string>('save_user_asset', { assetId, dataUrl });

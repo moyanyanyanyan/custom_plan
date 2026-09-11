@@ -1,4 +1,5 @@
 use crate::geometry::{self, Rect};
+use crate::data::AvatarPosition;
 use tauri::{PhysicalPosition, PhysicalSize, WebviewWindow};
 
 /** 使用系统工作区，自动排除任务栏和其他已停靠的桌面工具。 */
@@ -32,37 +33,61 @@ fn avatar_rect(window: &WebviewWindow) -> Result<Rect, String> {
     })
 }
 
+/** 保存的位置可能来自旧分辨率或多屏配置，超出当前屏幕时回退默认。 */
+fn is_within_work_area(pos: &AvatarPosition, side: i32, origin_x: i32, origin_y: i32, width: i32, height: i32) -> bool {
+    pos.x >= origin_x
+        && pos.y >= origin_y
+        && pos.x + side <= origin_x + width
+        && pos.y + side <= origin_y + height
+}
+
 /** 首次启动固定在主屏，后续拖动才跟随所在屏幕。 */
-pub fn initialize(avatar: &WebviewWindow) -> Result<(), String> {
+pub fn initialize(avatar: &WebviewWindow, saved: Option<AvatarPosition>) -> Result<AvatarPosition, String> {
     let monitor = avatar
         .primary_monitor()
         .map_err(|e| e.to_string())?
         .ok_or("No primary display available")?;
     let area = monitor.work_area();
-    let side = (64.0 * monitor.scale_factor()).round() as u32;
+    let side = (48.0 * monitor.scale_factor()).round() as u32;
     avatar
         .set_size(PhysicalSize::new(side, side))
         .map_err(|e| e.to_string())?;
-    avatar
-        .set_position(PhysicalPosition::new(
-            area.position.x + area.size.width as i32 - side as i32,
-            area.position.y + (area.size.height as i32 - side as i32) / 2,
+    let default_pos = AvatarPosition {
+        x: area.position.x + area.size.width as i32 - side as i32,
+        y: area.position.y + (area.size.height as i32 - side as i32) / 2,
+    };
+    let initial = saved
+        .filter(|pos| is_within_work_area(
+            pos,
+            side as i32,
+            area.position.x,
+            area.position.y,
+            area.size.width as i32,
+            area.size.height as i32,
         ))
-        .map_err(|e| e.to_string())
+        .unwrap_or(default_pos);
+    avatar.set_position(PhysicalPosition::new(initial.x, initial.y))
+        .map_err(|e| e.to_string())?;
+    let (_, scale) = work_area(avatar)?;
+    let scaled_side = (48.0 * scale).round() as u32;
+    avatar.set_size(PhysicalSize::new(scaled_side, scaled_side))
+        .map_err(|e| e.to_string())?;
+    settle_avatar(avatar, 0.0)
 }
 
-/** 在松手后单次吸附，避免拖动过程中窗口反复跳回边缘。 */
-pub fn snap_avatar(avatar: &WebviewWindow) -> Result<(), String> {
-    let (work, _) = work_area(avatar)?;
-    let (x, y) = geometry::snap(work, avatar_rect(avatar)?);
-    avatar
-        .set_position(PhysicalPosition::new(x, y))
-        .map_err(|e| e.to_string())
+/** 松手时保证头像可见，距离四边较近时才吸附。 */
+pub fn settle_avatar(avatar: &WebviewWindow, threshold: f64) -> Result<AvatarPosition, String> {
+    let (work, scale) = work_area(avatar)?;
+    let distance = (threshold * scale).round() as i32;
+    let (x, y) = geometry::settle(work, avatar_rect(avatar)?, distance);
+    avatar.set_position(PhysicalPosition::new(x, y))
+        .map_err(|e| e.to_string())?;
+    Ok(AvatarPosition { x, y })
 }
 
-/** 每次展开重新计算，使显示器和缩放设置变化后仍然可见。 */
-pub fn place_panel(avatar: &WebviewWindow, panel: &WebviewWindow) -> Result<(), String> {
-    snap_avatar(avatar)?;
+/** 每次展开重新计算，但不改变用户选择的自由位置。 */
+pub fn place_panel(avatar: &WebviewWindow, panel: &WebviewWindow) -> Result<AvatarPosition, String> {
+    let position = settle_avatar(avatar, 0.0)?;
     let (work, scale) = work_area(avatar)?;
     let rect = geometry::panel_rect(work, avatar_rect(avatar)?, scale);
     panel
@@ -70,5 +95,6 @@ pub fn place_panel(avatar: &WebviewWindow, panel: &WebviewWindow) -> Result<(), 
         .map_err(|e| e.to_string())?;
     panel
         .set_size(PhysicalSize::new(rect.width as u32, rect.height as u32))
-        .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string())?;
+    Ok(position)
 }

@@ -1,4 +1,5 @@
-use super::{models::{ChatResponse, GeneratedCopy, ImageResponse}, provider::{AiError, AiProvider}};
+use super::{models::{ChatResponse, GeneratedCopy, ImageResponse, StepSuggestion}, provider::{AiError, AiProvider}};
+use crate::data::AppStore;
 use base64::Engine;
 use std::time::Duration;
 
@@ -18,8 +19,18 @@ impl AiProvider for StepFunProvider {
     }
 }
 
-fn key() -> Result<String, AiError> {
+fn env_key() -> Result<String, AiError> {
     std::env::var("STEPFUN_API_KEY").map_err(|_| AiError::MissingKey)
+}
+
+pub fn stored_key(store: &AppStore) -> Result<String, AiError> {
+    let data = store.load().map_err(|e| AiError::Network(e.to_string()))?;
+    if let Some(value) = data.settings.get("stepfunApiKey").and_then(|v| v.as_str()) {
+        if !value.is_empty() {
+            return Ok(value.into());
+        }
+    }
+    env_key()
 }
 
 fn client() -> Result<reqwest::Client, AiError> {
@@ -35,19 +46,61 @@ async fn checked(response: reqwest::Response) -> Result<reqwest::Response, AiErr
 }
 
 pub async fn generate_copy(system: String, user: String) -> Result<GeneratedCopy, AiError> {
-    let response = client()?.post(CHAT_URL).bearer_auth(key()?).json(&serde_json::json!({
+    generate_copy_with_key(system, user, env_key()?).await
+}
+
+pub async fn generate_image(prompt: String) -> Result<Vec<u8>, AiError> {
+    generate_image_with_key(prompt, env_key()?).await
+}
+
+pub async fn generate_copy_with_store(
+    system: String, user: String, store: &AppStore,
+) -> Result<GeneratedCopy, AiError> {
+    generate_copy_with_key(system, user, stored_key(store)?).await
+}
+
+pub async fn generate_image_with_store(
+    prompt: String, store: &AppStore,
+) -> Result<Vec<u8>, AiError> {
+    generate_image_with_key(prompt, stored_key(store)?).await
+}
+
+pub async fn generate_steps_with_store(
+    system: String, user: String, store: &AppStore,
+) -> Result<Vec<String>, AiError> {
+    let raw = generate_chat_with_key(system, user, stored_key(store)?).await?;
+    extract_steps(&raw).ok_or(AiError::InvalidResponse)
+}
+
+async fn generate_copy_with_key(system: String, user: String, key: String) -> Result<GeneratedCopy, AiError> {
+    let raw = generate_chat_with_key(system, user, key).await?;
+    extract_copy(&raw).ok_or(AiError::InvalidResponse)
+}
+
+async fn generate_chat_with_key(system: String, user: String, key: String) -> Result<String, AiError> {
+    let response = client()?.post(CHAT_URL).bearer_auth(key).json(&serde_json::json!({
         "model": CHAT_MODEL, "messages": [
             {"role": "system", "content": system}, {"role": "user", "content": user}
         ], "temperature": 1.0, "max_tokens": 1000
     })).send().await.map_err(|e| AiError::Network(e.to_string()))?;
     let body: ChatResponse = checked(response).await?.json().await
         .map_err(|_| AiError::InvalidResponse)?;
-    let raw = body.choices.first().ok_or(AiError::InvalidResponse)?.message.content.trim();
-    extract_copy(raw).ok_or(AiError::InvalidResponse)
+    Ok(body.choices.first().ok_or(AiError::InvalidResponse)?.message.content.trim().into())
 }
 
-pub async fn generate_image(prompt: String) -> Result<Vec<u8>, AiError> {
-    let response = client()?.post(IMAGE_URL).bearer_auth(key()?).json(&serde_json::json!({
+pub fn extract_steps(raw: &str) -> Option<Vec<String>> {
+    let candidate = raw.trim().trim_start_matches("```json").trim_start_matches("```")
+        .trim_end_matches("```").trim();
+    let start = candidate.find('{')?;
+    let end = candidate.rfind('}')? + 1;
+    let parsed: StepSuggestion = serde_json::from_str(&candidate[start..end]).ok()?;
+    let steps: Vec<String> = parsed.steps.into_iter().map(|step| step.trim().chars().take(20).collect())
+        .filter(|step: &String| !step.is_empty()).take(6).collect();
+    (steps.len() >= 2).then_some(steps)
+}
+
+async fn generate_image_with_key(prompt: String, key: String) -> Result<Vec<u8>, AiError> {
+    let response = client()?.post(IMAGE_URL).bearer_auth(key).json(&serde_json::json!({
         "model": IMAGE_MODEL, "prompt": prompt, "n": 1,
         "size": "1024x1024", "response_format": "b64_json"
     })).send().await.map_err(|e| AiError::Network(e.to_string()))?;
@@ -69,7 +122,7 @@ pub fn extract_copy(raw: &str) -> Option<GeneratedCopy> {
 
 #[cfg(test)]
 mod tests {
-    use super::extract_copy;
+    use super::{extract_copy, extract_steps};
     #[test]
     fn extracts_json_with_or_without_fence() {
         assert_eq!(extract_copy(r#"{"name":"A","description":"B"}"#).unwrap().name, "A");
@@ -77,4 +130,9 @@ mod tests {
     }
     #[test]
     fn rejects_invalid_copy() { assert!(extract_copy("not json").is_none()); }
+    #[test]
+    fn validates_step_count() {
+        assert_eq!(extract_steps(r#"{"steps":["订酒店","买机票"]}"#).unwrap().len(), 2);
+        assert!(extract_steps(r#"{"steps":["只有一步"]}"#).is_none());
+    }
 }

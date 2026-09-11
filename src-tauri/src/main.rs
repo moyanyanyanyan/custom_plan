@@ -13,36 +13,61 @@ use tauri::Manager;
 /** 隐藏窗口完成定位后再展示，避免启动时在屏幕中央闪现。 */
 fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            if let Some(avatar) = app.get_webview_window("avatar") {
+                let _ = avatar.show();
+                let _ = avatar.set_focus();
+            }
+        }))
+        .plugin(tauri_plugin_notification::init())
         .setup(|app| {
             let data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+            let position_store = data::AvatarPositionStore::open(data_dir.join("avatar-position.json"))?;
+            let saved_position = position_store.load()?;
             app.manage(data::AppStore::open(data_dir)?);
+            app.manage(position_store);
             let avatar = app.get_webview_window("avatar").ok_or("Avatar window missing")?;
-            placement::initialize(&avatar)?;
+            let initial_position = placement::initialize(&avatar, saved_position)?;
+            app.state::<data::AvatarPositionStore>().save(initial_position)?;
             avatar.show()?;
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             commands::window::toggle_panel,
-            commands::window::hide_panel,
+            commands::window::minimize_panel,
             commands::window::drag_avatar,
             commands::window::drag_panel,
             commands::window::exit_app,
             commands::data::load_app_data,
             commands::data::save_app_data,
+            commands::data::claim_daily_card,
+            commands::data::update_card,
             commands::data::import_legacy_data,
             commands::data::load_asset_data_url,
             commands::data::save_user_asset,
             commands::ai::generate_card_copy,
             commands::ai::generate_card_art,
-            commands::ai::generate_slime_copy
+            commands::ai::generate_slime_copy,
+            commands::ai::suggest_task_steps,
+            commands::ai::save_stepfun_api_key,
+            commands::notification::ensure_notification_permission,
+            commands::notification::send_task_notification
         ])
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 if window.label() == "panel" {
-                    // 系统关闭只收起面板，保留头像再次展开所需的窗口实例。
+                    // 系统关闭只最小化面板，保留头像再次展开所需的窗口实例。
                     api.prevent_close();
-                    if let Err(error) = window.hide() {
-                        eprintln!("Failed to hide panel: {error}");
+                    if let Ok(visible) = window.is_visible() {
+                        if visible {
+                            if let Err(error) = window.minimize() {
+                                eprintln!("Failed to minimize panel: {error}");
+                            }
+                        } else {
+                            if let Err(error) = window.hide() {
+                                eprintln!("Failed to hide panel: {error}");
+                            }
+                        }
                     }
                 } else {
                     window.app_handle().exit(0);

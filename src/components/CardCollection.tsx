@@ -1,18 +1,17 @@
-import type { InventionCard } from '../types/card';
-import { useState } from 'react';
-import { useCards } from '../hooks/useCards';
+import type { CardCollection, InventionCard } from '../types/card';
+import { useState, useMemo } from 'react';
 import { AssetImage } from './cards/AssetImage';
 import './collection.css';
 import './cards/browser.css';
 
-/** 单张卡面：有图（dataURL 或 http URL）则渲染 <img>，加载失败/无图时回退到名称占位。 */
+/** 单张卡面：有图（dataURL 或 http URL）则渲染 <img>，加载失败/无图时回退到名称首字占位。 */
 function CardArt({ card, count }: { card: InventionCard; count: number }) {
   const [broken, setBroken] = useState(false);
-  const showImage = !!(card.imageAssetId || card.imagePath) && !broken;
+  const showImage = !!card.imagePath && !broken;
   return (
     <div className="card-art" role="img" aria-label={card.name}>
       {showImage ? (
-        <AssetImage card={card} onError={() => setBroken(true)} />
+        <img src={card.imagePath} alt={card.name} loading="lazy" onError={() => setBroken(true)} />
       ) : (
         <span className="card-placeholder">{card.name.slice(0, 2)}</span>
       )}
@@ -21,8 +20,9 @@ function CardArt({ card, count }: { card: InventionCard; count: number }) {
   );
 }
 
-export function CardCollection() {
-  const { cards } = useCards();
+export function CardCollection({ cards }: { cards: InventionCard[] }) {
+  const collection = useMemo(() => ({ cards, updatedAt: new Date().toISOString() }), [cards]);
+  const [flippedId, setFlippedId] = useState<string | null>(null);
 
   const [expanding, setExpanding] = useState<{ stackKey: string; cards: InventionCard[]; index: number } | null>(null);
 
@@ -49,7 +49,7 @@ export function CardCollection() {
 
   // 按 stackKey 分组统计数量
   const stackMap = new Map<string, InventionCard[]>();
-  for (const card of cards) {
+  for (const card of collection.cards) {
     const list = stackMap.get(card.stackKey) || [];
     list.push(card);
     stackMap.set(card.stackKey, list);
@@ -65,7 +65,7 @@ export function CardCollection() {
           <h3>发明卡牌</h3>
         </div>
         <div className="collection-count">
-          <strong>{cards.length}</strong>
+          <strong>{collection.cards.length}</strong>
           <span>张</span>
         </div>
       </div>
@@ -76,13 +76,34 @@ export function CardCollection() {
         {stacks.map((stack) => {
           const representative = stack[0];
           const count = stack.length;
+          const flipped = flippedId === representative.id;
           return (
             <article key={representative.stackKey} className="card-slot">
-              <CardArt card={representative} count={count} />
-              <div className="card-info">
-                <h4>{representative.name}</h4>
-                <p>{representative.description}</p>
-                <time>{new Date(representative.earnedAt).toLocaleString()}</time>
+              <div className="card-art-wrapper" onClick={() => setFlippedId(flipped ? null : representative.id)}>
+                <div className={`card-flipper${flipped ? ' flipped' : ''}`}>
+                  <div className="card-face card-front">
+                    <div className="card-front-inner">
+                      <div className="card-name">{representative.name}</div>
+                      <CardArt card={representative} count={count} />
+                      <div className="card-desc">{representative.description}</div>
+                      <div className="card-footer">
+                        <span>离谱发明所</span>
+                        <time>{representative.date}</time>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="card-face card-back">
+                    <div className="card-back-content">
+                      <h4>任务来源</h4>
+                      <ul>
+                        {representative.backTasks.map((task, idx) => (
+                          <li key={idx}>{idx + 1}. {task}</li>
+                        ))}
+                      </ul>
+                      <time>{representative.date}</time>
+                    </div>
+                  </div>
+                </div>
               </div>
               <button
                 className="static-button split-button"
@@ -102,20 +123,15 @@ export function CardCollection() {
             <button className="expand-nav" onClick={prevCard} aria-label="上一张">‹</button>
             <div className="expand-card">
               <div className="card-art">
-                {(expanding.cards[expanding.index].imageAssetId || expanding.cards[expanding.index].imagePath) ? (
-                  <AssetImage card={expanding.cards[expanding.index]} />
+                {expanding.cards[expanding.index].imagePath ? (
+                  <img src={expanding.cards[expanding.index].imagePath} alt={expanding.cards[expanding.index].name} />
                 ) : (
                   <span className="card-placeholder">{expanding.cards[expanding.index].name.slice(0, 2)}</span>
                 )}
               </div>
-              <div className="card-info">
-                <h4>{expanding.cards[expanding.index].name}</h4>
-                <p>{expanding.cards[expanding.index].description}</p>
-                <time>{new Date(expanding.cards[expanding.index].earnedAt).toLocaleString()}</time>
-                <div className="expand-meta">
-                  <span className="expand-count">拥有 {expanding.cards.length} 张</span>
-                  <span className="expand-index">{expanding.index + 1}/{expanding.cards.length}</span>
-                </div>
+              <div className="expand-meta">
+                <span className="expand-count">拥有 {expanding.cards.length} 张</span>
+                <span className="expand-index">{expanding.index + 1}/{expanding.cards.length}</span>
               </div>
             </div>
             <button className="expand-nav" onClick={nextCard} aria-label="下一张">›</button>

@@ -1,13 +1,9 @@
-use super::{AppData, LegacyData};
+use super::{persistence::write_state, AppData, LegacyData, StoreError};
 use base64::Engine;
 use std::{fs, path::PathBuf, sync::Mutex};
 
 pub struct AppStore {
-    path: PathBuf,
-    assets: PathBuf,
-    state: Mutex<AppData>,
-    writes: Mutex<()>,
-    migration: Mutex<()>,
+    path: PathBuf, assets: PathBuf, state: Mutex<AppData>, migration: Mutex<()>,
 }
 
 fn preserve_invalid(root: &std::path::Path, path: &std::path::Path, reason: String) -> Result<AppData, String> {
@@ -37,42 +33,62 @@ impl AppStore {
         let state = if path.exists() {
             let raw = fs::read_to_string(&path).map_err(|error| error.to_string())?;
             match serde_json::from_str::<AppData>(&raw) {
-                Ok(data) if data.schema_version <= 1 => data,
+                Ok(data) if data.schema_version <= 2 => data,
                 Ok(_) => preserve_invalid(&root, &path, "数据版本高于当前程序".into())?,
                 Err(error) => preserve_invalid(&root, &path, error.to_string())?,
             }
         } else {
             AppData::default()
         };
-        Ok(Self {
-            path, assets, state: Mutex::new(state),
-            writes: Mutex::new(()), migration: Mutex::new(()),
-        })
+        Ok(Self { path, assets, state: Mutex::new(state), migration: Mutex::new(()) })
     }
 
     pub fn load(&self) -> Result<AppData, String> {
         self.state.lock().map(|data| data.clone()).map_err(|e| e.to_string())
     }
 
-    pub fn save(&self, data: AppData) -> Result<(), String> {
-        let _write = self.writes.lock().map_err(|e| e.to_string())?;
-        let raw = serde_json::to_vec_pretty(&data).map_err(|e| e.to_string())?;
-        let temporary = self.path.with_extension("json.tmp");
-        let backup = self.path.with_extension("json.backup");
-        fs::write(&temporary, raw).map_err(|e| e.to_string())?;
-        if self.path.exists() {
-            if backup.exists() {
-                fs::remove_file(&backup).map_err(|e| e.to_string())?;
+    pub fn save(&self, mut data: AppData, expected: u64) -> Result<AppData, StoreError> {
+        let mut current = self.state.lock().map_err(|e| StoreError::from(e.to_string()))?;
+        if current.revision != expected {
+            return Err(StoreError::StateConflict { latest: Box::new(current.clone()) });
+        }
+        data.revision = expected + 1;
+        write_state(&self.path, &data).map_err(StoreError::from)?;
+        *current = data.clone();
+        Ok(data)
+    }
+
+    pub fn claim_card(&self, date: &str, mut card: serde_json::Value) -> Result<AppData, StoreError> {
+        let mut current = self.state.lock().map_err(|e| StoreError::from(e.to_string()))?;
+        let exists = current.cards.iter().any(|item| {
+            item.get("dailyKey").and_then(|value| value.as_str()) == Some(date)
+                || item.get("earnedAt").and_then(|value| value.as_str())
+                    .is_some_and(|earned| earned.starts_with(date))
+        });
+        if exists { return Err(StoreError::DailyCardExists); }
+        let object = card.as_object_mut().ok_or_else(|| StoreError::from(String::from("Invalid card")))?;
+        object.insert("dailyKey".into(), serde_json::Value::String(date.into()));
+        current.cards.push(card);
+        current.revision += 1;
+        write_state(&self.path, &current).map_err(StoreError::from)?;
+        Ok(current.clone())
+    }
+
+    pub fn update_card(&self, id: &str, patch: serde_json::Value) -> Result<AppData, StoreError> {
+        let mut current = self.state.lock().map_err(|e| StoreError::from(e.to_string()))?;
+        let changes = patch.as_object().ok_or_else(|| StoreError::from(String::from("Invalid card patch")))?;
+        let card = current.cards.iter_mut().find(|item|
+            item.get("id").and_then(|value| value.as_str()) == Some(id))
+            .ok_or_else(|| StoreError::from(String::from("Card not found")))?;
+        let target = card.as_object_mut().ok_or_else(|| StoreError::from(String::from("Invalid stored card")))?;
+        for (key, value) in changes {
+            if !matches!(key.as_str(), "id" | "dailyKey" | "earnedAt" | "type") {
+                target.insert(key.clone(), value.clone());
             }
-            fs::rename(&self.path, &backup).map_err(|e| e.to_string())?;
         }
-        if let Err(error) = fs::rename(&temporary, &self.path) {
-            if backup.exists() { let _ = fs::rename(&backup, &self.path); }
-            return Err(error.to_string());
-        }
-        if backup.exists() { fs::remove_file(&backup).map_err(|e| e.to_string())?; }
-        *self.state.lock().map_err(|e| e.to_string())? = data;
-        Ok(())
+        current.revision += 1;
+        write_state(&self.path, &current).map_err(StoreError::from)?;
+        Ok(current.clone())
     }
 
     /** 旧数据只在空仓库导入一次，避免重复启动产生重复卡牌。 */
@@ -88,7 +104,10 @@ impl AppStore {
         let mut cards = legacy.cards;
         cards.extend(legacy.demo_cards);
         imported.cards = self.migrate_card_assets(cards);
-        self.save(imported.clone())?;
+        let mut state = self.state.lock().map_err(|e| e.to_string())?;
+        imported.revision = state.revision + 1;
+        write_state(&self.path, &imported)?;
+        *state = imported.clone();
         Ok(imported)
     }
 

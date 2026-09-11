@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { generateCardFromTasks, remainingTasksForCard } from '../../src/utils/cardGenerator';
+import { generateCardFromTasks, getMachineState, remainingTasksForCard } from '../../src/utils/cardGenerator';
 import type { Task } from '../../src/types/task';
 
 function task(index: number, completed = true): Task {
@@ -11,10 +11,17 @@ function task(index: number, completed = true): Task {
 }
 
 describe('cardGenerator', () => {
+  it('覆盖发明机的四种状态', () => {
+    expect(getMachineState(5, false, false)).toBe('locked');
+    expect(getMachineState(0, false, false)).toBe('ready');
+    expect(getMachineState(0, false, true)).toBe('generating');
+    expect(getMachineState(0, true, false)).toBe('completed');
+  });
   it('完成五项后按注入时间生成卡牌', () => {
     const date = new Date('2026-09-10T12:00:00.000Z');
     const card = generateCardFromTasks([0, 1, 2, 3, 4].map((index) => task(index)), date);
     expect(card?.earnedAt).toBe(date.toISOString());
+    expect(card?.dailyKey).toBe('2026-09-10');
     expect(card?.sourceTasks).toHaveLength(5);
   });
 

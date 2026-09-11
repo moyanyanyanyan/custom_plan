@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import type { Experiment } from '../types/experiment';
 import type { InventionCard } from '../types/card';
-import { generateCardFromTasks, remainingTasksForCard } from '../utils/cardGenerator';
+import type { InventionMachineState } from '../types/card';
+import { generateCardFromTasks, getMachineState, remainingTasksForCard } from '../utils/cardGenerator';
 import { generateCardArt, generateCardCopy } from '../utils/aiClient';
 import { useCards } from './useCards';
 
@@ -9,8 +10,10 @@ export function useCardGeneration(tasks: Experiment[]) {
   const [inventing, setInventing] = useState(false);
   const [warning, setWarning] = useState('');
   const [revealedCard, setRevealedCard] = useState<InventionCard | null>(null);
-  const { cards, add, canGenerate } = useCards();
+  const { cards, claim, updateCard, canGenerate } = useCards();
   const remaining = remainingTasksForCard(tasks);
+  const alreadyGenerated = !canGenerate();
+  const state: InventionMachineState = getMachineState(remaining, alreadyGenerated, inventing);
 
   const generate = async () => {
     if (inventing || remaining > 0 || !canGenerate()) return;
@@ -19,6 +22,12 @@ export function useCardGeneration(tasks: Experiment[]) {
     try {
       const base = generateCardFromTasks(tasks);
       if (!base) return;
+      try {
+        await claim(base);
+      } catch {
+        setWarning('今天的卡牌已在另一个窗口生成，请查看收藏册。');
+        return;
+      }
       let card = base;
       try {
         const copy = await generateCardCopy(base.sourceTasks);
@@ -32,12 +41,15 @@ export function useCardGeneration(tasks: Experiment[]) {
       } catch (reason) {
         setWarning((current) => current || `AI 插画暂不可用：${String(reason)}`);
       }
-      add(card);
+      await updateCard(card.id, card);
       setRevealedCard(card);
     } finally {
       setInventing(false);
     }
   };
 
-  return { cards, inventing, warning, revealedCard, setRevealedCard, remaining, generate, canGenerate };
+  return {
+    cards, inventing, warning, revealedCard, setRevealedCard,
+    remaining, generate, canGenerate, state,
+  };
 }

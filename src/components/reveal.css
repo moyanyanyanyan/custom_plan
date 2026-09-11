@@ -63,3 +63,57 @@
   color: #888;
   font-size: 12px;
 }
+
+.card-viewport {
+  perspective: 900px;
+  cursor: pointer;
+}
+
+.card-face {
+  position: relative;
+  width: 100%;
+  min-height: 320px;
+  transform-style: preserve-3d;
+  transition: transform 0.35s ease;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.card-face.back {
+  transform: rotateY(180deg);
+}
+
+.reveal-back {
+  padding: 16px;
+  background: #181824;
+  color: #e6e6e6;
+  min-height: 320px;
+  border-radius: 12px;
+}
+
+.reveal-back h3 {
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+
+.reveal-back ul {
+  margin: 0;
+  padding-left: 18px;
+  line-height: 1.6;
+  font-size: 13px;
+}
+
+.reveal-back time {
+  display: block;
+  margin-top: 12px;
+  font-size: 12px;
+  color: #888;
+}
+
+.reveal-hint {
+  text-align: center;
+  margin-top: 10px;
+  font-size: 12px;
+  color: #cfcfcf;
+  opacity: 0.9;
+}
