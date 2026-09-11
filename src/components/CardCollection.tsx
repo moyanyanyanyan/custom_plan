@@ -1,17 +1,21 @@
 import type { CardCollection, InventionCard } from '../types/card';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { AssetImage } from './cards/AssetImage';
 import './collection.css';
 import './cards/browser.css';
 
-/** 单张卡面：有图（dataURL 或 http URL）则渲染 <img>，加载失败/无图时回退到名称首字占位。 */
+/** 单张卡面：新卡插画存于资源文件（imageAssetId），旧卡才用内联 imagePath，
+ *  两者统一交给 AssetImage 解析，与揭晓弹窗共用同一条渲染链路；
+ *  无图或加载失败时回退到名称首字占位。 */
 function CardArt({ card, count }: { card: InventionCard; count: number }) {
   const [broken, setBroken] = useState(false);
-  const showImage = !!card.imagePath && !broken;
+  // 必须稳定引用：AssetImage 的 effect 依赖 onError，内联箭头会导致每帧重新读取资源。
+  const failImage = useCallback(() => setBroken(true), []);
+  const showImage = !broken && (!!card.imageAssetId || !!card.imagePath);
   return (
     <div className="card-art" role="img" aria-label={card.name}>
       {showImage ? (
-        <img src={card.imagePath} alt={card.name} loading="lazy" onError={() => setBroken(true)} />
+        <AssetImage card={card} onError={failImage} />
       ) : (
         <span className="card-placeholder">{card.name.slice(0, 2)}</span>
       )}
@@ -122,13 +126,7 @@ export function CardCollection({ cards }: { cards: InventionCard[] }) {
           <div className="expand-carousel" onClick={(e) => e.stopPropagation()}>
             <button className="expand-nav" onClick={prevCard} aria-label="上一张">‹</button>
             <div className="expand-card">
-              <div className="card-art">
-                {expanding.cards[expanding.index].imagePath ? (
-                  <img src={expanding.cards[expanding.index].imagePath} alt={expanding.cards[expanding.index].name} />
-                ) : (
-                  <span className="card-placeholder">{expanding.cards[expanding.index].name.slice(0, 2)}</span>
-                )}
-              </div>
+              <CardArt card={expanding.cards[expanding.index]} count={1} />
               <div className="expand-meta">
                 <span className="expand-count">拥有 {expanding.cards.length} 张</span>
                 <span className="expand-index">{expanding.index + 1}/{expanding.cards.length}</span>
