@@ -33,6 +33,14 @@ fn avatar_rect(window: &WebviewWindow) -> Result<Rect, String> {
     })
 }
 
+/** 保存的位置可能来自旧分辨率或多屏配置，超出当前屏幕时回退默认。 */
+fn is_within_work_area(pos: &AvatarPosition, side: i32, origin_x: i32, origin_y: i32, width: i32, height: i32) -> bool {
+    pos.x >= origin_x
+        && pos.y >= origin_y
+        && pos.x + side <= origin_x + width
+        && pos.y + side <= origin_y + height
+}
+
 /** 首次启动固定在主屏，后续拖动才跟随所在屏幕。 */
 pub fn initialize(avatar: &WebviewWindow, saved: Option<AvatarPosition>) -> Result<AvatarPosition, String> {
     let monitor = avatar
@@ -44,10 +52,20 @@ pub fn initialize(avatar: &WebviewWindow, saved: Option<AvatarPosition>) -> Resu
     avatar
         .set_size(PhysicalSize::new(side, side))
         .map_err(|e| e.to_string())?;
-    let initial = saved.unwrap_or(AvatarPosition {
+    let default_pos = AvatarPosition {
         x: area.position.x + area.size.width as i32 - side as i32,
         y: area.position.y + (area.size.height as i32 - side as i32) / 2,
-    });
+    };
+    let initial = saved
+        .filter(|pos| is_within_work_area(
+            pos,
+            side as i32,
+            area.position.x,
+            area.position.y,
+            area.size.width as i32,
+            area.size.height as i32,
+        ))
+        .unwrap_or(default_pos);
     avatar.set_position(PhysicalPosition::new(initial.x, initial.y))
         .map_err(|e| e.to_string())?;
     let (_, scale) = work_area(avatar)?;
