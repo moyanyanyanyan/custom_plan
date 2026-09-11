@@ -109,6 +109,9 @@ dist
 src-tauri/target/
 src-tauri/gen/schemas/
 .artifacts/
+
+# Playwright test output
+test-results/
 src-tauri/icons/*
 !src-tauri/icons/icon.png
 !src-tauri/icons/icon.ico
