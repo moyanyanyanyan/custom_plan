@@ -19,6 +19,7 @@
 .identity { gap: 13px; margin-bottom: 8px; }
 .identity h2 { font-size: 26px; letter-spacing: 4px; font-weight: 600; }
 .identity > span { font-size: 11px; padding: 4px 9px; border: 1px solid #a3c3ff4a; border-radius: 20px; background: #81aaff22; }
+.streak-badge { font-size: 11px; padding: 4px 9px; border: 1px solid color-mix(in srgb, var(--theme-accent) 60%, transparent); border-radius: 20px; background: color-mix(in srgb, var(--theme-accent) 18%, transparent); color: var(--theme-text); white-space: nowrap; }
 .progress-label { justify-content: space-between; font-size: 13px; color: var(--theme-muted-text); }
 .progress-label strong { font-size: 20px; color: var(--theme-text); font-weight: 500; }
 .progress-label small { font-size: 13px; color: #abbce0; }

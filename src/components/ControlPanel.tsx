@@ -15,6 +15,7 @@ import { useSettings } from '../hooks/useSettings';
 import { useCurrentDate } from '../hooks/useCurrentDate';
 import { useTaskReminders } from '../hooks/useTaskReminders';
 import { playCompletionSound } from '../utils/feedback';
+import { calculateCardStreak } from '../utils/streak';
 import './panel.css';
 import './collection.css';
 import './reveal.css';
@@ -35,6 +36,7 @@ export function ControlPanel() {
   const { settings } = useSettings();
   const { now } = useCurrentDate();
   const { reminderError } = useTaskReminders();
+  const streak = calculateCardStreak(generation.cards, now);
 
   const windowAction = (command: 'minimize_panel' | 'exit_app' | 'drag_panel') => {
     void desktopCommand(command).catch((reason) => setError(String(reason)));
@@ -89,7 +91,7 @@ export function ControlPanel() {
     <section className="overview" aria-label="研究所概况">
       <div className="profile-avatar"><AvatarArt /><span>RESEARCHER / 001</span></div>
       <div className="profile-info">
-        <div className="identity"><h2>墨言</h2><span>代理所长</span></div>
+        <div className="identity"><h2>{settings.username}</h2>{streak > 0 && <b className="streak-badge">🔥 坚持 {streak} 天</b>}<span>代理所长</span></div>
         <div className="progress-label"><span>今日研究进度</span><strong>{completedCount}<small> / {tasks.length}</small></strong></div>
         <div className="progress-track" role="progressbar" aria-label="今日研究进度" aria-valuenow={completedCount} aria-valuemin={0} aria-valuemax={tasks.length}>
           <span style={{ width: `${tasks.length ? completedCount / tasks.length * 100 : 0}%` }} />

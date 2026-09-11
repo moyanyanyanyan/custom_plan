@@ -32,6 +32,5 @@ export async function applyTheme(settings: AppSettings): Promise<void> {
     ? await loadAsset(settings.wallpaperAssetId).catch(() => '') : '';
   if (version !== applicationVersion) return;
   root.style.setProperty('--panel-wallpaper', wallpaper ? `url("${wallpaper}")` : 'none');
-  const overlay = wallpaper ? 0.25 + settings.panelOpacity * 0.45 : settings.panelOpacity;
-  root.style.setProperty('--panel-overlay-opacity', String(overlay));
+  root.style.setProperty('--panel-overlay-opacity', String(settings.panelOpacity));
 }
