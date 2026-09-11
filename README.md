@@ -1,35 +1,47 @@
 # 离谱发明所
 
-## 一句话介绍
-一个探索创意与趣味发明的桌面应用。
+> 把每天完成的小事，炼成毫无用处但值得收藏的荒诞发明。
 
-## 为什么做
-把有趣的脑洞和发明想法集中展示，方便快速浏览和分享。
+## 项目简介
 
-## 核心功能
-- 浏览发明创意列表
-- 查看创意详情与介绍
-- 互动反馈与评价
-- 提交新的创意发明
+一款基于 Tauri、React 和 TypeScript 的 Windows 桌面任务工具，包含悬浮头像、
+今日任务、荒诞发明卡牌、本地个性化主题和 StepFun AI 能力。
 
-## 使用方法
-1. 打开「离谱发明所」
-2. 浏览发明创意卡片
-3. 点击感兴趣的发明查看详情
-4. 参与互动或提交你的创意
+## 技术栈
 
-## 在线体验
-- 公开链接：https://boisterous-genie-bc584d.netlify.app
-- 示例输入：勾选「编程、技术、人工智能」三个标签，点击生成推荐
+- 前端：React 19、TypeScript、Vite
+- 桌面端：Tauri 2、Rust
+- 测试：Vitest、Testing Library、Playwright、Cargo Test
 
-## 已知限制
-- 数据为静态演示数据，不是真实发布平台
-- 「提交创意」按钮仅做提示，未接入真实后端
-- 联系方式为示例内容，使用前需核实
+## 快速开始
 
-## AI 使用说明
-本项目为纯前端静态页面，未调用任何 AI 接口。页面行为可通过浏览器开发者工具和查看源代码核验。
+```bash
+git clone https://gitee.com/moyanyanyanyan/hackson.git
+cd hackson
+pnpm install
+```
 
-## 素材与致谢
-- 交互与视觉参考创意发明展示场景
-- 内容为演示用途，不代表真实在招信息
+Windows 开发调试时，先退出正在运行的正式版，再执行：
+
+```powershell
+.\scripts\dev-desktop.ps1
+```
+
+脚本会切换到 Node 22.22.2 并启动 Tauri 热更新；按 `Ctrl+C` 停止。
+日常调试不需要删除或重新生成 `node_modules`、`dist` 和 `target`。
+
+## 分支策略
+
+- `master`：稳定版本
+- `feat/xxx`：新功能开发
+- `fix/xxx`：问题修复
+
+## 贡献方式
+
+1. 拉取最新代码
+2. 创建功能分支
+3. 提交代码并发起 Pull Request
+
+## 许可证
+
+[MulanPSL2](LICENSE)

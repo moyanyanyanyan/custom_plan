@@ -32,7 +32,9 @@ function findAppProcess(startedAt) {
 
 async function main() {
   const startedAt = Date.now();
-  const tauri = spawn('npm.cmd', ['run', 'desktop'], {
+  // Node 22 在 Windows 不再直接启动 .cmd，统一交给系统命令解释器处理。
+  const tauri = spawn(process.env.ComSpec || 'cmd.exe', ['/d', '/s', '/c',
+    'corepack pnpm run desktop'], {
     env: {
       ...process.env,
       WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: '--remote-debugging-port=9222',

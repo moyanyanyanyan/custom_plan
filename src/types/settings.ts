@@ -17,3 +17,10 @@ export interface AppSettings {
   theme: ThemeSettings;
   stepfunApiKey: string;
 }
+
+export type UserAssetKind = 'avatar' | 'wallpaper';
+
+export interface PendingUserAsset {
+  file: File;
+  previewSource: string;
+}

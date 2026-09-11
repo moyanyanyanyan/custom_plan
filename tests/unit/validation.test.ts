@@ -13,7 +13,11 @@ describe('normalizeData', () => {
       schemaVersion: 1, tasksByDate: { '2026-09-10': [validTask, { id: 3 }] },
       cards: [{ id: 2 }], slimes: [], settings: fallback.settings, updatedAt: fallback.updatedAt,
     }, fallback);
-    expect(normalized.tasksByDate['2026-09-10']).toEqual([validTask]);
+    expect(normalized.tasksByDate['2026-09-10']).toEqual([expect.objectContaining(validTask)]);
+    expect(normalized.tasksByDate['2026-09-10'][0]).toMatchObject({
+      scheduledTime: null, repeatRule: null, notes: '', steps: [],
+    });
+    expect(normalized.schemaVersion).toBe(2);
     expect(normalized.cards).toEqual([]);
   });
 

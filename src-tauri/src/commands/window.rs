@@ -1,5 +1,5 @@
-use crate::placement;
-use tauri::{AppHandle, Manager, WebviewWindow};
+use crate::{data::AvatarPositionStore, placement};
+use tauri::{AppHandle, Manager, State, WebviewWindow};
 
 fn authorize(window: &WebviewWindow) -> Result<(), String> {
     matches!(window.label(), "avatar" | "panel").then_some(())
@@ -11,13 +11,16 @@ fn get_window(app: &AppHandle, label: &str) -> Result<WebviewWindow, String> {
 }
 
 #[tauri::command]
-pub async fn toggle_panel(app: AppHandle, window: WebviewWindow) -> Result<(), String> {
+pub async fn toggle_panel(
+    app: AppHandle, window: WebviewWindow, positions: State<'_, AvatarPositionStore>,
+) -> Result<(), String> {
     authorize(&window)?;
     let panel = get_window(&app, "panel")?;
     if panel.is_visible().map_err(|e| e.to_string())? {
         return panel.hide().map_err(|e| e.to_string());
     }
-    placement::place_panel(&get_window(&app, "avatar")?, &panel)?;
+    let position = placement::place_panel(&get_window(&app, "avatar")?, &panel)?;
+    positions.save(position)?;
     panel.show().map_err(|e| e.to_string())?;
     panel.set_focus().map_err(|e| e.to_string())
 }
@@ -51,7 +54,8 @@ pub async fn drag_avatar(app: AppHandle, window: WebviewWindow) -> Result<(), St
         while unsafe { windows_sys::Win32::UI::Input::KeyboardAndMouse::GetAsyncKeyState(1) } < 0 {
             std::thread::sleep(std::time::Duration::from_millis(16));
         }
-        placement::snap_avatar(&window)
+        let position = placement::settle_avatar(&window, 24.0)?;
+        app.state::<AvatarPositionStore>().save(position)
     }).await.map_err(|e| e.to_string())?
 }
 

@@ -97,8 +97,8 @@
 .brand h1 { font-size: 18px; letter-spacing: 2px; }
 .brand p { margin-top: 2px; font-size: 5px; letter-spacing: 1.4px; }
 .preview-label { display: none; }
-.overview { grid-template-columns: 64px 1fr 104px; gap: 10px; margin-bottom: 8px; }
-.profile-avatar { width: 62px; height: 62px; padding: 3px; }
+.overview { grid-template-columns: 84px 1fr 104px; gap: 10px; margin-bottom: 8px; }
+.profile-avatar { width: 82px; height: 82px; padding: 3px; }
 .profile-avatar > span:last-child { display: none; }
 .identity { gap: 8px; margin-bottom: 3px; }
 .identity h2 { font-size: 18px; letter-spacing: 2px; }

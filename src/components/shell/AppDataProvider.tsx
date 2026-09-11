@@ -7,6 +7,20 @@ import { claimDailyCard as claimCard, listenForAppData, loadAppData,
   saveAppData, updateStoredCard } from '../../utils/appRepository';
 import { applyTheme } from '../../utils/theme';
 
+/** 独立 WebView 可能早于 Rust 状态注册发起首次读取，仅对该启动竞态短暂重试。 */
+async function loadInitialData() {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    try { return await loadAppData(); }
+    catch (reason) {
+      lastError = reason;
+      if (!String(reason).includes('state not managed')) throw reason;
+      await new Promise((resolve) => window.setTimeout(resolve, 50));
+    }
+  }
+  throw lastError;
+}
+
 export function AppDataProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<AppData>(createDefaultData);
   const [ready, setReady] = useState(false);
@@ -19,7 +33,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let active = true;
-    loadAppData().then((loaded) => {
+    loadInitialData().then((loaded) => {
       if (!active) return;
       // 启动读取较慢时保留用户已经提交的乐观更新，由队列基于最新数据重放。
       if (pending.current === 0) {
@@ -38,10 +52,13 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let dispose: () => void = () => undefined;
-    const acceptLatest = (incoming: AppData) => {
-      if (pending.current > 0 || incoming.revision <= dataRef.current.revision) return;
+    const acceptLatest = (incoming: AppData, acceptSameRevision = false) => {
+      const isOlder = incoming.revision < dataRef.current.revision;
+      const isDuplicate = incoming.revision === dataRef.current.revision && !acceptSameRevision;
+      if (pending.current > 0 || isOlder || isDuplicate) return;
       dataRef.current = incoming;
       setData(incoming);
+      setError(incoming.storageWarning ?? '');
     };
     void listenForAppData((incoming) => {
       if (incoming.sourceId === sourceId.current || pending.current > 0) return;
@@ -49,7 +66,8 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     }).then(async (unlisten) => {
       dispose = unlisten;
       // 监听建立后再校验一次，补回窗口启动阶段可能错过的广播。
-      acceptLatest(await loadAppData());
+      // 首次读取可与默认 revision 相同，但仍包含用户的持久化设置。
+      acceptLatest(await loadInitialData(), true);
     }).catch((reason) => setError(String(reason)));
     return () => dispose();
   }, []);

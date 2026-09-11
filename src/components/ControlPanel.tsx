@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { AvatarArt } from './AvatarArt';
 import { Icon } from './Icon';
-import { ExperimentList } from './ExperimentList';
 import { CardRevealModal } from './CardRevealModal';
 import { SettingsPanel } from './settings/SettingsPanel';
-import { AddTaskControl } from './tasks/AddTaskControl';
+import { TodayTaskBoard } from './tasks/TodayTaskBoard';
 import { ArchiveModal } from './cards/ArchiveModal';
 import { SlimeArchive } from './slimes/SlimeArchive';
 import { useTasks } from '../hooks/useTasks';
@@ -13,9 +12,10 @@ import { useCardGeneration } from '../hooks/useCardGeneration';
 import { useSlimes } from '../hooks/useSlimes';
 import { useAppData } from '../hooks/useAppData';
 import { useSettings } from '../hooks/useSettings';
+import { useCurrentDate } from '../hooks/useCurrentDate';
+import { useTaskReminders } from '../hooks/useTaskReminders';
 import { playCompletionSound } from '../utils/feedback';
 import './panel.css';
-import './experiments.css';
 import './collection.css';
 import './reveal.css';
 
@@ -26,12 +26,15 @@ export function ControlPanel() {
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [slimesOpen, setSlimesOpen] = useState(false);
   const [energyToast, setEnergyToast] = useState(false);
-  const { tasks, add, toggle, remove, completeHistorical } = useTasks();
+  const { tasks, laterTasks, dateKey, add, toggle, remove, patch, reschedule,
+    moveToToday, completeHistorical } = useTasks();
   const completedCount = tasks.filter((t) => t.completed).length;
   const generation = useCardGeneration(tasks);
   const slimes = useSlimes();
   const { error: storageError, saveStatus, retrySave } = useAppData();
   const { settings } = useSettings();
+  const { now } = useCurrentDate();
+  const { reminderError } = useTaskReminders();
 
   const windowAction = (command: 'minimize_panel' | 'exit_app' | 'drag_panel') => {
     void desktopCommand(command).catch((reason) => setError(String(reason)));
@@ -39,7 +42,7 @@ export function ControlPanel() {
 
   const handleToggle = (id: string) => {
     const completing = !tasks.find((task) => task.id === id)?.completed;
-    toggle(id);
+    toggle(dateKey, id);
     if (!completing) return;
     playCompletionSound(settings.soundEnabled);
     setEnergyToast(true);
@@ -78,9 +81,9 @@ export function ControlPanel() {
         <button disabled={!isDesktop} onClick={() => windowAction('exit_app')} title="退出应用" aria-label="退出应用"><Icon name="power" size={16} /></button>
       </div>
     </header>
-    {(error || storageError || generation.warning || saveStatus === 'pending') &&
+    {(error || storageError || reminderError || generation.warning || saveStatus === 'pending') &&
       <div role="alert" className="window-error">
-        <span>{error || storageError || generation.warning || '数据保存中…'}</span>
+        <span>{error || storageError || reminderError || generation.warning || '数据保存中…'}</span>
         {saveStatus === 'failed' && <button onClick={() => void retrySave()}>重试保存</button>}
       </div>}
     <section className="overview" aria-label="研究所概况">
@@ -99,19 +102,11 @@ export function ControlPanel() {
         <div><strong>{generation.cards.length}</strong><Icon name="arrow" /></div><span className="collection-caption">收藏每一次认真生活</span>
       </button>
     </section>
-    <section className="console" aria-labelledby="console-title">
-      <div className="console-heading">
-        <div><span className="eyebrow">DAILY RESEARCH</span><h2 id="console-title">今日控制台</h2></div>
-        <AddTaskControl onAdd={add} />
-      </div>
-      <div className="metrics">
-        <div><i className="metric-dot stable" /><span>稳定余波</span><strong>{completedCount}</strong></div>
-        <div><i className="metric-dot stagnant" /><span>停滞能量</span><strong>{tasks.length - completedCount}</strong></div>
-        <button className="slime-metric" onClick={() => setSlimesOpen(true)}><Icon name="slime" size={20} />
-          <span>史莱姆图鉴</span><strong>{pendingSlimes}/{slimes.length}</strong></button>
-      </div>
-      <ExperimentList tasks={tasks} onToggle={handleToggle} onRemove={remove} />
-    </section>
+    <TodayTaskBoard tasks={tasks} laterTasks={laterTasks} dateKey={dateKey}
+      date={now} pendingSlimeCount={pendingSlimes} onAdd={add}
+      onToggle={(date, id) => date === dateKey ? handleToggle(id) : toggle(date, id)}
+      onRemove={remove} onPatch={patch} onReschedule={reschedule} onMoveToday={moveToToday}
+      onOpenSlimes={() => setSlimesOpen(true)} />
     <button className={`invention-button ${generation.state}`} onClick={handleGenerateCard}
       disabled={generation.state !== 'ready'}>
       <span className="machine-symbol"><Icon name="flask" size={28} /></span>

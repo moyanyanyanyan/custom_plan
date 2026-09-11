@@ -6,18 +6,21 @@ pub struct Rect {
     pub height: i32,
 }
 
-/** 全部使用物理像素，避免混合缩放的显示器之间产生坐标漂移。 */
-pub fn snap(work: Rect, avatar: Rect) -> (i32, i32) {
+fn settle_axis(position: i32, minimum: i32, maximum: i32, threshold: i32) -> i32 {
+    let clamped = position.clamp(minimum, maximum);
+    if clamped - minimum <= threshold { minimum }
+    else if maximum - clamped <= threshold { maximum }
+    else { clamped }
+}
+
+/** 全部使用物理像素，只在距离边缘足够近时吸附。 */
+pub fn settle(work: Rect, avatar: Rect, threshold: i32) -> (i32, i32) {
     let right = work.x + (work.width - avatar.width).max(0);
-    let x = if avatar.x + avatar.width / 2 < work.x + work.width / 2 {
-        work.x
-    } else {
-        right
-    };
-    let y = avatar
-        .y
-        .clamp(work.y, work.y + (work.height - avatar.height).max(0));
-    (x, y)
+    let bottom = work.y + (work.height - avatar.height).max(0);
+    (
+        settle_axis(avatar.x, work.x, right, threshold.max(0)),
+        settle_axis(avatar.y, work.y, bottom, threshold.max(0)),
+    )
 }
 
 /** 为头像预留横向空间，窄屏下缩小面板而不覆盖桌面入口。 */

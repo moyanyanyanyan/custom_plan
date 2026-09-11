@@ -18,6 +18,15 @@ pub async fn generate_slime_copy(
 }
 
 #[tauri::command]
+pub async fn suggest_task_steps(
+    store: State<'_, crate::data::AppStore>, title: String,
+) -> Result<Vec<String>, String> {
+    let (system, user) = prompts::task_steps(&title);
+    crate::ai::stepfun::generate_steps_with_store(system, user, &store)
+        .await.map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub async fn generate_card_art(
     store: State<'_, crate::data::AppStore>, card_id: String, name: String, description: String,
 ) -> Result<String, String> {
