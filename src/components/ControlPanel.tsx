@@ -33,7 +33,7 @@ export function ControlPanel() {
   const { error: storageError, saveStatus, retrySave } = useAppData();
   const { settings } = useSettings();
 
-  const windowAction = (command: 'hide_panel' | 'exit_app' | 'drag_panel') => {
+  const windowAction = (command: 'minimize_panel' | 'exit_app' | 'drag_panel') => {
     void desktopCommand(command).catch((reason) => setError(String(reason)));
   };
 
@@ -74,7 +74,7 @@ export function ControlPanel() {
       </div>
       <div className="window-actions"><span className="preview-label">界面预览</span>
         <button onClick={() => setSettingsOpen(true)} title="研究所设置" aria-label="研究所设置"><Icon name="settings" size={16} /></button>
-        <button disabled={!isDesktop} onClick={() => windowAction('hide_panel')} title="收起面板" aria-label="收起面板"><Icon name="minus" size={17} /></button>
+        <button disabled={!isDesktop} onClick={() => windowAction('minimize_panel')} title="最小化面板" aria-label="最小化面板"><Icon name="minus" size={17} /></button>
         <button disabled={!isDesktop} onClick={() => windowAction('exit_app')} title="退出应用" aria-label="退出应用"><Icon name="power" size={16} /></button>
       </div>
     </header>

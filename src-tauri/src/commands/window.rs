@@ -23,9 +23,14 @@ pub async fn toggle_panel(app: AppHandle, window: WebviewWindow) -> Result<(), S
 }
 
 #[tauri::command]
-pub async fn hide_panel(app: AppHandle, window: WebviewWindow) -> Result<(), String> {
+pub async fn minimize_panel(app: AppHandle, window: WebviewWindow) -> Result<(), String> {
     authorize(&window)?;
-    get_window(&app, "panel")?.hide().map_err(|e| e.to_string())
+    let panel = get_window(&app, "panel")?;
+    if panel.is_minimized().map_err(|e| e.to_string())? {
+        panel.unminimize().map_err(|e| e.to_string())?;
+        return panel.set_focus().map_err(|e| e.to_string());
+    }
+    panel.minimize().map_err(|e| e.to_string())
 }
 
 #[tauri::command]

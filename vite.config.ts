@@ -7,7 +7,7 @@ export default defineConfig({
     port: 1420,
     strictPort: true,
     watch: {
-      ignored: ['src-tauri/target/**']
+      ignored: ['**/target/**', '**/*.exe']
     }
   },
   clearScreen: false,

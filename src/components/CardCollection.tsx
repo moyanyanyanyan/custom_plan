@@ -1,6 +1,5 @@
 import type { CardCollection, InventionCard } from '../types/card';
-import { loadCollection } from '../utils/cardStorage';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { AssetImage } from './cards/AssetImage';
 import './collection.css';
 import './cards/browser.css';
@@ -21,8 +20,8 @@ function CardArt({ card, count }: { card: InventionCard; count: number }) {
   );
 }
 
-export function CardCollection() {
-  const [collection, setCollection] = useState<CardCollection>(loadCollection);
+export function CardCollection({ cards }: { cards: InventionCard[] }) {
+  const collection = useMemo(() => ({ cards, updatedAt: new Date().toISOString() }), [cards]);
   const [flippedId, setFlippedId] = useState<string | null>(null);
 
   const [expanding, setExpanding] = useState<{ stackKey: string; cards: InventionCard[]; index: number } | null>(null);
