@@ -35,8 +35,15 @@ corepack pnpm run check
 corepack pnpm run desktop:build
 ```
 
-桌面构建只生成可执行文件，不生成安装包：
+`desktop:build` 会先重新构建前端，再生成 Windows NSIS 安装程序：
+`src-tauri/target/release/bundle/nsis/离谱发明所_0.1.0_x64-setup.exe`。
+如果只需要用于诊断的裸可执行文件，执行 `corepack pnpm run desktop:build:binary`，产物为
 `src-tauri/target/release/absurd-invention-lab.exe`。
+
+安装程序采用当前用户安装模式，不要求管理员权限，并创建开始菜单及卸载入口。
+目标机器需要联网：缺少 Microsoft Edge WebView2 Runtime 时，安装程序会在线下载安装。
+当前 `0.1.0` 安装包尚未进行代码签名，Windows 可能显示“未知发布者”或 SmartScreen 提示；
+确认安装包来自项目的 Gitee Release 且 SHA-256 一致后，可在“更多信息”中选择“仍要运行”。
 
 本次已生成并验收的原型程序为 `src-tauri/target/debug/absurd-invention-lab.exe`，可直接双击。
 复现该构建使用 `corepack pnpm run tauri -- build --debug --no-bundle`，程序内已包含界面资源，

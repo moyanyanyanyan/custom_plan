@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "identifier": "com.absurdlab.desktop",
   "build": {
+    "beforeBuildCommand": "corepack pnpm run build",
     "devUrl": "http://127.0.0.1:1420",
     "frontendDist": "../dist"
   },
@@ -43,5 +44,19 @@
       "devCsp": "default-src 'self'; script-src 'self' 'unsafe-inline'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; connect-src ipc: http://ipc.localhost http://127.0.0.1:1420 ws://127.0.0.1:1420"
     }
   },
-  "bundle": { "active": false, "icon": ["icons/icon.png", "icons/icon.ico"] }
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "useLocalToolsDir": true,
+    "icon": ["icons/icon.png", "icons/icon.ico"],
+    "windows": {
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper",
+        "silent": true
+      },
+      "nsis": {
+        "installMode": "currentUser"
+      }
+    }
+  }
 }
