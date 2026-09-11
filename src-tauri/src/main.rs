@@ -11,6 +11,21 @@ mod placement;
 use tauri::Manager;
 
 /** 隐藏窗口完成定位后再展示，避免启动时在屏幕中央闪现。 */
+fn read_stepfun_key_from_dsh() -> Option<String> {
+    let home = std::env::var_os("USERPROFILE")?;
+    let path = std::path::Path::new(&home).join(".dsh").join(".credentials.yaml");
+    let content = std::fs::read_to_string(path).ok()?;
+    for line in content.lines() {
+        if let Some(rest) = line.strip_prefix("STEPFUN_API_KEY:") {
+            let trimmed = rest.trim();
+            if !trimmed.is_empty() {
+                return Some(trimmed.into());
+            }
+        }
+    }
+    None
+}
+
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
@@ -26,6 +41,21 @@ fn main() {
             let saved_position = position_store.load()?;
             app.manage(data::AppStore::open(data_dir)?);
             app.manage(position_store);
+            if let Ok(mut current) = app.state::<data::AppStore>().load() {
+                let latest_revision = current.revision;
+                let missing = current.settings.get("stepfunApiKey")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.is_empty())
+                    .unwrap_or(true);
+                if missing {
+                    if let Some(key) = read_stepfun_key_from_dsh() {
+                        if let Some(object) = current.settings.as_object_mut() {
+                            object.insert("stepfunApiKey".into(), serde_json::Value::String(key));
+                            let _ = app.state::<data::AppStore>().save(current, latest_revision);
+                        }
+                    }
+                }
+            }
             let avatar = app.get_webview_window("avatar").ok_or("Avatar window missing")?;
             let initial_position = placement::initialize(&avatar, saved_position)?;
             app.state::<data::AvatarPositionStore>().save(initial_position)?;
