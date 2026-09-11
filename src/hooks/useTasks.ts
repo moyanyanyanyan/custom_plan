@@ -27,6 +27,7 @@ export function useTasks() {
         [draft.targetDate]: [...(current.tasksByDate[draft.targetDate] ?? []), task],
       },
     })).catch(() => undefined);
+    return task.id;
   }, [update]);
   const toggle = useCallback((taskDate: string, id: string) => {
     const now = new Date();

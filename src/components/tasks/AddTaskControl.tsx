@@ -4,7 +4,7 @@ import { suggestTaskSteps } from '../../utils/aiClient';
 import { localDateKey } from '../../utils/date';
 import { parseTaskInput } from '../../utils/taskParser';
 
-export function AddTaskControl({ date, onAdd }: { date: Date; onAdd: (draft: TaskDraft) => void }) {
+export function AddTaskControl({ date, onAdd }: { date: Date; onAdd: (draft: TaskDraft) => string | void }) {
   const [raw, setRaw] = useState('');
   const [draft, setDraft] = useState(() => parseTaskInput('', date));
   const [suggestion, setSuggestion] = useState<string[]>([]);

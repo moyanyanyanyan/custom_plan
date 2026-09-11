@@ -14,6 +14,21 @@ function mockCrop(kind: 'avatar' | 'wallpaper') {
 }
 
 describe('SettingsPanel', () => {
+  it('窗口模式使用可访问的分段选项并同步选中态', () => {
+    const data = createDefaultData(new Date('2026-09-10T00:00:00Z'));
+    render(<AppDataContext.Provider value={{ data, ready: true, error: '', update: vi.fn() }}>
+      <SettingsPanel open onClose={vi.fn()} />
+    </AppDataContext.Provider>);
+    const standard = screen.getByRole('radio', { name: '标准模式' });
+    const compact = screen.getByRole('radio', { name: '紧凑模式' });
+    expect(standard).toBeChecked();
+    expect(standard.closest('label')).toHaveClass('selected');
+    fireEvent.click(compact);
+    expect(compact).toBeChecked();
+    expect(compact.closest('label')).toHaveClass('selected');
+    expect(standard.closest('label')).not.toHaveClass('selected');
+  });
+
   it('无壁纸时隐藏壁纸遮罩设置', () => {
     const data = createDefaultData(new Date('2026-09-10T00:00:00Z'));
     render(<AppDataContext.Provider value={{ data, ready: true, error: '', update: vi.fn() }}>

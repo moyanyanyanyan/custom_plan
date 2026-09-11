@@ -13,8 +13,9 @@ interface TodayTaskBoardProps {
   dateKey: string;
   date: Date;
   focusTaskId?: string | null;
+  recentlyAddedTaskId?: string | null;
   slime: SlimeCompanion;
-  onAdd: (draft: TaskDraft) => void;
+  onAdd: (draft: TaskDraft) => string | void;
   onToggle: (date: string, id: string) => void;
   onRemove: (date: string, id: string) => void;
   onPatch: (date: string, id: string, changes: Partial<Task>) => void;
@@ -28,7 +29,7 @@ interface TodayTaskBoardProps {
 
 /** 把任务、进度反馈与过夜任务入口收在同一张今日纸板中。 */
 export function TodayTaskBoard({ tasks, laterTasks, dateKey, date, onAdd,
-  focusTaskId, slime, onToggle, onRemove, onPatch, onReschedule, onMoveToday,
+  focusTaskId, recentlyAddedTaskId, slime, onToggle, onRemove, onPatch, onReschedule, onMoveToday,
   onSlimeFocus, onSlimeComplete, onSlimeSplit, onSlimeDiscard }: TodayTaskBoardProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   useEffect(() => {
@@ -58,7 +59,7 @@ export function TodayTaskBoard({ tasks, laterTasks, dateKey, date, onAdd,
     <AddTaskControl date={date} onAdd={onAdd} />
     <div className="today-list" role="list" aria-label="今日任务">
       {tasks.map((task) => <TaskRow key={task.id} task={task} dateKey={dateKey}
-        todayKey={dateKey} open={expandedId === task.id}
+        todayKey={dateKey} open={expandedId === task.id} newlyAdded={recentlyAddedTaskId === task.id}
         onExpand={() => setExpandedId(expandedId === task.id ? null : task.id)}
         onToggle={() => onToggle(dateKey, task.id)}
         onPatch={(changes) => onPatch(dateKey, task.id, changes)}
@@ -67,6 +68,7 @@ export function TodayTaskBoard({ tasks, laterTasks, dateKey, date, onAdd,
       {!tasks.length && <p className="today-empty">今天还没有任务，先登记一件小事吧</p>}
     </div>
     <LaterTaskSection tasks={laterTasks} todayKey={dateKey} expandedId={expandedId}
+      recentlyAddedTaskId={recentlyAddedTaskId}
       onExpand={(id) => setExpandedId(expandedId === id ? null : id)} onPatch={onPatch}
       onReschedule={onReschedule}
       onRemove={onRemove} onMoveToday={onMoveToday} />

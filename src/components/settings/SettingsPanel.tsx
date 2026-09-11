@@ -6,6 +6,7 @@ import type { AppSettings, CropResult, ThemeSettings } from '../../types/setting
 import { loadAsset, saveUserAsset } from '../../utils/appRepository';
 import { extractTheme } from '../../utils/colorExtraction';
 import { applyTheme } from '../../utils/theme';
+import { setPanelMode } from '../../utils/desktop';
 import { ImageCropper } from './ImageCropper';
 import './settings.css';
 
@@ -69,7 +70,9 @@ export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () =>
           crop.setErrors((current) => ({ ...current, [kind]: `资产保存失败：${String(reason)}` })); return;
         }
       }
-      await save(next); setDraft(next); crop.setPending({}); onClose();
+      await save(next);
+      await setPanelMode(next.panelMode);
+      setDraft(next); crop.setPending({}); onClose();
     } catch (reason) { setSaveError(`设置保存失败，请重试：${String(reason)}`); }
     finally { setSaving(false); }
   };
@@ -87,6 +90,17 @@ export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () =>
       <label className="username-setting"><span>用户名</span><input value={draft.username} maxLength={20}
         onChange={(event) => setDraft({ ...draft, username: event.target.value })} placeholder="请输入用户名" />
         {usernameError && <small role="alert">{usernameError}</small>}</label>
+      <fieldset className="panel-mode-setting"><legend>窗口模式</legend>
+        <div className="panel-mode-options">
+          <label className={draft.panelMode === 'standard' ? 'selected' : ''}><input type="radio"
+            name="panel-mode" checked={draft.panelMode === 'standard'}
+            onChange={() => setDraft({ ...draft, panelMode: 'standard' })} />标准模式</label>
+          <label className={draft.panelMode === 'compact' ? 'selected' : ''}><input type="radio"
+            name="panel-mode" checked={draft.panelMode === 'compact'}
+            onChange={() => setDraft({ ...draft, panelMode: 'compact' })} />紧凑模式</label>
+        </div>
+        <small className="setting-hint">快捷键：Ctrl+Shift+M（切换窗口模式）</small>
+      </fieldset>
       {(draft.wallpaperAssetId || crop.pending.wallpaper) && <label className="opacity-setting"><span>壁纸遮罩强度</span>
         <input type="range" aria-label="壁纸遮罩强度" min="0.4" max="1" step="0.02" value={draft.panelOpacity}
           onChange={(event) => setDraft({ ...draft, panelOpacity: Number(event.target.value) })} />
@@ -95,7 +109,7 @@ export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () =>
         <input aria-label={label} type="color" value={draft.theme[key as keyof ThemeSettings]}
           onChange={(event) => setDraft({ ...draft, theme: { ...draft.theme, [key]: event.target.value } })} /></label>)}</div>
       <label className="sound-setting"><input type="checkbox" checked={draft.soundEnabled}
-        onChange={(event) => setDraft({ ...draft, soundEnabled: event.target.checked })} />完成任务时播放提示音</label>
+        onChange={(event) => setDraft({ ...draft, soundEnabled: event.target.checked })} />播放任务反馈音效</label>
       <label className="stepfun-key-setting"><span>StepFun API Key</span><input type="password" value={draft.stepfunApiKey}
         onChange={(event) => setDraft({ ...draft, stepfunApiKey: event.target.value })} placeholder="由开发者提供，可在此覆盖" />
         <span className="setting-hint">仅保存在本机应用数据中</span></label>

@@ -48,6 +48,7 @@ function normalizeSettings(value: unknown, fallback: AppSettings): AppSettings {
   if (!isSettings(value)) return fallback;
   return {
     ...fallback, ...value,
+    panelMode: value.panelMode === 'compact' ? 'compact' : 'standard',
     username: typeof value.username === 'string' && value.username.trim() ? value.username.trim() : fallback.username,
     soundEnabled: typeof value.soundEnabled === 'boolean' ? value.soundEnabled : true,
     theme: { ...fallback.theme, ...value.theme },

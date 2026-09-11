@@ -50,6 +50,8 @@
 .today-board-footer { flex: 0 0 auto; margin: 0 -14px -8px; position: relative; z-index: 2; }
 .task-pulse { animation: boardTaskBounce .4s ease; }
 .task-entry { position: relative; border-bottom: 1px solid color-mix(in srgb, var(--theme-primary) 10%, transparent); }
+.task-enter { animation: taskEnter .32s ease-out both; }
+@keyframes taskEnter { from { opacity: 0; transform: translateY(7px); background: color-mix(in srgb, var(--theme-accent) 24%, transparent); } 70% { background: color-mix(in srgb, var(--theme-accent) 14%, transparent); } to { opacity: 1; transform: translateY(0); background: transparent; } }
 .task-entry-row { min-height: 52px; display: flex; align-items: center; gap: 8px; }
 .task-entry-row .task-check { width: 27px; height: 27px; flex-basis: 27px; }
 .task-title { min-width: 0; flex: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; padding: 7px 0; border: 0; color: inherit; background: transparent; text-align: left; }
@@ -105,5 +107,6 @@
 .later-section:not([open]) summary b { transform: rotate(180deg); }
 .later-section > div { max-height: 150px; overflow-y: auto; padding: 0 9px 4px; border-top: 1px solid color-mix(in srgb, var(--theme-primary) 7%, transparent); }
 @keyframes boardTaskBounce { 45% { transform: scale(.985); } 75% { transform: scale(1.006); } }
+@media (prefers-reduced-motion: reduce) { .task-enter, .task-pulse { animation: none; } }
 @media (max-width: 440px) { .today-board { padding-inline: 10px; } .energy-strip { gap: 5px; } .row-delete { opacity: .7; } .task-entry-row { gap: 5px; } .task-row-actions { gap: 2px; } .lab-code, .odd-note { display: none; } .sample-watermark { right: 58px; } }
 @media (max-height: 620px) { .today-board { padding-top: 9px; } .energy-strip { margin: 5px 0; } .today-row { min-height: 36px; } .sample-stamp, .sample-watermark { opacity: .1; } }

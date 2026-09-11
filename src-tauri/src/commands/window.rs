@@ -1,5 +1,5 @@
 use crate::{data::AvatarPositionStore, placement};
-use tauri::{AppHandle, Manager, State, WebviewWindow};
+use tauri::{AppHandle, LogicalSize, Manager, Size, State, WebviewWindow};
 
 fn authorize(window: &WebviewWindow) -> Result<(), String> {
     matches!(window.label(), "avatar" | "panel").then_some(())
@@ -44,6 +44,18 @@ pub async fn minimize_panel(app: AppHandle, window: WebviewWindow) -> Result<(),
 pub async fn drag_panel(window: WebviewWindow) -> Result<(), String> {
     if window.label() != "panel" { return Err("Only panel can use this drag command".into()); }
     window.start_dragging().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn set_panel_mode(window: WebviewWindow, mode: String) -> Result<(), String> {
+    if window.label() != "panel" { return Err("Only panel can change panel mode".into()); }
+    let (width, height) = match mode.as_str() {
+        "standard" => (480.0, 680.0),
+        "compact" => (360.0, 460.0),
+        _ => return Err("Unknown panel mode".into()),
+    };
+    window.set_size(Size::Logical(LogicalSize::new(width, height)))
+        .map_err(|error| error.to_string())
 }
 
 /** 系统拖动不会稳定派发网页松手事件，因此等待真实鼠标键释放后再吸附。 */

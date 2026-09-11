@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AvatarArt } from './AvatarArt';
 import { Icon } from './Icon';
 import { CardRevealModal } from './CardRevealModal';
@@ -6,14 +6,14 @@ import { SettingsPanel } from './settings/SettingsPanel';
 import { TodayTaskBoard } from './tasks/TodayTaskBoard';
 import { ArchiveModal } from './cards/ArchiveModal';
 import { useTasks } from '../hooks/useTasks';
-import { desktopCommand, isDesktop } from '../utils/desktop';
+import { desktopCommand, isDesktop, setPanelMode } from '../utils/desktop';
 import { useCardGeneration } from '../hooks/useCardGeneration';
 import { useSlimes } from '../hooks/useSlimes';
 import { useAppData } from '../hooks/useAppData';
 import { useSettings } from '../hooks/useSettings';
 import { useCurrentDate } from '../hooks/useCurrentDate';
 import { useTaskReminders } from '../hooks/useTaskReminders';
-import { playCompletionSound } from '../utils/feedback';
+import { playCompletionSound, playTaskAddedSound } from '../utils/feedback';
 import { calculateCardStreak } from '../utils/streak';
 import './panel.css';
 import './collection.css';
@@ -26,16 +26,33 @@ export function ControlPanel() {
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [energyToast, setEnergyToast] = useState(false);
   const [focusedTaskId, setFocusedTaskId] = useState<string | null>(null);
+  const [recentlyAddedTaskId, setRecentlyAddedTaskId] = useState<string | null>(null);
+  const [addedTaskMessage, setAddedTaskMessage] = useState('');
+  const addedFeedbackTimer = useRef<number | undefined>(undefined);
   const { tasks, laterTasks, dateKey, add, toggle, remove, patch, reschedule,
     moveToToday, completeHistorical, discardHistorical } = useTasks();
   const completedCount = tasks.filter((t) => t.completed).length;
   const generation = useCardGeneration(tasks);
   const slime = useSlimes();
   const { error: storageError, saveStatus, retrySave } = useAppData();
-  const { settings } = useSettings();
+  const { settings, save } = useSettings();
+  useEffect(() => { void setPanelMode(settings.panelMode); }, [settings.panelMode]);
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement;
+      if (event.key.toLowerCase() !== 'm' || !event.ctrlKey || !event.shiftKey
+        || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable) return;
+      event.preventDefault();
+      const panelMode = settings.panelMode === 'compact' ? 'standard' : 'compact';
+      void save({ ...settings, panelMode });
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [save, settings]);
   const { now } = useCurrentDate();
   const { reminderError } = useTaskReminders();
   const streak = calculateCardStreak(generation.cards, now);
+  useEffect(() => () => window.clearTimeout(addedFeedbackTimer.current), []);
 
   const windowAction = (command: 'minimize_panel' | 'exit_app' | 'drag_panel') => {
     void desktopCommand(command).catch((reason) => setError(String(reason)));
@@ -48,6 +65,18 @@ export function ControlPanel() {
     playCompletionSound(settings.soundEnabled);
     setEnergyToast(true);
     window.setTimeout(() => setEnergyToast(false), 1100);
+  };
+
+  const handleAdd = (draft: Parameters<typeof add>[0]) => {
+    const taskId = add(draft);
+    if (!taskId) return;
+    window.clearTimeout(addedFeedbackTimer.current);
+    setRecentlyAddedTaskId(taskId);
+    setAddedTaskMessage(`已添加任务：${draft.title.trim()}`);
+    playTaskAddedSound(settings.soundEnabled);
+    addedFeedbackTimer.current = window.setTimeout(() => {
+      setRecentlyAddedTaskId(null); setAddedTaskMessage('');
+    }, 1200);
   };
 
   const handleGenerateCard = async () => {
@@ -67,7 +96,7 @@ export function ControlPanel() {
 
   return (
     <>
-      <main className="panel-shell">
+      <main className={`panel-shell panel-mode-${settings.panelMode}`}>
     <header className="brand-bar panel-drag-area" title="按住此处拖动面板" onPointerDown={(event) => {
       if (event.button !== 0 || (event.target as HTMLElement).closest('button')) return;
       event.preventDefault();
@@ -82,9 +111,10 @@ export function ControlPanel() {
         <button disabled={!isDesktop} onClick={() => windowAction('exit_app')} title="退出应用" aria-label="退出应用"><Icon name="power" size={16} /></button>
       </div>
     </header>
-    {(error || storageError || reminderError || generation.warning || saveStatus === 'pending') &&
+    {saveStatus === 'pending' && <div className="save-status" role="status"><i />正在保存</div>}
+    {(error || storageError || reminderError || generation.warning) &&
       <div role="alert" className="window-error">
-        <span>{error || storageError || reminderError || generation.warning || '数据保存中…'}</span>
+        <span>{error || storageError || reminderError || generation.warning}</span>
         {saveStatus === 'failed' && <button onClick={() => void retrySave()}>重试保存</button>}
       </div>}
     <section className="overview" aria-label="研究所概况">
@@ -97,14 +127,15 @@ export function ControlPanel() {
         </div>
         <p className="assistant-message"><span className="signal-dot" />{assistantCopy}</p>
       </div>
-      <button className="collection" aria-label={`打开发明档案馆，共 ${generation.cards.length} 张`}
+      <button className="collection secondary-content" aria-label={`打开发明档案馆，共 ${generation.cards.length} 张`}
         onClick={() => setArchiveOpen(true)}><span className="collection-orbit" />
         <span className="eyebrow">ARCHIVE / 001</span><h3>发明卡牌</h3>
         <div><strong>{generation.cards.length}</strong><Icon name="arrow" /></div><span className="collection-caption">收藏每一次认真生活</span>
       </button>
     </section>
     <TodayTaskBoard tasks={tasks} laterTasks={laterTasks} dateKey={dateKey}
-      date={now} focusTaskId={focusedTaskId} slime={slime} onAdd={add}
+      date={now} focusTaskId={focusedTaskId} recentlyAddedTaskId={recentlyAddedTaskId}
+      slime={slime} onAdd={handleAdd}
       onToggle={(date, id) => date === dateKey ? handleToggle(id) : toggle(date, id)}
       onRemove={remove} onPatch={patch} onReschedule={reschedule} onMoveToday={moveToToday}
       onSlimeComplete={completeHistorical} onSlimeDiscard={discardHistorical}
@@ -115,13 +146,14 @@ export function ControlPanel() {
         moveToToday(date, id);
         setFocusedTaskId(id);
       }} />
-    <button className={`invention-button ${generation.state}`} onClick={handleGenerateCard}
+    <button className={`invention-button secondary-content ${generation.state}`} onClick={handleGenerateCard}
       disabled={generation.state !== 'ready'}>
       <span className="machine-symbol"><Icon name="flask" size={28} /></span>
       <strong>{machineCopy}</strong>
       <Icon name="arrow" size={25} />
     </button>
     {energyToast && <div className="energy-toast" role="status">稳定余波 +1</div>}
+    {addedTaskMessage && <div className="task-added-status" role="status">{addedTaskMessage}</div>}
     <CardRevealModal card={generation.revealedCard} open={!!generation.revealedCard}
       onClose={() => generation.setRevealedCard(null)} />
     <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} />

@@ -10,6 +10,7 @@ export interface ThemeSettings {
 }
 
 export interface AppSettings {
+  panelMode: 'standard' | 'compact';
   username: string;
   avatarAssetId: string | null;
   wallpaperAssetId: string | null;

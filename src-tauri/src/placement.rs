@@ -93,8 +93,6 @@ pub fn place_panel(avatar: &WebviewWindow, panel: &WebviewWindow) -> Result<Avat
     panel
         .set_position(PhysicalPosition::new(rect.x, rect.y))
         .map_err(|e| e.to_string())?;
-    panel
-        .set_size(PhysicalSize::new(rect.width as u32, rect.height as u32))
-        .map_err(|e| e.to_string())?;
+    // 尺寸由面板模式命令负责；这里仅定位，避免重新打开时覆盖紧凑模式。
     Ok(position)
 }
