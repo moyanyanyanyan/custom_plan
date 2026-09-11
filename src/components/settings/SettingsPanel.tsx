@@ -1,4 +1,5 @@
 import { useEffect, useState, type ChangeEvent } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import { ACCEPTED_IMAGE_TYPES, MAX_IMAGE_BYTES } from '../../constants/generation';
 import { createDefaultData } from '../../constants/defaults';
 import { useSettings } from '../../hooks/useSettings';
@@ -65,6 +66,9 @@ export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () =>
     setError('');
     try {
       await save(draft);
+      if (draft.stepfunApiKey != null) {
+        await invoke('save_stepfun_api_key', { key: draft.stepfunApiKey });
+      }
       onClose();
     } catch (reason) {
       setError(`设置保存失败，请重试：${String(reason)}`);
@@ -93,6 +97,11 @@ export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () =>
           } })} /></label>)}</div>
       <label className="sound-setting"><input type="checkbox" checked={draft.soundEnabled}
         onChange={(event) => setDraft({ ...draft, soundEnabled: event.target.checked })} />完成任务时播放提示音</label>
+      <label className="stepfun-key-setting">StepFun API Key
+        <input type="password" value={draft.stepfunApiKey ?? ''}
+          onChange={(event) => setDraft({ ...draft, stepfunApiKey: event.target.value })}
+          placeholder="由开发者提供，可在此覆盖" />
+        <span className="setting-hint">本地保存，不会上传</span></label>
       {error && <p role="alert">{error}</p>}
       <footer><button disabled={saving} onClick={() => setDraft(createDefaultData().settings)}>恢复默认</button>
         <button disabled={saving} onClick={() => { setDraft(settings); onClose(); }}>取消</button>

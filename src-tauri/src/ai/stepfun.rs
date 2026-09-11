@@ -1,4 +1,5 @@
 use super::{models::{ChatResponse, GeneratedCopy, ImageResponse}, provider::{AiError, AiProvider}};
+use crate::data::AppStore;
 use base64::Engine;
 use std::time::Duration;
 
@@ -18,8 +19,18 @@ impl AiProvider for StepFunProvider {
     }
 }
 
-fn key() -> Result<String, AiError> {
+fn env_key() -> Result<String, AiError> {
     std::env::var("STEPFUN_API_KEY").map_err(|_| AiError::MissingKey)
+}
+
+pub fn stored_key(store: &AppStore) -> Result<String, AiError> {
+    let data = store.load().map_err(|e| AiError::Network(e.to_string()))?;
+    if let Some(value) = data.settings.get("stepfunApiKey").and_then(|v| v.as_str()) {
+        if !value.is_empty() {
+            return Ok(value.into());
+        }
+    }
+    env_key()
 }
 
 fn client() -> Result<reqwest::Client, AiError> {
@@ -35,7 +46,27 @@ async fn checked(response: reqwest::Response) -> Result<reqwest::Response, AiErr
 }
 
 pub async fn generate_copy(system: String, user: String) -> Result<GeneratedCopy, AiError> {
-    let response = client()?.post(CHAT_URL).bearer_auth(key()?).json(&serde_json::json!({
+    generate_copy_with_key(system, user, env_key()?).await
+}
+
+pub async fn generate_image(prompt: String) -> Result<Vec<u8>, AiError> {
+    generate_image_with_key(prompt, env_key()?).await
+}
+
+pub async fn generate_copy_with_store(
+    system: String, user: String, store: &AppStore,
+) -> Result<GeneratedCopy, AiError> {
+    generate_copy_with_key(system, user, stored_key(store)?).await
+}
+
+pub async fn generate_image_with_store(
+    prompt: String, store: &AppStore,
+) -> Result<Vec<u8>, AiError> {
+    generate_image_with_key(prompt, stored_key(store)?).await
+}
+
+async fn generate_copy_with_key(system: String, user: String, key: String) -> Result<GeneratedCopy, AiError> {
+    let response = client()?.post(CHAT_URL).bearer_auth(key).json(&serde_json::json!({
         "model": CHAT_MODEL, "messages": [
             {"role": "system", "content": system}, {"role": "user", "content": user}
         ], "temperature": 1.0, "max_tokens": 1000
@@ -46,8 +77,8 @@ pub async fn generate_copy(system: String, user: String) -> Result<GeneratedCopy
     extract_copy(raw).ok_or(AiError::InvalidResponse)
 }
 
-pub async fn generate_image(prompt: String) -> Result<Vec<u8>, AiError> {
-    let response = client()?.post(IMAGE_URL).bearer_auth(key()?).json(&serde_json::json!({
+async fn generate_image_with_key(prompt: String, key: String) -> Result<Vec<u8>, AiError> {
+    let response = client()?.post(IMAGE_URL).bearer_auth(key).json(&serde_json::json!({
         "model": IMAGE_MODEL, "prompt": prompt, "n": 1,
         "size": "1024x1024", "response_format": "b64_json"
     })).send().await.map_err(|e| AiError::Network(e.to_string()))?;

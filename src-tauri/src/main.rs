@@ -36,7 +36,8 @@ fn main() {
             commands::data::save_user_asset,
             commands::ai::generate_card_copy,
             commands::ai::generate_card_art,
-            commands::ai::generate_slime_copy
+            commands::ai::generate_slime_copy,
+            commands::ai::save_stepfun_api_key
         ])
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
