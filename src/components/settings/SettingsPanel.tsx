@@ -127,6 +127,11 @@ export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () =>
           } })} /></label>)}</div>
       <label className="sound-setting"><input type="checkbox" checked={draft.soundEnabled}
         onChange={(event) => setDraft({ ...draft, soundEnabled: event.target.checked })} />完成任务时播放提示音</label>
+      <label className="stepfun-key-setting">StepFun API Key
+        <input type="password" value={draft.stepfunApiKey}
+          onChange={(event) => setDraft({ ...draft, stepfunApiKey: event.target.value })}
+          placeholder="由开发者提供，可在此覆盖" />
+        <span className="setting-hint">仅保存在本机应用数据中</span></label>
       {saveError && <p role="alert">{saveError}</p>}
       <footer><button disabled={saving} onClick={() => setDraft(createDefaultData().settings)}>恢复默认</button>
         <button disabled={saving} onClick={closeWithoutSaving}>取消</button>

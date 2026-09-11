@@ -49,6 +49,7 @@ fn main() {
             commands::ai::generate_card_art,
             commands::ai::generate_slime_copy,
             commands::ai::suggest_task_steps,
+            commands::ai::save_stepfun_api_key,
             commands::notification::ensure_notification_permission,
             commands::notification::send_task_notification
         ])

@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::fmt::{Display, Formatter};
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(default, rename_all = "camelCase")]
@@ -24,6 +25,16 @@ pub enum StoreError {
 
 impl From<String> for StoreError {
     fn from(message: String) -> Self { Self::Failure { message } }
+}
+
+impl Display for StoreError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::StateConflict { latest: _ } => write!(f, "STORE_STATE_CONFLICT"),
+            Self::DailyCardExists => write!(f, "STORE_DAILY_CARD_EXISTS"),
+            Self::Failure { message } => write!(f, "STORE_FAILURE: {message}"),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize)]

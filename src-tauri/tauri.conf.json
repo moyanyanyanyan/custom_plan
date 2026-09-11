@@ -4,9 +4,7 @@
   "version": "0.1.0",
   "identifier": "com.absurdlab.desktop",
   "build": {
-    "beforeDevCommand": "npm run dev",
-    "devUrl": "http://127.0.0.1:1420",
-    "beforeBuildCommand": "npm run build",
+    "devUrl": "http://127.0.0.1:5173",
     "frontendDist": "../dist"
   },
   "app": {
@@ -23,7 +21,7 @@
         "alwaysOnTop": true,
         "skipTaskbar": true,
         "resizable": false,
-        "visible": false
+        "visible": true
       },
       {
         "label": "panel",
@@ -36,7 +34,7 @@
         "shadow": false,
         "alwaysOnTop": true,
         "resizable": false,
-        "visible": false
+        "visible": true
       }
     ],
     "security": {
