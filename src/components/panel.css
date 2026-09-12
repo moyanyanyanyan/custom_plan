@@ -1,4 +1,4 @@
-.panel-shell { min-height: 100vh; padding: 18px 28px 12px; overflow: hidden; border: 1px solid color-mix(in srgb, var(--theme-accent) 34%, #b9d4e2); border-radius: 20px; background-image: radial-gradient(ellipse at 50% 42%, rgb(226 244 251 / .24), transparent 58%), linear-gradient(160deg, rgb(207 235 247 / var(--panel-overlay-opacity)), rgb(132 194 222 / var(--panel-overlay-opacity)) 52%, rgb(188 224 239 / var(--panel-overlay-opacity))), var(--panel-wallpaper), linear-gradient(160deg, #cfeaf6, #84c2de 52%, #bce0ef); background-size: cover; background-position: center; position: relative; }
+.panel-shell { min-height: 100vh; padding: 18px 28px 12px; overflow: hidden; border: 1px solid color-mix(in srgb, var(--theme-accent) 38%, #91b6c9); border-radius: 20px; background-image: radial-gradient(ellipse at 50% 42%, rgb(210 237 248 / .18), transparent 58%), linear-gradient(160deg, rgb(174 216 234 / var(--panel-overlay-opacity)), rgb(91 163 197 / var(--panel-overlay-opacity)) 52%, rgb(151 202 224 / var(--panel-overlay-opacity))), var(--panel-wallpaper), linear-gradient(160deg, #aed8ea, #5ba3c5 52%, #97cae0); background-size: cover; background-position: center; position: relative; }
 .panel-shell::before { content: ''; position: absolute; width: 270px; height: 270px; border: 1px solid #c7daff13; border-radius: 50%; top: -180px; left: 45%; pointer-events: none; }
 .brand-bar, .brand, .window-actions, .identity, .progress-label, .console-heading, .metrics { display: flex; align-items: center; }
 .brand-bar { justify-content: space-between; margin-bottom: 14px; }
@@ -99,7 +99,7 @@
 }
 
 /* 紧凑桌面模式把主要空间留给任务，仍保留触控友好的点击区域。 */
-.panel-shell { height: 100vh; min-height: 0; padding: 11px 16px 8px; border-radius: 17px; display: flex; flex-direction: column; background-image: radial-gradient(ellipse at 50% 42%, rgb(226 244 251 / .24), transparent 58%), linear-gradient(160deg, rgb(207 235 247 / .92), rgb(132 194 222 / .94) 52%, rgb(188 224 239 / .92)), var(--panel-wallpaper), linear-gradient(160deg, #cfeaf6, #84c2de 52%, #bce0ef); }
+.panel-shell { height: 100vh; min-height: 0; padding: 11px 16px 8px; border-radius: 17px; display: flex; flex-direction: column; background-image: radial-gradient(ellipse at 50% 42%, rgb(210 237 248 / .18), transparent 58%), linear-gradient(160deg, rgb(174 216 234 / .93), rgb(91 163 197 / .95) 52%, rgb(151 202 224 / .93)), var(--panel-wallpaper), linear-gradient(160deg, #aed8ea, #5ba3c5 52%, #97cae0); }
 .today-board-shell { min-height: 0; flex: 1 1 auto; display: flex; flex-direction: column; overflow: hidden; }
 .today-board-shell > .today-board { min-height: 0; flex: 1 1 auto; }
 .brand-bar { min-height: 36px; margin-bottom: 7px; }
