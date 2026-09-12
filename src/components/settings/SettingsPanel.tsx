@@ -42,13 +42,22 @@ export function SettingsPanel({ open, onClose, onReplayGuide }: { open: boolean;
     if (open && !wasOpen.current) { setDraft(settings); crop.reset(); setSaveError(''); }
     wasOpen.current = open;
   }, [open, settings]);
-  useEffect(() => { if (open) void applyTheme(draft); }, [draft, open]);
+  const wallpaperPreview = crop.pending.wallpaper?.previewSource;
+  useEffect(() => {
+    if (!open) return;
+    void applyTheme(draft, { wallpaperSource: wallpaperPreview })
+      .catch((reason) => setSaveError(String(reason)));
+  }, [draft, open, wallpaperPreview]);
   if (!open) return null;
   const closeWithoutSaving = () => {
     void applyTheme(settings); setDraft(settings); crop.reset(); setSaveError(''); onClose();
   };
   const acceptCrop = async (result: CropResult) => {
     const kind = crop.cropTarget?.kind; crop.acceptCrop(result);
+    if (kind === 'wallpaper') {
+      setDraft((current) => ({ ...current, panelOpacity: 0.6 }));
+      return;
+    }
     if (kind !== 'avatar') return;
     try { const theme = await extractTheme(result.previewSource); setDraft((current) => ({ ...current, theme })); }
     catch (reason) { crop.setErrors((current) => ({ ...current, avatar: `头像取色失败：${String(reason)}` })); }
@@ -102,7 +111,7 @@ export function SettingsPanel({ open, onClose, onReplayGuide }: { open: boolean;
         <small className="setting-hint">快捷键：Ctrl+Shift+M（切换窗口模式）</small>
       </fieldset>
       {(draft.wallpaperAssetId || crop.pending.wallpaper) && <label className="opacity-setting"><span>壁纸遮罩强度</span>
-        <input type="range" aria-label="壁纸遮罩强度" min="0.4" max="1" step="0.02" value={draft.panelOpacity}
+        <input type="range" aria-label="壁纸遮罩强度" min="0" max="1" step="0.02" value={draft.panelOpacity}
           onChange={(event) => setDraft({ ...draft, panelOpacity: Number(event.target.value) })} />
         <output>{Math.round(draft.panelOpacity * 100)}%</output></label>}
       <div className="theme-grid">{Object.entries(labels).map(([key, label]) => <label key={key}>{label}
