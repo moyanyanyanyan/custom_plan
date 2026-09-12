@@ -122,7 +122,7 @@ export function ControlPanel() {
     <CardRevealModal card={generation.revealedCard} open={!!generation.revealedCard}
       onClose={() => generation.setRevealedCard(null)} />
     <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} />
-    <ArchiveModal open={archiveOpen} onClose={() => setArchiveOpen(false)} />
+    <ArchiveModal open={archiveOpen} tasks={tasks} onClose={() => setArchiveOpen(false)} />
     <SlimeArchive open={slimesOpen} slimes={slimes} onContain={completeHistorical}
       onClose={() => setSlimesOpen(false)} />
       </main>

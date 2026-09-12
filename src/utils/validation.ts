@@ -1,5 +1,6 @@
 import { TASK_ICONS, type Task } from '../types/task';
 import type { InventionCard } from '../types/card';
+import type { PixelItem } from '../types/item';
 import type { AppData } from '../types/storage';
 import type { AppSettings } from '../types/settings';
 
@@ -9,6 +10,15 @@ export function isTask(value: unknown): value is Task {
   return typeof task.id === 'string' && typeof task.name === 'string'
     && TASK_ICONS.includes(task.icon as Task['icon']) && typeof task.minutes === 'number'
     && typeof task.completed === 'boolean' && typeof task.createdAt === 'string';
+}
+
+export function isPixelItem(value: unknown): value is PixelItem {
+  if (!value || typeof value !== 'object') return false;
+  const item = value as Record<string, unknown>;
+  return typeof item.id === 'string' && typeof item.name === 'string'
+    && typeof item.description === 'string' && typeof item.sourceTask === 'string'
+    && typeof item.earnedAt === 'string' && typeof item.dailyKey === 'string'
+    && (item.enchantment === null || typeof item.enchantment === 'object');
 }
 
 export function isCard(value: unknown): value is InventionCard {
@@ -66,6 +76,7 @@ export function normalizeData(value: unknown, fallback: AppData): AppData {
     revision: typeof source.revision === 'number' ? source.revision : 0,
     tasksByDate,
     cards: normalizeCards(source.cards),
+    items: safeArray(source.items, isPixelItem),
     slimes: Array.isArray(source.slimes) ? source.slimes : [],
     settings: normalizeSettings(source.settings, fallback.settings),
     updatedAt: typeof source.updatedAt === 'string' ? source.updatedAt : fallback.updatedAt,
