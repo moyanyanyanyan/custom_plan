@@ -14,10 +14,12 @@
   margin-right: 4px;
 }
 
+/* 网格：卡牌按游戏王比例(59:86)排布，窄栏更接近实体卡观感 */
 .card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: 14px;
+  align-items: start;
 }
 
 .card-slot {
@@ -30,23 +32,70 @@
   gap: 8px;
 }
 
-.card-art {
+/* ── 游戏王比例卡面 59 : 86 ──────────────────────────────── */
+.card-flipper {
+  position: relative;
   width: 100%;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 59 / 86;
+  transform-style: preserve-3d;
+  transition: transform 0.35s ease;
   border-radius: 10px;
+}
+
+.card-flipper.flipped {
+  transform: rotateY(180deg);
+}
+
+.card-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.card-front {
+  background: linear-gradient(160deg, #2b2438, #16121f);
+  border: 1px solid rgba(232, 201, 133, 0.35);
+}
+
+/* 四段竖排：标题条 / 插画 / 文案 / 落款 —— 各占各的，互不重叠 */
+.card-front-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: 100%;
+  padding: 8px 8px 6px;
+}
+
+/* 标题独占顶部一条，不参与图片区（压在图上会被裁掉） */
+.card-name {
+  flex: 0 0 auto;
+  text-align: center;
+  font-weight: 800;
+  font-size: 12px;
+  line-height: 1.3;
+  letter-spacing: 0.5px;
+  color: #f3d180;
+  text-shadow: 0 1px 2px #000a;
+}
+
+/* 插画区：占据卡片中段，等同游戏王的卡图区域 */
+.card-art {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  border-radius: 6px;
+  border: 1px solid rgba(232, 201, 133, 0.28);
   background: linear-gradient(135deg, #2a2a3a, #1f1f2e);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #cfcfcf;
-  font-weight: 700;
-  font-size: 24px;
-  letter-spacing: 2px;
   position: relative;
   overflow: hidden;
 }
 
-/* AI 卡图（dataURL / http URL）铺满卡面 */
 .card-art img {
   width: 100%;
   height: 100%;
@@ -57,22 +106,83 @@
 .card-placeholder {
   color: #cfcfcf;
   font-weight: 700;
-  font-size: 24px;
+  font-size: 22px;
   letter-spacing: 2px;
 }
 
 .stack-badge {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 6px;
+  right: 6px;
   background: rgba(8, 10, 22, 0.74);
   color: #e8c985;
   border: 1px solid rgba(232, 201, 133, 0.45);
   border-radius: 10px;
-  padding: 2px 8px;
-  font-size: 12px;
+  padding: 2px 7px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0;
+}
+
+.card-desc {
+  flex: 0 0 auto;
+  font-size: 10px;
+  line-height: 1.35;
+  color: #cfcfcf;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card-footer {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 9px;
+  color: #8b8b9a;
+}
+
+/* 卡背：任务来源 */
+.card-back {
+  transform: rotateY(180deg);
+  background: #181824;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+}
+
+.card-back-content {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  color: #e6e6e6;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.card-back-content h4 {
+  margin: 0;
+  font-size: 12px;
+  color: #cfcfcf;
+}
+
+.card-back-content ul {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 10px;
+  color: #cfcfcf;
+  line-height: 1.5;
+}
+
+.card-back-content time {
+  margin-top: auto;
+  font-size: 10px;
+  color: #888;
 }
 
 .card-info h4 {
@@ -91,6 +201,11 @@
   color: #777;
 }
 
+.card-info .card-sources {
+  color: #d3b978;
+  font-size: 11px;
+}
+
 .split-button {
   align-self: flex-end;
   padding: 6px 10px;
@@ -99,6 +214,7 @@
   color: #cfcfcf;
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 8px;
+  cursor: pointer;
 }
 
 .split-button:hover:not(:disabled) {
@@ -117,134 +233,76 @@
   font-size: 13px;
 }
 
-.expand-overlay {
+/* ── 图鉴浮层：全屏铺开 + 内部可滚动（此前 className 无样式，内容被面板裁掉） ── */
+.library-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.75);
+  z-index: 9000;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 100;
   padding: 16px;
+  background: #000000bf;
 }
 
-.expand-cards {
+.library-panel {
+  width: 100%;
+  max-width: 560px;
+  max-height: calc(100vh - 32px);
   display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: flex-start;
-}
-
-.expand-card {
-  width: 160px;
-  background: #1f1f2e;
+  flex-direction: column;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 12px;
-  padding: 10px;
-  animation: popIn 0.4s ease both;
-}
-
-.expand-card .card-art {
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #2a2a3a, #1f1f2e);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #cfcfcf;
-  font-weight: 700;
-  font-size: 24px;
-  letter-spacing: 2px;
+  border-radius: 14px;
+  background: #1b1b28;
+  color: #e6e6e6;
   overflow: hidden;
-  margin-bottom: 8px;
 }
 
-.expand-card .card-art img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.expand-card .card-placeholder {
-  color: #cfcfcf;
-  font-weight: 700;
-  font-size: 24px;
-  letter-spacing: 2px;
-}
-
-.expand-card .card-info h4 {
-  margin: 0;
-  font-size: 14px;
-}
-
-.expand-card .card-info p {
-  margin: 4px 0 0;
-  font-size: 12px;
-  color: #aaa;
-}
-
-.expand-card .card-info time {
-  display: block;
-  margin-top: 6px;
-  font-size: 11px;
-  color: #cfcfcf;
-}
-
-.expand-hint {
-  position: absolute;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 12px;
-  color: #cfcfcf;
-  opacity: 0.9;
-  pointer-events: none;
-}
-
-.expand-carousel {
+.library-panel > header {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
-  gap: 14px;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.expand-card {
-  width: 220px;
+.library-panel > header span {
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: #8b8b9a;
 }
 
-.expand-nav {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.06);
-  color: #fff;
-  font-size: 22px;
+.library-panel > header h2 {
+  margin: 2px 0 0;
+  font-size: 16px;
+}
+
+.library-panel > header button {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #cfcfcf;
+  font-size: 20px;
+  line-height: 1;
   cursor: pointer;
 }
 
-.expand-nav:hover:not(:disabled) {
-  border-color: rgba(255, 255, 255, 0.35);
-  background: rgba(255, 255, 255, 0.12);
+.library-panel > header button:hover {
+  background: #ffffff19;
+  color: #fff;
 }
 
-.expand-meta {
-  margin-top: 10px;
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  color: #cfcfcf;
+/* 滚动容器：内容高于面板时出现滚动条 */
+.library-panel .collection-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
-@keyframes popIn {
-  from {
-    transform: scale(0.6);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
+.archive-library .collection-panel {
+  padding: 12px 14px 16px;
 }

@@ -1,7 +1,22 @@
+import { useEffect, useState } from 'react';
+import { useSettings } from '../hooks/useSettings';
+import { loadAsset } from '../utils/appRepository';
 import './avatar.css';
 
 /** 使用本地几何头像，确保首版不依赖外部图片服务。 */
 export function AvatarArt() {
+  const { settings } = useSettings();
+  const [source, setSource] = useState('');
+  useEffect(() => {
+    let active = true;
+    if (!settings.avatarAssetId) { setSource(''); return; }
+    setSource('');
+    void loadAsset(settings.avatarAssetId).then((value) => { if (active) setSource(value); })
+      .catch(() => { if (active) setSource(''); });
+    return () => { active = false; };
+  }, [settings.avatarAssetId]);
+  if (source) return <span className="avatar-art"><img src={source} alt="小离谱头像" draggable={false} /></span>;
+  if (!settings.avatarAssetId) return <span className="avatar-art"><img src="/onboarding/avatar.jpg" alt="小离谱头像" draggable={false} /></span>;
   return <span className="avatar-art" aria-hidden="true">
     <span className="avatar-orbit" /><span className="avatar-head" />
     <span className="avatar-body" /><span className="avatar-spark" />

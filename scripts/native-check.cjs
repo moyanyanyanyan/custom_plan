@@ -1,4 +1,4 @@
-const { chromium } = require(process.env.PLAYWRIGHT_PATH || 'playwright');
+const { chromium } = require('@playwright/test');
 const { execFileSync } = require('node:child_process');
 const assert = require('node:assert/strict');
 const path = require('node:path');
@@ -29,16 +29,20 @@ async function main() {
   assert.ok(original.visible);
   assert.ok(original.frameless && original.topmost);
   await avatar.screenshot({ path: '.artifacts/native-avatar.png', omitBackground: true });
-  assert.equal(probe(panelTitle).visible, false);
+  assert.equal(probe(panelTitle).visible, true, 'Panel must be visible on startup');
+  await avatar.getByRole('button').click();
+  await panel.waitForTimeout(150);
+  assert.equal(probe(panelTitle).visible, false, 'Avatar must hide a visible panel');
   await avatar.getByRole('button').click();
   await panel.waitForTimeout(300);
   let bounds = probe(panelTitle);
-  assert.ok(bounds.visible && bounds.x + bounds.width < original.x);
+  const panelAvoidsAvatar = bounds.x + bounds.width <= original.x
+    || bounds.x >= original.x + original.width;
+  assert.ok(bounds.visible && panelAvoidsAvatar, 'Panel must open beside the avatar');
   await checkPanelDrag({ avatar, panel, probe, avatarTitle, panelTitle, original });
   await avatar.bringToFront();
   assert.equal(probe(panelTitle).visible, true, 'Panel should remain visible after losing focus');
   await panel.screenshot({ path: '.artifacts/native-panel.png' });
-  assert.equal(probe(panelTitle, 'Close').visible, false, 'System close should hide panel');
   await avatar.getByRole('button').click();
   await panel.waitForTimeout(150);
   await panel.getByRole('button', { name: '收起面板', exact: true }).click();
@@ -46,26 +50,36 @@ async function main() {
   assert.equal(probe(panelTitle).visible, false);
   await avatar.getByRole('button').click();
   await panel.waitForTimeout(150);
+  assert.equal(probe(panelTitle).visible, true, 'Avatar must restore a minimized panel in one click');
   const dragged = probe(avatarTitle, 'Drag', 120, original.y + 32);
-  assert.ok(dragged.x < original.x, 'Native drag should move the avatar to the left');
+  assert.ok(dragged.x > 0 && dragged.x < original.x, 'Interior drag must keep a free position');
   assert.equal(probe(panelTitle).visible, false, 'Drag must hide panel without toggling it');
   await avatar.getByRole('button').click();
   await panel.waitForTimeout(200);
   bounds = probe(panelTitle);
   assert.ok(bounds.visible && bounds.x > dragged.x + dragged.width);
-  probe(avatarTitle, 'Drag', original.x + original.width / 2, original.y + original.height / 2);
+  const snapped = probe(avatarTitle, 'Drag', -100, dragged.y + dragged.height / 2);
+  assert.equal(snapped.x, 0, 'Drag near the screen edge must snap to it');
+  assert.equal(probe(panelTitle).visible, false);
+  const restoreX = original.x === 0 ? -100 : original.x + original.width + 400;
+  probe(avatarTitle, 'Drag', restoreX, original.y + original.height / 2);
   const restored = probe(avatarTitle);
-  assert.equal(restored.x, original.x);
+  assert.equal(restored.x === 0, original.x === 0, 'Cleanup must restore the original screen edge');
   assert.equal(probe(panelTitle).visible, false);
   assert.deepEqual(errors, []);
-  await avatar.getByRole('button').click();
-  await panel.waitForTimeout(150);
-  await panel.getByRole('button', { name: '退出应用', exact: true }).click().catch((error) => {
-    if (!/closed|disconnected/.test(error.message)) throw error;
-  });
+  const exitMethod = process.env.NATIVE_EXIT_METHOD ?? 'system-close';
+  if (exitMethod === 'button') {
+    await avatar.getByRole('button').click();
+    await panel.waitForTimeout(150);
+    await panel.getByRole('button', { name: '退出应用', exact: true }).click().catch((error) => {
+      if (!/closed|disconnected/.test(error.message)) throw error;
+    });
+  } else {
+    assert.equal(probe(panelTitle, 'Close').visible, false, 'System close should exit the application');
+  }
   await new Promise((resolve) => setTimeout(resolve, 500));
-  assert.throws(() => probe(avatarTitle), 'Exit should remove both application windows');
-  console.log(JSON.stringify({ result: 'Native checks passed', original, left: dragged, restored }));
+  assert.throws(() => probe(avatarTitle), `${exitMethod} should remove the avatar window`);
+  console.log(JSON.stringify({ result: 'Native checks passed', original, free: dragged, snapped, restored }));
   await browser.close();
 }
 

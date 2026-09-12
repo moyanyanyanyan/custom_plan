@@ -4,10 +4,11 @@
   "version": "0.1.0",
   "identifier": "com.absurdlab.desktop",
   "build": {
-    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "corepack pnpm run build",
     "devUrl": "http://127.0.0.1:1420",
-    "beforeBuildCommand": "npm run build",
-    "frontendDist": "../dist"
+    "frontendDist": "../dist",
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "pnpm build"
   },
   "app": {
     "windows": [
@@ -15,28 +16,29 @@
         "label": "avatar",
         "title": "离谱发明所 · 头像",
         "url": "index.html#avatar",
-        "width": 64,
-        "height": 64,
+        "width": 48,
+        "height": 48,
         "decorations": false,
         "transparent": true,
         "shadow": false,
         "alwaysOnTop": true,
         "skipTaskbar": true,
         "resizable": false,
-        "visible": false
+        "visible": true
       },
       {
         "label": "panel",
         "title": "离谱发明所",
         "url": "index.html#panel",
-        "width": 760,
-        "height": 800,
+        "width": 480,
+        "height": 680,
         "decorations": false,
         "transparent": true,
         "shadow": false,
         "alwaysOnTop": true,
+        "skipTaskbar": false,
         "resizable": false,
-        "visible": false
+        "visible": true
       }
     ],
     "security": {
@@ -47,6 +49,16 @@
   "bundle": {
     "active": true,
     "targets": ["nsis"],
-    "icon": ["icons/icon.png"]
+    "useLocalToolsDir": true,
+    "icon": ["icons/icon.png", "icons/icon.ico"],
+    "windows": {
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper",
+        "silent": true
+      },
+      "nsis": {
+        "installMode": "currentUser"
+      }
+    }
   }
 }
