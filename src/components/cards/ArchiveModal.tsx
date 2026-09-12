@@ -1,5 +1,6 @@
 import { CardCollection } from '../CardCollection';
 import { useAppData } from '../../hooks/useAppData';
+import '../collection.css';
 
 export function ArchiveModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { data } = useAppData();
