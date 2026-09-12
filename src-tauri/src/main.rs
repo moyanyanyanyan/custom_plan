@@ -71,6 +71,12 @@ fn main() {
             let avatar = app.get_webview_window("avatar").ok_or("Avatar window missing")?;
             let initial_position = placement::initialize(&avatar, saved_position)?;
             app.state::<data::AvatarPositionStore>().save(initial_position)?;
+            if let Some(index) = std::env::args().position(|arg| arg == "--fire-reminder") {
+                if let Some(task_id) = std::env::args().nth(index + 1) {
+                    commands::reminder::fire_task_reminder_now(app.handle(), &app.state::<data::AppStore>(), &task_id)?;
+                    app.handle().exit(0);
+                }
+            }
             avatar.show()?;
             Ok(())
         })
@@ -94,7 +100,10 @@ fn main() {
             commands::ai::suggest_task_steps,
             commands::ai::save_stepfun_api_key,
             commands::notification::ensure_notification_permission,
-            commands::notification::send_task_notification
+            commands::notification::send_task_notification,
+            commands::reminder::schedule_task_reminder,
+            commands::reminder::cancel_task_reminder,
+            commands::reminder::fire_task_reminder
         ])
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { .. } = event {
