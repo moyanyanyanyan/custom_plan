@@ -38,7 +38,13 @@ export function normalizeCards(value: unknown): InventionCard[] {
     const derived = earnedAt && !Number.isNaN(earnedAt.getTime())
       ? `${earnedAt.getFullYear()}-${String(earnedAt.getMonth() + 1).padStart(2, '0')}-${String(earnedAt.getDate()).padStart(2, '0')}`
       : '';
-    const normalized = { ...card, dailyKey: typeof card.dailyKey === 'string' ? card.dailyKey : derived };
+    const normalized = {
+      ...card,
+      dailyKey: typeof card.dailyKey === 'string' ? card.dailyKey : derived,
+      backTasks: Array.isArray(card.backTasks) ? card.backTasks.filter((task): task is string => typeof task === 'string') :
+        (Array.isArray(card.sourceTasks) ? card.sourceTasks.filter((task): task is string => typeof task === 'string') : []),
+      date: typeof card.date === 'string' && card.date ? card.date : derived,
+    };
     return isCard(normalized) ? [normalized] : [];
   });
 }
