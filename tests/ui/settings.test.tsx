@@ -14,6 +14,18 @@ function mockCrop(kind: 'avatar' | 'wallpaper') {
 }
 
 describe('SettingsPanel', () => {
+  it('显示重新查看新手指引按钮并触发回调', () => {
+    const data = createDefaultData(new Date('2026-09-10T00:00:00Z'));
+    const onReplayGuide = vi.fn();
+    render(<AppDataContext.Provider value={{ data, ready: true, error: '', update: vi.fn() }}>
+      <SettingsPanel open onClose={vi.fn()} onReplayGuide={onReplayGuide} />
+    </AppDataContext.Provider>);
+    const button = screen.getByRole('button', { name: '重新查看新手指引' });
+    expect(button).toHaveClass('settings-replay-guide');
+    fireEvent.click(button);
+    expect(onReplayGuide).toHaveBeenCalledOnce();
+  });
+
   it('窗口模式使用可访问的分段选项并同步选中态', () => {
     const data = createDefaultData(new Date('2026-09-10T00:00:00Z'));
     render(<AppDataContext.Provider value={{ data, ready: true, error: '', update: vi.fn() }}>

@@ -97,24 +97,9 @@ fn main() {
             commands::notification::send_task_notification
         ])
         .on_window_event(|window, event| {
-            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                if window.label() == "panel" {
-                    // 系统关闭只最小化面板，保留头像再次展开所需的窗口实例。
-                    api.prevent_close();
-                    if let Ok(visible) = window.is_visible() {
-                        if visible {
-                            if let Err(error) = window.minimize() {
-                                eprintln!("Failed to minimize panel: {error}");
-                            }
-                        } else {
-                            if let Err(error) = window.hide() {
-                                eprintln!("Failed to hide panel: {error}");
-                            }
-                        }
-                    }
-                } else {
-                    window.app_handle().exit(0);
-                }
+            if let tauri::WindowEvent::CloseRequested { .. } = event {
+                // 系统关闭表示用户要结束应用，两个窗口必须一起退出。
+                window.app_handle().exit(0);
             }
         })
         .run(tauri::generate_context!())

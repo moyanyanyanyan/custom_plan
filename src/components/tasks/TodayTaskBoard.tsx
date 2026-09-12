@@ -56,8 +56,8 @@ export function TodayTaskBoard({ tasks, laterTasks, dateKey, date, onAdd,
       <span><i className="energy-dot stable" />稳定余波 <strong>{completedCount}</strong></span>
       <span><i className="energy-dot stagnant" />停滞能量 <strong>{tasks.length - completedCount}</strong></span>
     </div>
-    <AddTaskControl date={date} onAdd={onAdd} />
-    <div className="today-list" role="list" aria-label="今日任务">
+    <div data-guide="add-task"><AddTaskControl date={date} onAdd={onAdd} /></div>
+    <div data-guide="task-list" className="today-list" role="list" aria-label="今日任务">
       {tasks.map((task) => <TaskRow key={task.id} task={task} dateKey={dateKey}
         todayKey={dateKey} open={expandedId === task.id} newlyAdded={recentlyAddedTaskId === task.id}
         onExpand={() => setExpandedId(expandedId === task.id ? null : task.id)}
@@ -72,7 +72,7 @@ export function TodayTaskBoard({ tasks, laterTasks, dateKey, date, onAdd,
       onExpand={(id) => setExpandedId(expandedId === id ? null : id)} onPatch={onPatch}
       onReschedule={onReschedule}
       onRemove={onRemove} onMoveToday={onMoveToday} />
-    <footer className="today-board-footer">
+    <footer data-guide="slime" className="today-board-footer">
       <SlimeDrawer slime={slime} onFocus={onSlimeFocus} onComplete={onSlimeComplete}
         onReschedule={onReschedule} onSplit={onSlimeSplit} onDiscard={onSlimeDiscard} />
     </footer>

@@ -60,7 +60,7 @@
 .today-row:hover .row-delete, .today-row.focused .row-delete, .row-delete:focus-visible { opacity: 1; }
 .row-delete:hover { color: white; background: color-mix(in srgb, var(--theme-completed) 75%, #b85d43); }
 .today-empty { padding: 26px 8px; color: color-mix(in srgb, var(--theme-primary) 52%, transparent); text-align: center; font-size: 11px; }
-.today-board-footer { flex: 0 0 auto; margin: 0 -14px -8px; position: relative; z-index: 1; }
+.today-board-footer { flex: 0 0 auto; min-height: 52px; margin: 0 -14px -8px; position: relative; z-index: 1; }
 .task-pulse { animation: boardTaskBounce .4s ease; }
 .task-entry { position: relative; border-bottom: 1px solid color-mix(in srgb, var(--theme-primary) 10%, transparent); }
 .task-enter { animation: taskEnter .32s ease-out both; }

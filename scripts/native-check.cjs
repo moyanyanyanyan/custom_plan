@@ -43,7 +43,6 @@ async function main() {
   await avatar.bringToFront();
   assert.equal(probe(panelTitle).visible, true, 'Panel should remain visible after losing focus');
   await panel.screenshot({ path: '.artifacts/native-panel.png' });
-  assert.equal(probe(panelTitle, 'Close').visible, false, 'System close should hide panel');
   await avatar.getByRole('button').click();
   await panel.waitForTimeout(150);
   await panel.getByRole('button', { name: '收起面板', exact: true }).click();
@@ -68,13 +67,18 @@ async function main() {
   assert.equal(restored.x === 0, original.x === 0, 'Cleanup must restore the original screen edge');
   assert.equal(probe(panelTitle).visible, false);
   assert.deepEqual(errors, []);
-  await avatar.getByRole('button').click();
-  await panel.waitForTimeout(150);
-  await panel.getByRole('button', { name: '退出应用', exact: true }).click().catch((error) => {
-    if (!/closed|disconnected/.test(error.message)) throw error;
-  });
+  const exitMethod = process.env.NATIVE_EXIT_METHOD ?? 'system-close';
+  if (exitMethod === 'button') {
+    await avatar.getByRole('button').click();
+    await panel.waitForTimeout(150);
+    await panel.getByRole('button', { name: '退出应用', exact: true }).click().catch((error) => {
+      if (!/closed|disconnected/.test(error.message)) throw error;
+    });
+  } else {
+    assert.equal(probe(panelTitle, 'Close').visible, false, 'System close should exit the application');
+  }
   await new Promise((resolve) => setTimeout(resolve, 500));
-  assert.throws(() => probe(avatarTitle), 'Exit should remove both application windows');
+  assert.throws(() => probe(avatarTitle), `${exitMethod} should remove the avatar window`);
   console.log(JSON.stringify({ result: 'Native checks passed', original, free: dragged, snapped, restored }));
   await browser.close();
 }

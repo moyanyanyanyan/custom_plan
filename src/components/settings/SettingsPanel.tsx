@@ -30,7 +30,7 @@ function AssetPreview({ assetId, label, previewSource }: {
     ? <img src={source} alt={`${label}预览`} /> : <span>默认</span>}</span>;
 }
 
-export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function SettingsPanel({ open, onClose, onReplayGuide }: { open: boolean; onClose: () => void; onReplayGuide?: () => void }) {
   const { settings, save } = useSettings();
   const [draft, setDraft] = useState<AppSettings>(settings);
   const [saveError, setSaveError] = useState('');
@@ -114,6 +114,7 @@ export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () =>
         onChange={(event) => setDraft({ ...draft, stepfunApiKey: event.target.value })} placeholder="由开发者提供，可在此覆盖" />
         <span className="setting-hint">仅保存在本机应用数据中</span></label>
       {saveError && <p role="alert">{saveError}</p>}
+      {onReplayGuide && <button type="button" className="settings-replay-guide" onClick={onReplayGuide}>重新查看新手指引</button>}
       <footer><button disabled={saving} onClick={() => setDraft(createDefaultData().settings)}>恢复默认</button>
         <button disabled={saving} onClick={closeWithoutSaving}>取消</button>
         <button disabled={saving} className="settings-save" onClick={() => void submit()}>{saving ? '保存中…' : '应用设置'}</button></footer>

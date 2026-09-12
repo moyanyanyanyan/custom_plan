@@ -1,4 +1,4 @@
-.panel-shell { min-height: 100vh; padding: 18px 28px 12px; overflow: hidden; border: 1px solid var(--theme-border); border-radius: 20px; background-image: radial-gradient(circle at 50% 20%, transparent 35%, #0005 100%), linear-gradient(rgb(from var(--theme-primary) r g b / var(--panel-overlay-opacity)), rgb(from var(--theme-secondary) r g b / var(--panel-overlay-opacity))), var(--panel-wallpaper), linear-gradient(var(--theme-primary), var(--theme-secondary)); background-size: cover; background-position: center; position: relative; }
+.panel-shell { min-height: 100vh; padding: 18px 28px 12px; overflow: hidden; border: 1px solid color-mix(in srgb, var(--theme-accent) 34%, #b9d4e2); border-radius: 20px; background-image: radial-gradient(ellipse at 50% 42%, rgb(226 244 251 / .24), transparent 58%), linear-gradient(160deg, rgb(207 235 247 / var(--panel-overlay-opacity)), rgb(132 194 222 / var(--panel-overlay-opacity)) 52%, rgb(188 224 239 / var(--panel-overlay-opacity))), var(--panel-wallpaper), linear-gradient(160deg, #cfeaf6, #84c2de 52%, #bce0ef); background-size: cover; background-position: center; position: relative; }
 .panel-shell::before { content: ''; position: absolute; width: 270px; height: 270px; border: 1px solid #c7daff13; border-radius: 50%; top: -180px; left: 45%; pointer-events: none; }
 .brand-bar, .brand, .window-actions, .identity, .progress-label, .console-heading, .metrics { display: flex; align-items: center; }
 .brand-bar { justify-content: space-between; margin-bottom: 14px; }
@@ -73,6 +73,7 @@
 .task-added-status { position: fixed; z-index: 20; left: 50%; bottom: 68px; max-width: min(320px, 80vw); overflow: hidden; transform: translateX(-50%); padding: 6px 12px; border: 1px solid color-mix(in srgb, var(--theme-accent) 55%, transparent); border-radius: 18px; color: var(--theme-text); background: color-mix(in srgb, var(--theme-primary) 92%, transparent); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; pointer-events: none; animation: taskStatusAppear .25s ease both; }
 @keyframes taskStatusAppear { from { opacity: 0; transform: translate(-50%, 5px); } }
 .panel-mode-compact .secondary-content { display: none; }
+.panel-mode-compact .invention-button { display: flex; }
 .panel-mode-compact .overview { grid-template-columns: 1fr; }
 .panel-mode-compact .profile-avatar, .panel-mode-compact .assistant-message { display: none; }
 .panel-mode-compact { padding: 10px 12px 8px; }
@@ -98,7 +99,9 @@
 }
 
 /* 紧凑桌面模式把主要空间留给任务，仍保留触控友好的点击区域。 */
-.panel-shell { height: 100vh; min-height: 0; padding: 11px 16px 8px; border-radius: 17px; display: flex; flex-direction: column; }
+.panel-shell { height: 100vh; min-height: 0; padding: 11px 16px 8px; border-radius: 17px; display: flex; flex-direction: column; background-image: radial-gradient(ellipse at 50% 42%, rgb(226 244 251 / .24), transparent 58%), linear-gradient(160deg, rgb(207 235 247 / .92), rgb(132 194 222 / .94) 52%, rgb(188 224 239 / .92)), var(--panel-wallpaper), linear-gradient(160deg, #cfeaf6, #84c2de 52%, #bce0ef); }
+.today-board-shell { min-height: 0; flex: 1 1 auto; display: flex; flex-direction: column; overflow: hidden; }
+.today-board-shell > .today-board { min-height: 0; flex: 1 1 auto; }
 .brand-bar { min-height: 36px; margin-bottom: 7px; }
 .brand { gap: 8px; }
 .brand-mark { width: 28px; font-size: 32px; line-height: 31px; }
@@ -117,23 +120,23 @@
 .progress-label small { font-size: 9px; }
 .progress-track { height: 6px; margin: 3px 0 5px; }
 .assistant-message { padding: 6px 7px; gap: 5px; font-size: 8px; }
-.collection { min-height: 76px; padding: 8px 10px; border-radius: 10px; box-shadow: 0 9px 20px #07162f55, inset 0 1px #ffffff24; transform: translateY(-1px); }
+.collection { min-height: 76px; padding: 8px 10px; border-radius: 10px; box-shadow: 0 9px 20px #648aa833, inset 0 1px #ffffffaa; transform: translateY(-1px); }
 .collection h3 { margin: 4px 0 1px; font-size: 12px; }
 .collection strong { font-size: 24px; }
 .collection-caption { display: none; }
 .collection-orbit { width: 72px; height: 72px; top: -39px; right: -19px; }
-.console { min-height: 0; flex: 1; display: flex; flex-direction: column; border-color: #c6d9ff66; box-shadow: 0 14px 30px #06142d70, inset 0 1px #ffffff17; }
+.console { min-height: 0; flex: 1; display: flex; flex-direction: column; border-color: #b7d8e8; box-shadow: 0 14px 30px #648aa833, inset 0 1px #ffffffaa; }
 .console-heading { flex: 0 0 auto; padding: 7px 12px 5px; }
 .console-heading h2 { margin-top: 2px; font-size: 16px; letter-spacing: 1px; }
 .add-task { padding: 5px 9px; font-size: 10px; box-shadow: 0 5px 12px #07162f45, inset 0 1px #ffffff1f; }
 .add-form input { width: 108px; padding: 5px 8px; font-size: 10px; }
 .add-cancel { padding: 5px 7px; }
 .metrics { flex: 0 0 auto; gap: 7px; padding: 0 12px 7px; }
-.metrics > div, .metrics > button { gap: 5px; padding: 5px 7px; border: 1px solid #b9ceff20; border-radius: 7px; font-size: 9px; box-shadow: 0 5px 12px #07162f35, inset 0 1px #ffffff16; }
+.metrics > div, .metrics > button { gap: 5px; padding: 5px 7px; border: 1px solid #b7d8e8; border-radius: 7px; font-size: 9px; box-shadow: 0 5px 12px #648aa833, inset 0 1px #ffffffaa; }
 .metrics strong { font-size: 13px; }
 .metric-dot { width: 6px; height: 6px; }
 .slime-metric svg { width: 14px; height: 14px; }
-.invention-button { width: 72%; height: 44px; min-height: 44px; flex: 0 0 44px; margin: 7px auto 0; gap: 10px; padding: 6px 15px; border-radius: 9px; box-shadow: 0 9px 22px #06142d60, inset 0 1px #ffffff1f; }
+.invention-button { width: 82%; height: 44px; min-height: 44px; flex: 0 0 44px; margin: 7px auto 0; gap: 10px; padding: 6px 15px; border-radius: 12px; box-shadow: 0 9px 22px #648aa833, inset 0 1px #ffffffaa; }
 .invention-button strong { font-size: 16px; letter-spacing: 1px; }
 .machine-symbol svg { width: 20px; height: 20px; }
 .today-board { z-index: 2; }
