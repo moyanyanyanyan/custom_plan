@@ -5,7 +5,9 @@ import { generateArtworkDataURL } from './stepfun';
 // 失败（无 key / 网络 / 超时）时降级为本地 canvas 占位。
 // 输出统一为正方形 dataURL（存 localStorage 的 imagePath 字段），无需外网可永久显示。
 
-const OUT = 400; // 输出边长（压缩后存 localStorage，控制体积）
+// 输出尺寸按游戏王卡比例 59:86（宽 400，高约 583）
+const OUT_W = 400;
+const OUT_H = Math.round(400 * 86 / 59);
 
 export type CardImageResult = {
   imagePath: string; // dataURL
@@ -39,27 +41,36 @@ function b64DataUrlToBlob(dataUrl: string): Blob {
   return new Blob([bytes], { type: 'image/png' });
 }
 
-/** 生图提示词：把卡牌名称与描述翻译成可绘制的画面，禁止文字。 */
+/** 生图提示词：固定为 Yu-Gi-Oh! 卡牌封面风格，禁止文字/字母/水印。 */
 function buildArtPrompt(card: InventionCard): string {
-  return (
-    `荒诞发明卡牌的方形插画，主题："${card.name}"（${card.description}）。` +
-    '深蓝夜色实验室背景，神秘发明装置为主体，蒸汽朋克 + 霓虹线条风格，' +
-    '构图居中、留出卡牌边框余量，画面不得出现任何文字或字母。'
-  );
+  return [
+    'Yu-Gi-Oh! trading card game cover art style',
+    `theme: "${card.name}"`,
+    `${card.description}`,
+    'fantasy illustration',
+    'dramatic lighting',
+    'highly detailed',
+    'vibrant colors',
+    'dynamic composition',
+    'centered subject with space for text overlay',
+    'no text',
+    'no letters',
+    'no watermark',
+  ].join(', ');
 }
 
 /** AI 原图 → 缩小 + 叠加中央预制装饰 → dataURL */
 function compose(bitmap: ImageBitmap, card: InventionCard): string {
   const canvas = document.createElement('canvas');
-  canvas.width = OUT;
-  canvas.height = OUT;
+  canvas.width = OUT_W;
+  canvas.height = OUT_H;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('no canvas 2d');
-  // cover 铺满
-  const scale = Math.max(OUT / bitmap.width, OUT / bitmap.height);
+  // cover 铺满（59:86 画幅）
+  const scale = Math.max(OUT_W / bitmap.width, OUT_H / bitmap.height);
   const w = bitmap.width * scale;
   const h = bitmap.height * scale;
-  ctx.drawImage(bitmap, (OUT - w) / 2, (OUT - h) / 2, w, h);
+  ctx.drawImage(bitmap, (OUT_W - w) / 2, (OUT_H - h) / 2, w, h);
   drawDecoration(ctx, card);
   return canvas.toDataURL('image/jpeg', 0.82);
 }
@@ -67,28 +78,28 @@ function compose(bitmap: ImageBitmap, card: InventionCard): string {
 /** 纯占位底图 + 装饰（无 key / AI 失败的降级） */
 function composeFallback(card: InventionCard): string {
   const canvas = document.createElement('canvas');
-  canvas.width = OUT;
-  canvas.height = OUT;
+  canvas.width = OUT_W;
+  canvas.height = OUT_H;
   const ctx = canvas.getContext('2d');
   if (!ctx) return '/placeholder-card.png';
-  const g = ctx.createLinearGradient(0, 0, OUT, OUT);
+  const g = ctx.createLinearGradient(0, 0, OUT_W, OUT_H);
   g.addColorStop(0, '#232342');
   g.addColorStop(1, '#10101e');
   ctx.fillStyle = g;
-  ctx.fillRect(0, 0, OUT, OUT);
+  ctx.fillRect(0, 0, OUT_W, OUT_H);
   // 边框
   ctx.strokeStyle = 'rgba(255,255,255,0.22)';
   ctx.lineWidth = 3;
-  ctx.strokeRect(8, 8, OUT - 16, OUT - 16);
+  ctx.strokeRect(8, 8, OUT_W - 16, OUT_H - 16);
   // 名称首字
   ctx.fillStyle = 'rgba(255,255,255,0.9)';
   ctx.font = 'bold 90px sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(card.name.slice(0, 1), OUT / 2, OUT / 2 - 30);
+  ctx.fillText(card.name.slice(0, 1), OUT_W / 2, OUT_H / 2 - 30);
   ctx.fillStyle = 'rgba(255,255,255,0.5)';
   ctx.font = '17px sans-serif';
-  ctx.fillText('离线占位卡', OUT / 2, OUT / 2 + 60);
+  ctx.fillText('离线占位卡', OUT_W / 2, OUT_H / 2 + 60);
   drawDecoration(ctx, card);
   return canvas.toDataURL('image/png');
 }
@@ -99,7 +110,7 @@ function drawDecoration(ctx: CanvasRenderingContext2D, card: InventionCard) {
   for (const ch of card.stackKey) h = (h * 31 + ch.codePointAt(0)!) >>> 0;
   const kind = ['gear', 'blueprint', 'question'][h % 3] as 'gear' | 'blueprint' | 'question';
   ctx.save();
-  ctx.translate(OUT / 2, OUT / 2);
+  ctx.translate(OUT_W / 2, OUT_H / 2);
   ctx.strokeStyle = 'rgba(190,225,255,0.38)';
   ctx.fillStyle = 'rgba(190,225,255,0.16)';
   ctx.lineWidth = 2;

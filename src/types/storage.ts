@@ -1,16 +1,16 @@
 import type { InventionCard } from './card';
 import type { PixelItem } from './item';
 import type { AppSettings } from './settings';
-import type { Slime } from './slime';
+import type { SlimeMeal } from './slime';
 import type { Task } from './task';
 
 export interface AppData {
-  schemaVersion: 1;
+  schemaVersion: 2;
   revision: number;
   tasksByDate: Record<string, Task[]>;
   cards: InventionCard[];
   items: PixelItem[];
-  slimes: Slime[];
+  slimes: SlimeMeal[];
   settings: AppSettings;
   updatedAt: string;
   storageWarning?: string | null;

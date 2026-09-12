@@ -1,9 +1,15 @@
-export interface Slime {
-  id: string;
-  sourceTaskId: string;
-  sourceTaskName: string;
-  name: string;
-  description: string;
-  discoveredAt: string;
-  containedAt: string | null;
+export interface SlimeMeal {
+  taskId: string;
+  swallowedAt: string;
+}
+
+export interface SlimeTask extends SlimeMeal {
+  taskName: string;
+  taskDate: string;
+  wanderingDays: number;
+}
+
+export interface SlimeCompanion {
+  meals: SlimeTask[];
+  mood: 'light' | 'content' | 'full';
 }

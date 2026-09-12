@@ -4,6 +4,14 @@ import { DAILY_CARD_THRESHOLD } from '../constants/generation';
 import { localDateKey } from './date';
 import type { InventionMachineState } from '../types/card';
 
+function summarizeTasks(tasks: string[]): { title: string; description: string } {
+  if (!tasks.length) return { title: '无用功粒子', description: '把今天的微小行动，编译成一场荒诞实验。' };
+  const keywords = tasks.map((t) => t.replace(/[0-9.、\s]/g, '').slice(0, 4)).filter(Boolean);
+  const title = keywords.slice(0, 3).join(' · ') || '今日微缩版';
+  const description = `今日已完成 ${tasks.length} 项任务：${tasks.slice(0, 3).join('、')}${tasks.length > 3 ? ' 等' : ''}。`;
+  return { title, description };
+}
+
 function generateId() {
   return crypto.randomUUID();
 }
@@ -31,16 +39,16 @@ export function generateCardFromTasks(tasks: Experiment[], date = new Date()): I
   const completedTasks = tasks.filter((t) => t.completed).map((t) => t.name);
   if (completedTasks.length < DAILY_CARD_THRESHOLD) return null;
 
-  // 模板卡名固定（无 AI 时的降级体系）：同名即可跨天堆叠 → 收藏册可演示"分化"
-  const name = '无用功粒子';
-  const descriptions = [
-    '把今天的微小行动，编译成一场荒诞实验。',
-    '当"认真生活"被投入反应釜，会冒泡出一种不可思议的副产品。',
-    '来自日常杂物的随机坍缩产物。',
-    '记录了今日至少一项任务完成的奇点。',
-  ];
-  const description = descriptions[Math.floor(Math.random() * descriptions.length)];
+  // 本地降级命名：基于任务文本摘要出“当天总结/鼓励”式卡名与说明
+  const summary = summarizeTasks(completedTasks);
+  const name = summary.title || '无用功粒子';
+  const description = summary.description || '把今天的微小行动，编译成一场荒诞实验。';
 
+  const today = new Date();
+  const y = today.getFullYear();
+  const m = String(today.getMonth() + 1).padStart(2, '0');
+  const d = String(today.getDate()).padStart(2, '0');
+  const dateStr = `${y}-${m}-${d}`;
   return {
     id: generateId(),
     name,
@@ -48,7 +56,10 @@ export function generateCardFromTasks(tasks: Experiment[], date = new Date()): I
     sourceTasks: completedTasks,
     earnedAt: date.toISOString(),
     dailyKey: localDateKey(date),
+    imagePath: undefined,
     type: 'daily',
     stackKey: name,
+    backTasks: completedTasks.map((t) => t.slice(0, 10)),
+    date: dateStr,
   };
 }

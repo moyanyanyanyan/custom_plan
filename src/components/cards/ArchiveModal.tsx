@@ -1,15 +1,18 @@
 import { useState } from 'react';
-import type { Experiment } from '../../types/experiment';
+import type { Task } from '../../types/task';
 import { CardCollection } from '../CardCollection';
 import { ItemCollection } from '../ItemCollection';
 import '../items.css';
 
-type Props = { open: boolean; onClose: () => void; tasks: Experiment[] };
+import { useAppData } from '../../hooks/useAppData';
+import '../collection.css';
+type Props = { open: boolean; onClose: () => void; tasks: Task[] };
 
 type ArchiveTab = 'cards' | 'items';
 
 export function ArchiveModal({ open, onClose, tasks }: Props) {
   const [tab, setTab] = useState<ArchiveTab>('cards');
+  const { data } = useAppData();
   if (!open) return null;
   return <div className="library-overlay" role="dialog" aria-modal="true" aria-label="发明档案馆"
     onClick={onClose}>
@@ -20,7 +23,7 @@ export function ArchiveModal({ open, onClose, tasks }: Props) {
         <button className={tab === 'cards' ? 'is-active' : ''} onClick={() => setTab('cards')}>发明卡牌</button>
         <button className={tab === 'items' ? 'is-active' : ''} onClick={() => setTab('items')}>离谱道具</button>
       </nav>
-      {tab === 'cards' ? <CardCollection /> : <ItemCollection tasks={tasks} />}
+      {tab === 'cards' ? <CardCollection cards={data.cards} /> : <ItemCollection tasks={tasks} />}
     </section>
   </div>;
 }

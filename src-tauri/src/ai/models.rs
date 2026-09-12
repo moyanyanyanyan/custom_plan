@@ -6,6 +6,11 @@ pub struct GeneratedCopy {
     pub description: String,
 }
 
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct StepSuggestion {
+    pub steps: Vec<String>,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct ChatResponse {
     pub choices: Vec<Choice>,

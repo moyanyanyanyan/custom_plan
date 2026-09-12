@@ -1,4 +1,4 @@
-use crate::geometry::{panel_rect, snap, Rect};
+use crate::geometry::{panel_rect, settle, Rect};
 
 const WORK: Rect = Rect {
     x: 0,
@@ -8,31 +8,18 @@ const WORK: Rect = Rect {
 };
 
 #[test]
-fn snaps_to_nearest_edge_and_clamps_vertical_position() {
+fn keeps_free_position_and_snaps_only_inside_threshold() {
     assert_eq!(
-        snap(
-            WORK,
-            Rect {
-                x: 100,
-                y: -50,
-                width: 64,
-                height: 64
-            }
-        ),
-        (0, 0)
+        settle(WORK, Rect { x: 500, y: 300, width: 64, height: 64 }, 24),
+        (500, 300)
     );
     assert_eq!(
-        snap(
-            WORK,
-            Rect {
-                x: 1500,
-                y: 1100,
-                width: 64,
-                height: 64
-            }
-        ),
-        (1856, 976)
+        settle(WORK, Rect { x: 20, y: 970, width: 64, height: 64 }, 24),
+        (0, 976)
     );
+    assert_eq!(settle(WORK, Rect { x: 1840, y: 300, width: 64, height: 64 }, 24), (1856, 300));
+    assert_eq!(settle(WORK, Rect { x: 500, y: 12, width: 64, height: 64 }, 24), (500, 0));
+    assert_eq!(settle(WORK, Rect { x: 500, y: 960, width: 64, height: 64 }, 24), (500, 976));
 }
 
 #[test]
@@ -44,26 +31,28 @@ fn supports_negative_monitor_coordinates_and_taskbar_offsets() {
         height: 1040,
     };
     assert_eq!(
-        snap(
+        settle(
             work,
             Rect {
                 x: -1800,
                 y: 0,
                 width: 96,
                 height: 96
-            }
+            },
+            24,
         ),
-        (-1920, 40)
+        (-1800, 40)
     );
     assert_eq!(
-        snap(
+        settle(
             work,
             Rect {
                 x: -100,
                 y: 1100,
                 width: 96,
                 height: 96
-            }
+            },
+            24,
         ),
         (-96, 984)
     );

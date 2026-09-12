@@ -20,3 +20,11 @@ export async function generateSlimeCopy(taskContext: string): Promise<GeneratedC
   if (!isDesktop) return null;
   return invoke<GeneratedCopy>('generate_slime_copy', { taskContext });
 }
+
+export async function suggestTaskSteps(title: string): Promise<string[] | null> {
+  if (!isDesktop) return null;
+  try {
+    const result = await invoke<string[]>('suggest_task_steps', { title });
+    return result.length >= 2 && result.length <= 6 ? result : null;
+  } catch { return null; }
+}

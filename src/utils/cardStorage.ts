@@ -46,6 +46,21 @@ export function addCard(card: InventionCard) {
   return collection;
 }
 
+export function updateCardBackTasks(cardId: string, backTasks: string[]) {
+  const collection = loadCollection();
+  const card = collection.cards.find((c) => c.id === cardId);
+  if (card) {
+    card.backTasks = backTasks;
+    saveCollection(collection);
+  }
+  return collection;
+}
+
+export function findCardById(cardId: string): InventionCard | null {
+  const collection = loadCollection();
+  return collection.cards.find((c) => c.id === cardId) ?? null;
+}
+
 export function canGenerateToday(): boolean {
   if (isDemoMode()) return true;
   const collection = loadCollection();

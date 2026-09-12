@@ -1,0 +1,17 @@
+.cropper-overlay { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 18px; background: #020917d9; backdrop-filter: blur(8px); }
+.cropper-panel { width: min(440px, 100%); max-height: calc(100vh - 36px); overflow-y: auto; padding: 18px; border: 1px solid var(--theme-border); border-radius: 14px; background: color-mix(in srgb, var(--theme-primary) 96%, black); box-shadow: 0 24px 70px #0009; }
+.cropper-panel header, .cropper-panel footer, .crop-zoom { display: flex; align-items: center; }
+.cropper-panel header { justify-content: space-between; margin-bottom: 14px; }
+.cropper-panel h3 { margin: 0; font-size: 17px; }
+.cropper-panel header button { border: 0; color: inherit; background: transparent; font-size: 24px; }
+.crop-viewport { width: min(300px, 75vw); max-height: 52vh; position: relative; margin: auto; overflow: hidden; border: 1px solid #ffffff45; background: #050914; cursor: grab; touch-action: none; user-select: none; }
+.crop-viewport.avatar { border-radius: 50%; }
+.crop-viewport img { position: absolute; left: 50%; top: 50%; max-width: none; pointer-events: none; }
+.crop-guide { position: absolute; inset: 0; box-shadow: inset 0 0 0 1px #fff8, inset 0 0 45px #0006; pointer-events: none; }
+.crop-viewport.avatar .crop-guide { border-radius: 50%; }
+.crop-zoom { gap: 12px; margin: 15px 0; font-size: 12px; }
+.crop-zoom input { flex: 1; accent-color: var(--theme-accent); }
+.cropper-panel small { display: block; color: #ffb6a4; }
+.cropper-panel footer { justify-content: flex-end; gap: 8px; margin-top: 14px; }
+.cropper-panel footer button { padding: 7px 12px; border: 1px solid #ffffff30; border-radius: 7px; color: inherit; background: #ffffff10; }
+.cropper-panel footer .crop-confirm { color: var(--theme-primary); background: var(--theme-accent); }

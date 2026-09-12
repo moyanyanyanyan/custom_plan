@@ -1,0 +1,1 @@
+{"desktop":{"identifier":"desktop","description":"Only local avatar and panel windows; native commands own window operations.","local":true,"windows":["avatar","panel"],"permissions":["core:event:allow-listen","core:event:allow-unlisten","notification:default"]}}
