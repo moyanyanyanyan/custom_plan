@@ -24,6 +24,11 @@ function CardArt({ card, count }: { card: InventionCard; count: number }) {
   );
 }
 
+function isRenderableCard(card: InventionCard): boolean {
+  return Boolean(card && typeof card.name === 'string' && typeof card.description === 'string'
+    && typeof card.stackKey === 'string' && Array.isArray(card.backTasks));
+}
+
 /** 游戏王比例（59:86）卡面：标题在顶部独立一条、插画居中、文案与落款在下，四段互不重叠。 */
 function CardFace({ card, count, flipped }: { card: InventionCard; count: number; flipped: boolean }) {
   return (
@@ -55,7 +60,7 @@ function CardFace({ card, count, flipped }: { card: InventionCard; count: number
 }
 
 export function CardCollection({ cards }: { cards: InventionCard[] }) {
-  const collection = useMemo(() => ({ cards, updatedAt: new Date().toISOString() }), [cards]);
+  const collection = useMemo(() => ({ cards: cards.filter(isRenderableCard), updatedAt: new Date().toISOString() }), [cards]);
 
   const [expanding, setExpanding] = useState<{ stackKey: string; cards: InventionCard[]; index: number } | null>(null);
   // 翻牌只在「浏览」里发生：网格上的卡面保持正面，点浏览进来后才可翻面看任务来源。
@@ -103,6 +108,7 @@ export function CardCollection({ cards }: { cards: InventionCard[] }) {
         </div>
       </div>
       <div className="card-grid">
+        {cards.length > 0 && collection.cards.length < cards.length && <p className="empty-hint">部分卡牌数据异常，已跳过显示</p>}
         {stacks.length === 0 && (
           <p className="empty-hint">完成今日任务后，启动发明机即可获得卡牌</p>
         )}
