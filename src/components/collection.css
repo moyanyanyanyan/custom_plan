@@ -183,7 +183,7 @@
 .card-back-content time {
   margin-top: auto;
   font-size: 10px;
-  color: #888;
+  color: #ccc;
 }
 
 .card-info h4 {
@@ -199,7 +199,7 @@
 
 .card-info time {
   font-size: 11px;
-  color: #777;
+  color: #bbb;
 }
 
 .card-info .card-sources {
@@ -335,9 +335,9 @@
     radial-gradient(circle at 75% 85%, rgba(74,44,10,0.25) 0%, transparent 40%);
   pointer-events: none;
 }
-.tier-copper .card-name { color: #e8a05e; text-shadow: 0 1px 3px #1a0800cc; position:relative; z-index:1; }
-.tier-copper .card-desc { color: #cd7f32; position:relative; z-index:1; }
-.tier-copper .card-footer { color: #a0743c; position:relative; z-index:1; }
+.tier-copper .card-name { color: #f0b86e; text-shadow: 0 1px 4px #1a0800ee; position:relative; z-index:1; }
+.tier-copper .card-desc { color: #e8b87a; text-shadow: 0 1px 4px #1a0800cc; position:relative; z-index:1; }
+.tier-copper .card-footer { color: #d4a05c; text-shadow: 0 1px 3px #1a080099; position:relative; z-index:1; }
 .tier-copper .card-art img { filter: sepia(0.15) brightness(0.95); }
 
 /* ⚪ 银 - 拉丝金属质感 */

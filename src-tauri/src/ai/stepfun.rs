@@ -3,7 +3,7 @@ use crate::data::AppStore;
 use base64::Engine;
 use std::time::Duration;
 
-const CHAT_MODEL: &str = "step-3.5-flash";
+const CHAT_MODEL: &str = "deepseek-v4-flash";
 const IMAGE_MODEL: &str = "seedream-5.0-lite";
 const CHAT_URL: &str = "https://tokendance.space/gateway/v1/chat/completions";
 const IMAGE_URL: &str = "https://tokendance.space/gateway/v1/images/generations";
@@ -63,13 +63,13 @@ pub async fn generate_image(prompt: String) -> Result<Vec<u8>, AiError> {
 pub async fn generate_copy_with_store(
     system: String, user: String, store: &AppStore,
 ) -> Result<GeneratedCopy, AiError> {
-    generate_copy_with_key(system, user, tokendance_key()?).await
+    generate_copy_with_key(system, user, stored_key(store)?).await
 }
 
 pub async fn generate_image_with_store(
     prompt: String, store: &AppStore,
 ) -> Result<Vec<u8>, AiError> {
-    generate_image_with_key(prompt, tokendance_key()?).await
+    generate_image_with_key(prompt, stored_key(store)?).await
 }
 
 pub async fn generate_steps_with_store(

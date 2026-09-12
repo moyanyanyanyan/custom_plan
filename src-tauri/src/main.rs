@@ -30,7 +30,7 @@ fn read_stepfun_key_from_dsh() -> Option<String> {
 fn default_stepfun_api_key() -> Option<&'static str> {
     // Embedded fallback so first-run users get a usable default API key.
     // Actual value is read at runtime from the DSH credentials file when available.
-    Some("1sMPgJBIWjiz6rxSDyJZIhTU5sx4hJm7pLiEZevYP9xgiOjlDnUbHLmZN1JZ46upG")
+    Some("sk-b4da085962e5cffad4c98dbad91b7d5bacae87dfa8ade5d7")
 }
 
 fn main() {

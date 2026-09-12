@@ -24,6 +24,8 @@ export function useCardGeneration(tasks: Experiment[]) {
     generatingRef.current = true;
     setInventing(true);
     setWarning('');
+    // 让 React 先刷新 UI（显示"发明机运转中…"），再开始耗时操作
+    await new Promise((resolve) => setTimeout(resolve, 0));
     try {
       const base = generateCardFromTasks(tasks);
       if (!base) return;
