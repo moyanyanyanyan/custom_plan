@@ -3,10 +3,11 @@ use crate::data::AppStore;
 use base64::Engine;
 use std::time::Duration;
 
-const CHAT_MODEL: &str = "step-3.7-flash";
-const IMAGE_MODEL: &str = "step-image-edit-2";
-const CHAT_URL: &str = "https://api.stepfun.com/v1/chat/completions";
-const IMAGE_URL: &str = "https://api.stepfun.com/v1/images/generations";
+const CHAT_MODEL: &str = "step-3.5-flash";
+const IMAGE_MODEL: &str = "seedream-5.0-lite";
+const CHAT_URL: &str = "https://tokendance.space/gateway/v1/chat/completions";
+const IMAGE_URL: &str = "https://tokendance.space/gateway/v1/images/generations";
+const REF_IMAGE_SUBPATH: &str = "com.absurdlab.desktop\\character_ref.png";
 
 pub struct StepFunProvider;
 
@@ -21,6 +22,12 @@ impl AiProvider for StepFunProvider {
 
 fn env_key() -> Result<String, AiError> {
     std::env::var("STEPFUN_API_KEY").map_err(|_| AiError::MissingKey)
+}
+
+fn tokendance_key() -> Result<String, AiError> {
+    std::env::var("TOKENDANCE_API_KEY")
+        .or_else(|_| std::env::var("STEPFUN_API_KEY"))
+        .map_err(|_| AiError::MissingKey)
 }
 
 pub fn stored_key(store: &AppStore) -> Result<String, AiError> {
@@ -46,23 +53,23 @@ async fn checked(response: reqwest::Response) -> Result<reqwest::Response, AiErr
 }
 
 pub async fn generate_copy(system: String, user: String) -> Result<GeneratedCopy, AiError> {
-    generate_copy_with_key(system, user, env_key()?).await
+    generate_copy_with_key(system, user, tokendance_key()?).await
 }
 
 pub async fn generate_image(prompt: String) -> Result<Vec<u8>, AiError> {
-    generate_image_with_key(prompt, env_key()?).await
+    generate_image_with_key(prompt, tokendance_key()?).await
 }
 
 pub async fn generate_copy_with_store(
     system: String, user: String, store: &AppStore,
 ) -> Result<GeneratedCopy, AiError> {
-    generate_copy_with_key(system, user, stored_key(store)?).await
+    generate_copy_with_key(system, user, tokendance_key()?).await
 }
 
 pub async fn generate_image_with_store(
     prompt: String, store: &AppStore,
 ) -> Result<Vec<u8>, AiError> {
-    generate_image_with_key(prompt, stored_key(store)?).await
+    generate_image_with_key(prompt, tokendance_key()?).await
 }
 
 pub async fn generate_steps_with_store(
@@ -99,11 +106,26 @@ pub fn extract_steps(raw: &str) -> Option<Vec<String>> {
     (steps.len() >= 2).then_some(steps)
 }
 
+fn load_ref_image() -> Option<String> {
+    let app_data = std::env::var("APPDATA").ok()?;
+    let path = std::path::Path::new(&app_data).join(REF_IMAGE_SUBPATH);
+    if !path.exists() { return None; }
+    let bytes = std::fs::read(&path).ok()?;
+    let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
+    Some(format!("data:image/png;base64,{}", b64))
+}
+
 async fn generate_image_with_key(prompt: String, key: String) -> Result<Vec<u8>, AiError> {
-    let response = client()?.post(IMAGE_URL).bearer_auth(key).json(&serde_json::json!({
+    let mut body = serde_json::json!({
         "model": IMAGE_MODEL, "prompt": prompt, "n": 1,
-        "size": "1024x1024", "response_format": "b64_json"
-    })).send().await.map_err(|e| AiError::Network(e.to_string()))?;
+        "size": "1920x1920", "response_format": "b64_json"
+    });
+    // If a character reference image exists, include it for image-to-image
+    if let Some(data_url) = load_ref_image() {
+        body["image"] = serde_json::json!(data_url);
+    }
+    let response = client()?.post(IMAGE_URL).bearer_auth(key).json(&body)
+        .send().await.map_err(|e| AiError::Network(e.to_string()))?;
     let body: ImageResponse = checked(response).await?.json().await
         .map_err(|_| AiError::InvalidResponse)?;
     let encoded = body.data.first().and_then(|item| item.b64_json.as_ref())

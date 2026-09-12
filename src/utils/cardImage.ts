@@ -41,21 +41,18 @@ function b64DataUrlToBlob(dataUrl: string): Blob {
   return new Blob([bytes], { type: 'image/png' });
 }
 
-/** 生图提示词：固定为 Yu-Gi-Oh! 卡牌封面风格，禁止文字/字母/水印。 */
+/** 生图提示词：纯场景插画，非卡牌风格，绝对禁止任何文字。 */
 function buildArtPrompt(card: InventionCard): string {
   return [
-    'Yu-Gi-Oh! trading card game cover art style',
+    'fantasy illustration, scene art',
+    'no card frame, no card border, no card layout',
+    'STRICTLY NO TEXT, NO LETTERS, NO WORDS, NO TITLES, NO LABELS',
     `theme: "${card.name}"`,
     `${card.description}`,
-    'fantasy illustration',
     'dramatic lighting',
     'highly detailed',
     'vibrant colors',
     'dynamic composition',
-    'centered subject with space for text overlay',
-    'no text',
-    'no letters',
-    'no watermark',
   ].join(', ');
 }
 
@@ -66,8 +63,8 @@ function compose(bitmap: ImageBitmap, card: InventionCard): string {
   canvas.height = OUT_H;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('no canvas 2d');
-  // cover 铺满（59:86 画幅）
-  const scale = Math.max(OUT_W / bitmap.width, OUT_H / bitmap.height);
+  // contain 基础上放大 1.12x，裁掉 AI 图常见的白边/外框
+  const scale = Math.min(OUT_W / bitmap.width, OUT_H / bitmap.height) * 1.12;
   const w = bitmap.width * scale;
   const h = bitmap.height * scale;
   ctx.drawImage(bitmap, (OUT_W - w) / 2, (OUT_H - h) / 2, w, h);
@@ -91,15 +88,6 @@ function composeFallback(card: InventionCard): string {
   ctx.strokeStyle = 'rgba(255,255,255,0.22)';
   ctx.lineWidth = 3;
   ctx.strokeRect(8, 8, OUT_W - 16, OUT_H - 16);
-  // 名称首字
-  ctx.fillStyle = 'rgba(255,255,255,0.9)';
-  ctx.font = 'bold 90px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(card.name.slice(0, 1), OUT_W / 2, OUT_H / 2 - 30);
-  ctx.fillStyle = 'rgba(255,255,255,0.5)';
-  ctx.font = '17px sans-serif';
-  ctx.fillText('离线占位卡', OUT_W / 2, OUT_H / 2 + 60);
   drawDecoration(ctx, card);
   return canvas.toDataURL('image/png');
 }

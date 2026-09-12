@@ -90,7 +90,8 @@ export function ControlPanel() {
       : !tasks.length ? '先登记一项今天想完成的小事吧。'
         : generation.state === 'ready' ? '研究数据充足，今日发明机已经就绪。'
           : `还差 ${generation.remaining} 份稳定余波即可启动发明机。`;
-  const machineCopy = generation.state === 'generating' ? '发明机运转中…'
+  const machineCopy = generation.generatingImage ? '图片还在生成中，请耐心等待'
+    : generation.state === 'generating' ? '发明机运转中…'
     : generation.state === 'completed' ? '今日发明已完成'
       : '启动今日发明机';
 
@@ -158,6 +159,18 @@ export function ControlPanel() {
       onClose={() => generation.setRevealedCard(null)} />
     <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     <ArchiveModal open={archiveOpen} onClose={() => setArchiveOpen(false)} />
+    {generation.generatingImage && (
+      <div style={{
+        position: 'fixed', inset: 0, zIndex: 9999,
+        background: 'rgba(0,0,0,0.85)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexDirection: 'column', gap: 16, cursor: 'wait',
+      }}>
+        <div style={{ width: 48, height: 48, border: '3px solid rgba(255,255,255,0.2)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+        <p style={{ color: '#fff', fontSize: 16 }}>图片还在生成中，请耐心等待</p>
+        <p style={{ color: '#9aa0b5', fontSize: 12 }}>生成过程中请不要进行其他操作</p>
+      </div>
+    )}
       </main>
     </>
   );
