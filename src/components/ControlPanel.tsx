@@ -162,7 +162,7 @@ export function ControlPanel() {
     <CardRevealModal card={generation.revealedCard} open={!!generation.revealedCard}
       onClose={() => generation.setRevealedCard(null)} />
     <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} onReplayGuide={replayGuide} />
-    <ArchiveModal open={archiveOpen} onClose={() => setArchiveOpen(false)} />
+    <ArchiveModal open={archiveOpen} tasks={tasks} onClose={() => setArchiveOpen(false)} />
       </main>
       <OnboardingGuide open={guideOpen} onFinish={finishGuide} />
     </>
