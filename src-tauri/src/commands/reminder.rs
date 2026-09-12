@@ -1,13 +1,22 @@
 use crate::data::AppStore;
 use chrono::{DateTime, Local};
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
 use std::process::Command;
 use tauri::{AppHandle, State};
 use tauri_plugin_notification::NotificationExt;
 
+#[cfg(windows)]
+const CREATE_NO_WINDOW: u32 = 0x08000000;
+
 fn task_name(id: &str) -> String { format!("AbsurdLab-Reminder-{id}") }
 
 fn run_schtasks(args: &[String]) -> Result<(), String> {
-    let output = Command::new("schtasks").args(args).output().map_err(|e| e.to_string())?;
+    let mut command = Command::new("schtasks");
+    command.args(args);
+    #[cfg(windows)]
+    command.creation_flags(CREATE_NO_WINDOW);
+    let output = command.output().map_err(|e| e.to_string())?;
     if output.status.success() { Ok(()) } else {
         Err(String::from_utf8_lossy(&output.stderr).trim().to_string())
     }

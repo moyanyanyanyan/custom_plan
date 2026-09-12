@@ -8,6 +8,12 @@ export function useTaskReminders() {
   const { data, ready, update } = useAppData();
   const [error, setError] = useState('');
   const scanning = useRef(false);
+  const scheduling = useRef(Promise.resolve());
+  const previousReminders = useRef(new Map<string, string>());
+  const reminderConfig = Object.values(data.tasksByDate).flat()
+    .filter((task) => !task.completed && !task.remindedAt && task.reminderAt)
+    .map((task) => `${task.id}:${task.reminderAt}`)
+    .sort().join('|');
   const scan = useCallback(async () => {
     if (!ready || scanning.current) return;
     scanning.current = true;
@@ -36,13 +42,22 @@ export function useTaskReminders() {
   }, [data.tasksByDate, ready, update]);
 
   useEffect(() => {
-    if (ready) {
-      for (const task of Object.values(data.tasksByDate).flat()) {
-        if (!task.completed && !task.remindedAt && task.reminderAt) {
-          void scheduleReminder(task.id, task.reminderAt).catch(() => undefined);
-        }
+    if (ready) scheduling.current = scheduling.current.then(async () => {
+      const active = Object.values(data.tasksByDate).flat()
+        .filter((task) => !task.completed && !task.remindedAt && task.reminderAt);
+      const next = new Map(active.map((task) => [task.id, task.reminderAt as string]));
+      for (const [taskId, reminderAt] of previousReminders.current) {
+        if (!next.has(taskId)) await scheduleReminder(taskId, null);
+        else if (next.get(taskId) !== reminderAt) await scheduleReminder(taskId, next.get(taskId)!);
       }
-    }
+      for (const [taskId, reminderAt] of next) {
+        if (!previousReminders.current.has(taskId)) await scheduleReminder(taskId, reminderAt);
+      }
+      previousReminders.current = next;
+    }).catch(() => undefined);
+  }, [ready, reminderConfig]);
+
+  useEffect(() => {
     void scan();
     const timer = window.setInterval(() => void scan(), 30_000);
     const onFocus = () => void scan();
