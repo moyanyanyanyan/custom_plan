@@ -17,7 +17,10 @@ export function OnboardingGuide({ open, onFinish }: OnboardingGuideProps) {
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
   const [cardPosition, setCardPosition] = useState<{ top: number; left: number } | null>(null);
   const locate = useCallback(() => {
-    setTargetRect(step.target ? document.querySelector(step.target)?.getBoundingClientRect() ?? null : null);
+    const target = step.target ? document.querySelector<HTMLElement>(step.target) : null;
+    const rect = target?.getBoundingClientRect();
+    // 紧凑模式会隐藏部分功能入口，引导不能聚焦一个没有可视面积的元素。
+    setTargetRect(rect && rect.width > 0 && rect.height > 0 ? rect : null);
   }, [step]);
   useEffect(() => { if (open) { setIndex(0); locate(); } }, [open]);
   useEffect(() => {
