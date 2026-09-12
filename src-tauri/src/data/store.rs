@@ -60,12 +60,15 @@ impl AppStore {
 
     pub fn claim_card(&self, date: &str, mut card: serde_json::Value) -> Result<AppData, StoreError> {
         let mut current = self.state.lock().map_err(|e| StoreError::from(e.to_string()))?;
-        let exists = current.cards.iter().any(|item| {
-            item.get("dailyKey").and_then(|value| value.as_str()) == Some(date)
-                || item.get("earnedAt").and_then(|value| value.as_str())
-                    .is_some_and(|earned| earned.starts_with(date))
-        });
-        if exists { return Err(StoreError::DailyCardExists); }
+        // debug 构建允许桌面端重复生成，便于测试；release 构建保留每日一张。
+        if !cfg!(debug_assertions) {
+            let exists = current.cards.iter().any(|item| {
+                item.get("dailyKey").and_then(|value| value.as_str()) == Some(date)
+                    || item.get("earnedAt").and_then(|value| value.as_str())
+                        .is_some_and(|earned| earned.starts_with(date))
+            });
+            if exists { return Err(StoreError::DailyCardExists); }
+        }
         let object = card.as_object_mut().ok_or_else(|| StoreError::from(String::from("Invalid card")))?;
         object.insert("dailyKey".into(), serde_json::Value::String(date.into()));
         current.cards.push(card);
