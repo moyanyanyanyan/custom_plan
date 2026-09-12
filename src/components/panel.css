@@ -99,7 +99,7 @@
 }
 
 /* 紧凑桌面模式把主要空间留给任务，仍保留触控友好的点击区域。 */
-.panel-shell { height: 100vh; min-height: 0; padding: 11px 16px 8px; border-radius: 17px; display: flex; flex-direction: column; background-image: radial-gradient(ellipse at 50% 42%, rgb(210 237 248 / .18), transparent 58%), linear-gradient(160deg, rgb(174 216 234 / .93), rgb(91 163 197 / .95) 52%, rgb(151 202 224 / .93)), var(--panel-wallpaper), linear-gradient(160deg, #aed8ea, #5ba3c5 52%, #97cae0); }
+.panel-shell { height: 100vh; min-height: 0; padding: 11px 16px 8px; border-radius: 17px; display: flex; flex-direction: column; background-image: radial-gradient(ellipse at 50% 42%, rgb(210 237 248 / .18), transparent 58%), linear-gradient(160deg, rgb(174 216 234 / var(--panel-overlay-opacity)), rgb(91 163 197 / var(--panel-overlay-opacity)) 52%, rgb(151 202 224 / var(--panel-overlay-opacity))), var(--panel-wallpaper), linear-gradient(160deg, #aed8ea, #5ba3c5 52%, #97cae0); }
 .today-board-shell { min-height: 0; flex: 1 1 auto; display: flex; flex-direction: column; overflow: hidden; }
 .today-board-shell > .today-board { min-height: 0; flex: 1 1 auto; }
 .brand-bar { min-height: 36px; margin-bottom: 7px; }
