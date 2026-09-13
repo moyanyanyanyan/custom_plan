@@ -6,7 +6,7 @@
 
 ## 环境
 
-- Node.js 20.19+ 与 npm。
+- Node.js 22.22.2（由 `.nvmrc` 固定）与 pnpm 10.33.4。
 - Rust stable，使用 Windows MSVC 工具链。
 - Visual Studio 2022 Build Tools 的“使用 C++ 的桌面开发”组件及 Windows SDK。
 - Microsoft Edge WebView2 Runtime。
@@ -15,9 +15,13 @@
 ## 启动与构建
 
 ```powershell
-npm install
-npm run desktop
+pnpm install
+.\scripts\dev-desktop.ps1
 ```
+
+`dev-desktop.ps1` 会自动切换 Node 版本、设置 Corepack 缓存并启动 Tauri 热更新。
+如果正式版或另一个开发实例已在运行，脚本会停止并提示手动退出，不会强制关闭。
+开发期间前端修改会自动刷新，Rust 修改会自动重新编译；在终端按 `Ctrl+C` 停止。
 
 启动后头像出现在主屏右边缘。拖动头像后松手，会吸附当前显示器最近的左右边缘。
 单击头像展开或收起面板。面板右上角减号收起，电源图标退出整个应用。
@@ -27,21 +31,27 @@ npm run desktop
 松手后面板留在当前位置，不带动头像；收起再打开时重新定位到头像旁。
 
 ```powershell
-npm run build
-npm run test:native
-npm run desktop:build
+corepack pnpm run check
+corepack pnpm run desktop:build
 ```
 
-桌面构建只生成可执行文件，不生成安装包：
+`desktop:build` 会先重新构建前端，再生成 Windows NSIS 安装程序：
+`src-tauri/target/release/bundle/nsis/离谱发明所_0.1.0_x64-setup.exe`。
+如果只需要用于诊断的裸可执行文件，执行 `corepack pnpm run desktop:build:binary`，产物为
 `src-tauri/target/release/absurd-invention-lab.exe`。
 
+安装程序采用当前用户安装模式，不要求管理员权限，并创建开始菜单及卸载入口。
+目标机器需要联网：缺少 Microsoft Edge WebView2 Runtime 时，安装程序会在线下载安装。
+当前 `0.1.0` 安装包尚未进行代码签名，Windows 可能显示“未知发布者”或 SmartScreen 提示；
+确认安装包来自项目的 Gitee Release 且 SHA-256 一致后，可在“更多信息”中选择“仍要运行”。
+
 本次已生成并验收的原型程序为 `src-tauri/target/debug/absurd-invention-lab.exe`，可直接双击。
-复现该构建使用 `npm run tauri -- build --debug --no-bundle`，程序内已包含界面资源，
+复现该构建使用 `corepack pnpm run tauri -- build --debug --no-bundle`，程序内已包含界面资源，
 运行时不需要预览服务，也不会额外打开控制台窗口。
 
-只看 UI 时执行 `npm run dev`，访问 `http://127.0.0.1:1420/`。
+只看 UI 时执行 `corepack pnpm run dev`，访问 `http://127.0.0.1:1420/`。
 浏览器里窗口操作按钮不可用；头像吸附必须在桌面应用中体验。
-不要在已有预览服务占用 1420 端口时再次启动 `npm run desktop`。
+不要在已有预览服务占用 1420 端口时再次启动桌面开发模式。
 
 ## 结构与约束
 
@@ -65,9 +75,9 @@ npm run desktop:build
 
 ## 验证
 
-`npm test` 运行前端单元和组件测试，`npm run test:e2e` 自动启动预览服务并运行浏览器检查。
-`npm run test:native` 覆盖 AI 响应解析、左右贴边、上下边界、负坐标屏幕、任务栏偏移及 150% 缩放。
-浏览器检查由项目内 Playwright 配置自动启动 Vite；运行 `npm run test:e2e` 即可。
+`pnpm test` 运行前端单元和组件测试，`pnpm run test:e2e` 自动启动预览服务并运行浏览器检查。
+`pnpm run test:native` 覆盖 AI 响应解析、左右贴边、上下边界、负坐标屏幕、任务栏偏移及 150% 缩放。
+浏览器检查由项目内 Playwright 配置自动启动 Vite；运行 `pnpm run test:e2e` 即可。
 截图类人工验收仍可运行 `node scripts/preview-check.cjs`，产物保存在 `.artifacts/`。
 浏览器截图不替代 Windows 上真实拖动、跨屏和退出操作的验收。
 

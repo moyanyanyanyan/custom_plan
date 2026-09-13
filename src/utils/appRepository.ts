@@ -4,7 +4,8 @@ import { experiments } from '../constants/preview';
 import { createDefaultData } from '../constants/defaults';
 import type { AppData, AppDataEvent, LegacyData } from '../types/storage';
 import type { InventionCard } from '../types/card';
-import { isTask, normalizeCards, normalizeData, safeArray } from './validation';
+import { normalizeCards, normalizeData } from './validation';
+import { createTask, normalizeTask } from './taskModel';
 import { isDesktop } from './desktop';
 import { localDateKey } from './date';
 
@@ -15,9 +16,9 @@ const DEMO_CARD_KEY = 'hackathon-card-collection-demo';
 function seededDefaults(now = new Date()): AppData {
   const data = createDefaultData(now);
   const timestamp = now.toISOString();
-  data.tasksByDate[localDateKey(now)] = experiments.map((task) => ({
+  data.tasksByDate[localDateKey(now)] = experiments.map((task) => createTask({
     ...task, createdAt: timestamp, completedAt: task.completed ? timestamp : null,
-  }));
+  }, now));
   return data;
 }
 
@@ -36,7 +37,10 @@ function readLegacy(): LegacyData {
       const key = localStorage.key(index);
       if (!key?.startsWith('absurd.tasks.')) continue;
       const date = key.slice('absurd.tasks.'.length);
-      tasksByDate[date] = safeArray(JSON.parse(localStorage.getItem(key) || '[]'), isTask);
+      const stored = JSON.parse(localStorage.getItem(key) || '[]');
+      tasksByDate[date] = Array.isArray(stored) ? stored.flatMap((item) => {
+        const task = normalizeTask(item); return task ? [task] : [];
+      }) : [];
     }
   } catch { /* 损坏的旧记录不会阻止其他数据迁移。 */ }
   return { tasksByDate, cards: parseCards(CARD_KEY), demoCards: parseCards(DEMO_CARD_KEY) };
@@ -54,9 +58,11 @@ function mergeLegacy(defaults: AppData, legacy: LegacyData): AppData {
 export async function loadAppData(): Promise<AppData> {
   const defaults = seededDefaults();
   if (isDesktop) {
-    const current = await invoke<AppData>('load_app_data');
-    if (current.schemaVersion === 1) return normalizeData(current, defaults);
-    return invoke<AppData>('import_legacy_data', { legacy: readLegacy(), defaults });
+    const current = await invoke<{ schemaVersion?: number }>('load_app_data');
+    if (!current.schemaVersion) {
+      return invoke<AppData>('import_legacy_data', { legacy: readLegacy(), defaults });
+    }
+    return normalizeData(current, defaults);
   }
   try {
     const saved = localStorage.getItem(WEB_STATE_KEY);
@@ -107,13 +113,20 @@ export async function loadAsset(assetId: string): Promise<string> {
   return isDesktop ? invoke<string>('load_asset_data_url', { assetId }) : '';
 }
 
-export async function saveUserAsset(file: File, kind: 'avatar' | 'wallpaper'): Promise<string> {
-  const dataUrl = await new Promise<string>((resolve, reject) => {
+/** 只读取一次用户图片，避免预览、取色和落盘使用不同的临时地址。 */
+export async function readUserAsset(file: File): Promise<string> {
+  return new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result));
     reader.onerror = () => reject(new Error('图片读取失败'));
     reader.readAsDataURL(file);
   });
+}
+
+export async function saveUserAsset(
+  file: File, kind: 'avatar' | 'wallpaper', source?: string,
+): Promise<string> {
+  const dataUrl = source ?? await readUserAsset(file);
   if (!isDesktop) return dataUrl;
   const assetId = `${kind}-${Date.now().toString(36)}`;
   return invoke<string>('save_user_asset', { assetId, dataUrl });

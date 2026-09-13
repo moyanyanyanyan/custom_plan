@@ -3,6 +3,14 @@ import { createDefaultData } from '../../src/constants/defaults';
 import { normalizeData } from '../../src/utils/validation';
 
 describe('normalizeData', () => {
+  it('旧设置和非法窗口模式回退到标准模式', () => {
+    const fallback = createDefaultData(new Date('2026-09-10T00:00:00Z'));
+    const legacy = { ...fallback, settings: { ...fallback.settings } } as any;
+    delete legacy.settings.panelMode;
+    expect(normalizeData(legacy, fallback).settings.panelMode).toBe('standard');
+    legacy.settings.panelMode = 'wide';
+    expect(normalizeData(legacy, fallback).settings.panelMode).toBe('standard');
+  });
   it('过滤损坏任务与卡牌并保留有效记录', () => {
     const fallback = createDefaultData(new Date('2026-09-10T00:00:00Z'));
     const validTask = {
@@ -13,7 +21,11 @@ describe('normalizeData', () => {
       schemaVersion: 1, tasksByDate: { '2026-09-10': [validTask, { id: 3 }] },
       cards: [{ id: 2 }], slimes: [], settings: fallback.settings, updatedAt: fallback.updatedAt,
     }, fallback);
-    expect(normalized.tasksByDate['2026-09-10']).toEqual([validTask]);
+    expect(normalized.tasksByDate['2026-09-10']).toEqual([expect.objectContaining(validTask)]);
+    expect(normalized.tasksByDate['2026-09-10'][0]).toMatchObject({
+      scheduledTime: null, repeatRule: null, notes: '', steps: [],
+    });
+    expect(normalized.schemaVersion).toBe(2);
     expect(normalized.cards).toEqual([]);
   });
 

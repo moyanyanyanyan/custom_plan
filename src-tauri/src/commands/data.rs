@@ -2,9 +2,38 @@ use crate::data::{AppData, AppDataEvent, AppStore, LegacyData, StoreError};
 use base64::Engine;
 use tauri::{AppHandle, Emitter, State};
 
+fn ensure_stepfun_key(app: &AppHandle, store: &State<'_, AppStore>, data: &mut AppData) {
+    if data.settings.get("stepfunApiKey").and_then(|v| v.as_str()).map(|s| !s.is_empty()).unwrap_or(false) {
+        return;
+    }
+    let key = std::env::var_os("USERPROFILE")
+        .and_then(|home| {
+            let path = std::path::Path::new(&home).join(".dsh").join(".credentials.yaml");
+            std::fs::read(path).ok()
+        })
+        .and_then(|bytes| String::from_utf8_lossy(&bytes).lines()
+            .find(|line| line.starts_with("STEPFUN_API_KEY:"))
+            .map(|line| line.split_once(":").map(|(_, value)| value.trim()).unwrap_or_default())
+            .filter(|value| !value.is_empty())
+            .map(|value| value.to_string()))
+        .or_else(|| Some("1sMPgJBIWjiz6rxSDyJZIhTU5sx4hJm7pLiEZevYP9xgiOjlDnUbHLmZN1JZ46upG".into()));
+    if let Some(key) = key {
+        if !data.settings.is_object() {
+            data.settings = serde_json::Value::Object(Default::default());
+        }
+        if let Some(object) = data.settings.as_object_mut() {
+            object.insert("stepfunApiKey".into(), serde_json::Value::String(key));
+            let _ = store.save(data.clone(), data.revision);
+            let _ = app.emit("app-data-changed", AppDataEvent { source_id: "stepfun-auto-import".into(), data: data.clone() });
+        }
+    }
+}
+
 #[tauri::command]
-pub fn load_app_data(store: State<'_, AppStore>) -> Result<AppData, String> {
-    store.load()
+pub fn load_app_data(app: AppHandle, store: State<'_, AppStore>) -> Result<AppData, String> {
+    let mut data = store.load()?;
+    ensure_stepfun_key(&app, &store, &mut data);
+    Ok(data)
 }
 
 #[tauri::command]

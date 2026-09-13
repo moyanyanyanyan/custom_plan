@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 
 /** 用真实鼠标输入验证顶部拖动，避免仅调用命令而漏测区域和按钮隔离。 */
 async function checkPanelDrag({ avatar, panel, probe, avatarTitle, panelTitle, original }) {
-  const scale = original.width / 64;
+  const scale = original.width / 48;
   const initial = probe(panelTitle);
   const titleBox = await panel.locator('.brand h1').boundingBox();
   const ox = Math.round((titleBox.x + titleBox.width / 2) * scale);
@@ -15,7 +15,7 @@ async function checkPanelDrag({ avatar, panel, probe, avatarTitle, panelTitle, o
   const movedAgain = probe(panelTitle, 'Drag', moved.x + blankX - 80, moved.y + blankY - 30, blankX, blankY);
   assert.ok(movedAgain.x < moved.x - 30, 'Header blank area must also drag');
   assert.deepEqual(probe(avatarTitle), original, 'Panel drag must not move avatar');
-  const task = await panel.locator('.focused').boundingBox();
+  const task = await panel.locator('.today-row').first().boundingBox();
   const tx = Math.round((task.x + task.width / 2) * scale);
   const ty = Math.round((task.y + task.height / 2) * scale);
   const afterTask = probe(panelTitle, 'Drag', movedAgain.x + tx - 80, movedAgain.y + ty, tx, ty);
