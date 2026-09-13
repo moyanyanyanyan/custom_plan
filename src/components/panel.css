@@ -10,6 +10,8 @@
 .brand h1 { font-size: 24px; letter-spacing: 3px; font-weight: 650; }
 .brand p { font-size: 7px; letter-spacing: 2px; color: var(--theme-muted-text); margin-top: 5px; }
 .window-actions { gap: 5px; align-self: flex-start; }
+.desktop-download-link { padding: 5px 8px; border: 1px solid color-mix(in srgb, var(--theme-accent) 45%, transparent); border-radius: 7px; color: var(--theme-accent); font-size: 10px; text-decoration: none; white-space: nowrap; }
+.desktop-download-link:hover { background: #ffffff19; color: white; }
 .window-actions button { display: grid; place-items: center; width: 27px; height: 27px; padding: 0; border: 0; background: transparent; border-radius: 7px; color: var(--theme-muted-text); cursor: pointer; }
 .window-actions button:not(:disabled):hover { background: #ffffff19; color: white; }
 .preview-label { font-size: 10px; color: #abbddb; margin-right: 7px; border: 1px solid #ffffff23; border-radius: 20px; padding: 4px 9px; }

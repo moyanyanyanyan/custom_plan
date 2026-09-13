@@ -20,6 +20,7 @@ import { loadJson, saveJson } from '../utils/storage';
 import './panel.css';
 import './collection.css';
 import './reveal.css';
+import { DESKTOP_DOWNLOAD } from '../constants/download';
 
 /** 控制面板统一持有任务状态，并将真实完成任务交给卡牌生成流程。 */
 export function ControlPanel() {
@@ -111,7 +112,7 @@ export function ControlPanel() {
       <div className="brand"><span className="brand-mark">i<span>▲</span></span>
         <div><h1>离谱发明所</h1><p>ABSURD INVENTION LAB</p></div>
       </div>
-      <div className="window-actions"><span className="preview-label">界面预览</span>
+      <div className="window-actions"><a className="desktop-download-link" href={DESKTOP_DOWNLOAD.url} download={DESKTOP_DOWNLOAD.fileName} target="_blank" rel="noopener noreferrer" aria-label="下载 Windows 桌面版">下载桌面版</a><span className="preview-label">界面预览</span>
         <button data-guide="settings" onClick={() => setSettingsOpen(true)} title="研究所设置" aria-label="研究所设置"><Icon name="settings" size={16} /></button>
         <button disabled={!isDesktop} onClick={() => windowAction('minimize_panel')} title="最小化面板" aria-label="最小化面板"><Icon name="minus" size={17} /></button>
         <button disabled={!isDesktop} onClick={() => windowAction('exit_app')} title="退出应用" aria-label="退出应用"><Icon name="power" size={16} /></button>

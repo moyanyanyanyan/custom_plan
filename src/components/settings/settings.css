@@ -40,6 +40,17 @@
 .panel-mode-setting .setting-hint { display: block; overflow-wrap: anywhere; }
 .setting-hint { color: var(--theme-muted-text); font-size: 10px; line-height: 1.4; }
 .settings-panel > p { margin-top: 12px; color: #ffb6a4; font-size: 11px; }
+.desktop-download-card { margin-top: 18px; padding: 13px; border: 1px solid color-mix(in srgb, var(--theme-accent) 42%, transparent); border-radius: 11px; background: color-mix(in srgb, var(--theme-accent) 8%, transparent); }
+.desktop-download-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.desktop-download-heading span { color: var(--theme-accent); font-size: 8px; letter-spacing: 1.5px; }
+.desktop-download-heading h3 { margin-top: 4px; font-size: 17px; }
+.desktop-download-heading b { color: var(--theme-muted-text); font-size: 10px; font-weight: 500; }
+.desktop-download-card p { margin: 9px 0; color: var(--theme-muted-text); font-size: 10px; line-height: 1.5; }
+.desktop-download-button { display: inline-block; padding: 8px 12px; border-radius: 7px; color: var(--theme-primary); background: var(--theme-accent); font-size: 11px; font-weight: 700; text-decoration: none; }
+.desktop-download-card > small { display: block; margin-top: 7px; color: var(--theme-muted-text); font-size: 9px; overflow-wrap: anywhere; }
+.desktop-download-card details { margin-top: 9px; color: var(--theme-muted-text); font-size: 9px; line-height: 1.45; }
+.desktop-download-card summary { cursor: pointer; color: var(--theme-text); }
+.desktop-download-card code { display: block; margin-top: 6px; padding: 5px; color: var(--theme-accent); background: #0003; overflow-wrap: anywhere; }
 .settings-replay-guide { display: block; margin-top: 16px; padding: 8px 16px; border: 1px solid #ffffff30; border-radius: 8px; color: var(--theme-text); background: #ffffff12; cursor: pointer; font: inherit; }
 .settings-replay-guide:hover { background: #ffffff1c; border-color: #ffffff4d; }
 .settings-replay-guide:focus-visible { outline: 2px solid var(--theme-accent); outline-offset: 2px; }

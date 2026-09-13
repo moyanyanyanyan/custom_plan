@@ -9,6 +9,7 @@ import { applyTheme } from '../../utils/theme';
 import { isDesktop, setPanelMode } from '../../utils/desktop';
 import { ImageCropper } from './ImageCropper';
 import './settings.css';
+import { DesktopDownloadCard } from './DesktopDownloadCard';
 
 const labels: Record<keyof ThemeSettings, string> = {
   primary: '主背景', secondary: '副背景', accent: '强调色', completed: '完成色',
@@ -119,6 +120,7 @@ export function SettingsPanel({ open, onClose, onReplayGuide }: { open: boolean;
           onChange={(event) => setDraft({ ...draft, theme: { ...draft.theme, [key]: event.target.value } })} /></label>)}</div>
       <label className="sound-setting"><input type="checkbox" checked={draft.soundEnabled}
         onChange={(event) => setDraft({ ...draft, soundEnabled: event.target.checked })} />播放任务反馈音效</label>
+      <DesktopDownloadCard />
       {isDesktop ? <label className="stepfun-key-setting"><span>TokenDance API Key</span><input type="password" value={draft.stepfunApiKey}
         onChange={(event) => setDraft({ ...draft, stepfunApiKey: event.target.value })} placeholder="由开发者提供，可在此覆盖" />
         <span className="setting-hint">在 <a href="https://tokendance.space/keys" target="_blank" rel="noopener noreferrer">tokendance.space/keys</a> 创建，以 sk- 开头；仅保存在本机应用数据中。未设置时 AI 生图与文案自动降级为离线模板</span></label>
