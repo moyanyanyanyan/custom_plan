@@ -13,8 +13,11 @@ pub async fn generate_card_copy(
 #[tauri::command]
 pub async fn generate_card_art(
     store: State<'_, crate::data::AppStore>, prompt: String,
-) -> Result<Vec<u8>, String> {
-    generate_image_with_store(prompt, &store).await.map_err(|e| e.to_string())
+) -> Result<String, String> {
+    let image = generate_image_with_store(prompt, &store)
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(base64::engine::general_purpose::STANDARD.encode(image))
 }
 
 #[tauri::command]

@@ -27,7 +27,7 @@ export async function generateAICopy(sourceTasks: string[]): Promise<AICopy | nu
 export async function generateArtworkDataURL(prompt: string): Promise<string | null> {
   if (!isDesktop) return null;
   try {
-    const b64 = await invoke<string | null>('generate_stepfun_image', { prompt });
+    const b64 = await invoke<string | null>('generate_card_art', { prompt });
     return b64 ? `data:image/png;base64,${b64}` : null;
   } catch {
     return null;

@@ -8,7 +8,7 @@ export function createDefaultData(now = new Date()): AppData {
       panelMode: 'standard',
       username: '墨言',
       avatarAssetId: null, wallpaperAssetId: null, panelOpacity: 0.96,
-      soundEnabled: true, theme: DEFAULT_THEME,
+      soundEnabled: true, stepfunApiKey: '', theme: DEFAULT_THEME,
     },
     updatedAt: now.toISOString(),
   };

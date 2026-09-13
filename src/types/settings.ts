@@ -16,6 +16,7 @@ export interface AppSettings {
   wallpaperAssetId: string | null;
   panelOpacity: number;
   soundEnabled: boolean;
+  stepfunApiKey: string;
   theme: ThemeSettings;
 }
 

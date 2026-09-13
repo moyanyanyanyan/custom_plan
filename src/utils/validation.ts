@@ -51,6 +51,7 @@ function normalizeSettings(value: unknown, fallback: AppSettings): AppSettings {
     panelMode: value.panelMode === 'compact' ? 'compact' : 'standard',
     username: typeof value.username === 'string' && value.username.trim() ? value.username.trim() : fallback.username,
     soundEnabled: typeof value.soundEnabled === 'boolean' ? value.soundEnabled : true,
+    stepfunApiKey: typeof value.stepfunApiKey === 'string' ? value.stepfunApiKey : fallback.stepfunApiKey,
     theme: { ...fallback.theme, ...value.theme },
   };
 }
