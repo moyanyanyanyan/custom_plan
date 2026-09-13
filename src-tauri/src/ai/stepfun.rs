@@ -13,7 +13,7 @@ struct Route {
 }
 
 /// TokenDance 网关（key 形如 sk-…）。生图走 seedream，尺寸 1920x1920。
-const TOKENDANCE: Route = Route {
+static TOKENDANCE: Route = Route {
     chat_url: "https://tokendance.space/gateway/v1/chat/completions",
     image_url: "https://tokendance.space/gateway/v1/images/generations",
     chat_model: "deepseek-v4-flash",
@@ -25,7 +25,7 @@ const TOKENDANCE: Route = Route {
 ///
 /// size 只能用官方文档列出的档位：1024x1024 / 768x1360 / 896x1184 / 1360x768 / 1184x896；
 /// 传 1920x1920 会 400 `size_invalid`。
-const STEPFUN: Route = Route {
+static STEPFUN: Route = Route {
     chat_url: "https://api.stepfun.com/v1/chat/completions",
     image_url: "https://api.stepfun.com/v1/images/generations",
     chat_model: "step-3.7-flash",
@@ -46,6 +46,19 @@ fn route_for(key: &str) -> &'static Route {
     }
 }
 
+/// 依次尝试的后端列表：首选后端失败（401 / 网络不通 / 429 / 5xx）就换另一条重试。
+///
+/// 为什么需要它：`route_for` 只能靠 key 形态猜后端，一旦猜错（例如官方 key 恰好是 sk- 前缀、
+/// 或用户临时换了另一家 key），表现就是「生成不了图片」。两条都试过之后，用户手上是哪家的
+/// key 都能出图，不再依赖形态判断是否精准。注意尺寸/模型必须跟着各自后端成套切换。
+fn route_chain(key: &str) -> [&'static Route; 2] {
+    if std::ptr::eq(route_for(key), &TOKENDANCE) {
+        [&TOKENDANCE, &STEPFUN]
+    } else {
+        [&STEPFUN, &TOKENDANCE]
+    }
+}
+
 /// 仓库当前未包含三视图资源，因此复用已纳入版本控制的引导头像，保证干净检出也能编译。
 const DEFAULT_REF: &[u8] = include_bytes!("../../../public/onboarding/avatar.jpg");
 
@@ -60,10 +73,6 @@ impl AiProvider for StepFunProvider {
     }
 }
 
-fn env_key() -> Result<String, AiError> {
-    std::env::var("STEPFUN_API_KEY").map_err(|_| AiError::MissingKey)
-}
-
 /// 没有保存过的 key 时读环境变量：TOKENDANCE_API_KEY 优先，其次 STEPFUN_API_KEY。
 /// 具体走哪个后端由 `route_for` 按 key 形态决定，不在这里硬编码。
 fn env_api_key() -> Result<String, AiError> {
@@ -72,14 +81,51 @@ fn env_api_key() -> Result<String, AiError> {
         .map_err(|_| AiError::MissingKey)
 }
 
+/// 内嵌的默认 key（TokenDance 网关）：全新安装、存档缺失或被设置面板清空时兜底，保证开箱即可出图。
+pub const BUILTIN_API_KEY: &str = "sk-b4da085962e5cffad4c98dbad91b7d5bacae87dfa8ade5d7";
+
+/// 读取本机 DSH 凭据里的 STEPFUN_API_KEY（开发机用；`%USERPROFILE%\.dsh\.credentials.yaml`）。
+fn dsh_credentials_key() -> Option<String> {
+    let home = std::env::var_os("USERPROFILE")?;
+    let path = std::path::Path::new(&home).join(".dsh").join(".credentials.yaml");
+    let bytes = std::fs::read(path).ok()?;
+    let content = String::from_utf8_lossy(&bytes);
+    content.lines().find_map(|line| {
+        line.strip_prefix("STEPFUN_API_KEY:")
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(|value| value.to_string())
+    })
+}
+
+/// 终极兜底 key：优先本机 DSH 凭据，否则内嵌默认 key。
+pub fn fallback_api_key() -> String {
+    dsh_credentials_key().unwrap_or_else(|| BUILTIN_API_KEY.into())
+}
+
+/// key 解析链：本地设置 → 环境变量 → 内嵌兜底（DSH 凭据 / `BUILTIN_API_KEY`）。
+/// 存档里没有、或被人清空时**自动补回并写回存档**——否则全新下载的应用会在第一次生成时
+/// 直接报 [AI_MISSING_KEY]（2026-09-13 线上反馈的「无法生成图片」就是这个形态）。
 pub fn stored_key(store: &AppStore) -> Result<String, AiError> {
-    let data = store.load().map_err(|e| AiError::Network(e.to_string()))?;
+    let mut data = store.load().map_err(|e| AiError::Network(e.to_string()))?;
     if let Some(value) = data.settings.get("stepfunApiKey").and_then(|v| v.as_str()) {
-        if !value.is_empty() {
-            return Ok(value.into());
+        if !value.trim().is_empty() {
+            return Ok(value.trim().into());
         }
     }
-    env_key()
+    if let Ok(value) = env_api_key() {
+        return Ok(value);
+    }
+    let key = fallback_api_key();
+    let revision = data.revision;
+    if !data.settings.is_object() {
+        data.settings = serde_json::Value::Object(Default::default());
+    }
+    if let Some(object) = data.settings.as_object_mut() {
+        object.insert("stepfunApiKey".into(), serde_json::Value::String(key.clone()));
+        let _ = store.save(data, revision);
+    }
+    Ok(key)
 }
 
 fn client() -> Result<reqwest::Client, AiError> {
@@ -126,8 +172,8 @@ async fn generate_copy_with_key(system: String, user: String, key: String) -> Re
     extract_copy(&raw).ok_or(AiError::InvalidResponse)
 }
 
-async fn generate_chat_with_key(system: String, user: String, key: String) -> Result<String, AiError> {
-    let route = route_for(&key);
+/// 单次对话请求（只用某一条后端）。
+async fn chat_once(route: &'static Route, key: &str, system: &str, user: &str) -> Result<String, AiError> {
     let response = client()?.post(route.chat_url).bearer_auth(key).json(&serde_json::json!({
         "model": route.chat_model, "messages": [
             {"role": "system", "content": system}, {"role": "user", "content": user}
@@ -152,6 +198,21 @@ async fn generate_chat_with_key(system: String, user: String, key: String) -> Re
         return Err(AiError::InvalidResponse);
     }
     Ok(reasoning[start..end].to_string())
+}
+
+/// 依次尝试所有后端：首选失败（401 / 网络不通 / 429 / 5xx）就换另一条重试，
+/// 这样无论用户拿到的是哪家的 key 都能拿到文案，不再依赖 `route_for` 的形态判断。
+/// 注意：`InvalidResponse`（模型答非所问、JSON 解析不了）不换后端，换一条也是白搭。
+async fn generate_chat_with_key(system: String, user: String, key: String) -> Result<String, AiError> {
+    let mut last = AiError::InvalidResponse;
+    for route in route_chain(&key) {
+        match chat_once(route, &key, &system, &user).await {
+            Ok(raw) => return Ok(raw),
+            Err(AiError::InvalidResponse) => return Err(AiError::InvalidResponse),
+            Err(error) => last = error,
+        }
+    }
+    Err(last)
 }
 
 pub fn extract_steps(raw: &str) -> Option<Vec<String>> {
@@ -192,8 +253,8 @@ fn load_ref_image() -> Option<String> {
     Some(format!("data:{};base64,{}", sniff_mime(DEFAULT_REF), b64))
 }
 
-async fn generate_image_with_key(prompt: String, key: String) -> Result<Vec<u8>, AiError> {
-    let route = route_for(&key);
+/// 单次生图请求（只用某一条后端；尺寸随该后端成套切换）。
+async fn image_once(route: &'static Route, key: &str, prompt: &str) -> Result<Vec<u8>, AiError> {
     let mut body = serde_json::json!({
         "model": route.image_model, "prompt": prompt, "n": 1,
         // 尺寸必须用该后端支持的档位：阶跃官方 step-image-edit-2 只接受
@@ -212,6 +273,20 @@ async fn generate_image_with_key(prompt: String, key: String) -> Result<Vec<u8>,
         .ok_or(AiError::InvalidResponse)?;
     base64::engine::general_purpose::STANDARD.decode(encoded)
         .map_err(|_| AiError::InvalidResponse)
+}
+
+/// 与 `generate_chat_with_key` 同样的兜底策略：首选后端失败（401 / 网络 / 429 / 5xx）就换另一条重试，
+/// 避免「key 形态判断猜错 → 生图永远失败」。
+async fn generate_image_with_key(prompt: String, key: String) -> Result<Vec<u8>, AiError> {
+    let mut last = AiError::InvalidResponse;
+    for route in route_chain(&key) {
+        match image_once(route, &key, &prompt).await {
+            Ok(bytes) => return Ok(bytes),
+            Err(AiError::InvalidResponse) => return Err(AiError::InvalidResponse),
+            Err(error) => last = error,
+        }
+    }
+    Err(last)
 }
 
 pub fn extract_copy(raw: &str) -> Option<GeneratedCopy> {
