@@ -1,7 +1,9 @@
 /* 浏览浮层：进来的这张卡才是可翻面的（网格上的卡不翻） */
 .expand-overlay { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 16px; background: #000000bf; }
 .expand-carousel { display: flex; align-items: center; gap: 14px; }
-.expand-card { width: 230px; max-height: 90vh; padding: 10px; border: 1px solid #ffffff1f; border-radius: 14px; background: #1f1f2e; cursor: pointer; animation: popIn .4s ease both; overflow-y: auto; }
+/* perspective 必须加在「被翻转元素的父级」上：没有它就没有真正的 3D 投影，
+   翻面会退化成共面渲染（用户看到的「自动反转全黑」）。 */
+.expand-card { perspective: 1200px; width: 230px; max-height: 90vh; padding: 10px; border: 1px solid #ffffff1f; border-radius: 14px; background: #1f1f2e; cursor: pointer; animation: popIn .4s ease both; overflow-y: auto; }
 /* 卡面比例由 collection.css 的 .card-flipper（59:86）决定，这里不再覆盖 .card-art 尺寸 */
 .expand-card .card-info h4 { margin: 0; font-size: 14px; }
 .expand-card .card-info p { margin: 4px 0 0; color: #aaa; font-size: 12px; }

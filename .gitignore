@@ -43,3 +43,8 @@ modsearch-temp/
 *.png
 *.jpeg
 *.gif
+
+# 例外：角色三视图是编译期内嵌的必需资源（src-tauri/src/ai/stepfun.rs 的 include_bytes!），
+# 必须随仓库分发 —— 否则干净检出（clone 后直接编译）会因找不到文件而编译失败。
+# 历史上正是因为这条 *.jpg 规则把它们挡在版本控制外，才导致「上线准备」把参考图换成了用户头像。
+!src-tauri/assets/*.jpg

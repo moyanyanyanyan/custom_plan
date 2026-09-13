@@ -22,9 +22,15 @@ describe('AddTaskControl', () => {
   });
 
   it('空内容不可提交且支持修改解析标签', () => {
-    render(<AddTaskControl date={new Date(2026, 8, 11)} onAdd={vi.fn()} />);
+    const add = vi.fn();
+    render(<AddTaskControl date={new Date(2026, 8, 11)} onAdd={add} />);
     const addButton = screen.getByRole('button', { name: '添加', exact: true });
-    expect(addButton).toBeDisabled();
+    // 「＋」不再使用 disabled：禁用态按钮收不到点击、点了毫无反馈，用户会以为「点了没用」。
+    // 改为 aria-disabled + 点击时空提交被拦下并提示、同时聚焦输入框。
+    expect(addButton).toHaveAttribute('aria-disabled', 'true');
+    fireEvent.click(addButton);
+    expect(add).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert')).toHaveTextContent('请先输入任务内容');
     expect(addButton).toHaveAttribute('title', '添加任务');
     expect(addButton).toHaveTextContent('＋');
     fireEvent.change(screen.getByRole('textbox'), { target: { value: '每天喝水' } });

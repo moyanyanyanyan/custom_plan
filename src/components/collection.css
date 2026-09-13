@@ -56,14 +56,23 @@
 }
 
 .card-front {
+  /* 必须显式写 0 度：不写时正面与背面在 preserve-3d 上下文里共面（z 都是 0），
+     翻转过程中 Chromium/WebView2 会 z-fighting，表现就是「翻过去整片深色」。 */
+  transform: rotateY(0deg) translateZ(0.02px);
   background: linear-gradient(160deg, #2b2438, #16121f);
   border: 1px solid rgba(232, 201, 133, 0.35);
 }
 
+/* 卡背：任务来源。整份文件里 .card-back 只允许出现这一次——
+   它曾被重复定义成两条（一条在卡面区块、一条在文件末尾），是「翻面全黑」排查的干扰源。 */
 .card-back {
-  transform: rotateY(180deg);
-  background: linear-gradient(160deg, #1f1f2e, #151525);
-  border: 1px solid rgba(232, 201, 133, 0.2);
+  transform: rotateY(180deg) translateZ(0.02px);
+  background: #181824;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
 }
 
 /* 四段竖排：标题条 / 插画 / 文案 / 落款 —— 各占各的，互不重叠 */
@@ -143,17 +152,6 @@
   align-items: center;
   font-size: 11px;
   color: #8b8b9a;
-}
-
-/* 卡背：任务来源 */
-.card-back {
-  transform: rotateY(180deg);
-  background: #181824;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 10px;
 }
 
 .card-back-content {

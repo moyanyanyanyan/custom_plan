@@ -31,6 +31,7 @@ export function ControlPanel() {
   const [focusedTaskId, setFocusedTaskId] = useState<string | null>(null);
   const [recentlyAddedTaskId, setRecentlyAddedTaskId] = useState<string | null>(null);
   const [addedTaskMessage, setAddedTaskMessage] = useState('');
+  const [overlayHidden, setOverlayHidden] = useState(false);
   const addedFeedbackTimer = useRef<number | undefined>(undefined);
   const { tasks, laterTasks, dateKey, add, toggle, remove, patch, reschedule,
     moveToToday, completeHistorical, discardHistorical } = useTasks();
@@ -40,6 +41,12 @@ export function ControlPanel() {
   const { error: storageError, saveStatus, retrySave } = useAppData();
   const { settings, save } = useSettings();
   useEffect(() => { void setPanelMode(settings.panelMode); }, [settings.panelMode]);
+  // 生成插画时会盖一层全屏遮罩；如果请求异常拖住（备用后端轮询、网络卡顿），
+  // 整个界面会点不动，表现为「加不了新任务」。这里给用户一个逃生口，
+  // 仅在本次生成结束/重新开始时复位。
+  useEffect(() => {
+    if (!generation.generatingImage) setOverlayHidden(false);
+  }, [generation.generatingImage]);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement;
@@ -166,7 +173,7 @@ export function ControlPanel() {
       tasks={tasks} onClose={() => generation.setRevealedCard(null)} />
     <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} onReplayGuide={replayGuide} />
     <ArchiveModal open={archiveOpen} tasks={tasks} onClose={() => setArchiveOpen(false)} />
-    {generation.generatingImage && (
+    {generation.generatingImage && !overlayHidden && (
       <div style={{
         position: 'fixed', inset: 0, zIndex: 9999,
         background: 'rgba(0,0,0,0.85)',
@@ -176,6 +183,11 @@ export function ControlPanel() {
         <div style={{ width: 48, height: 48, border: '3px solid rgba(255,255,255,0.2)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
         <p style={{ color: '#fff', fontSize: 16 }}>图片还在生成中，请耐心等待</p>
         <p style={{ color: '#9aa0b5', fontSize: 12 }}>生成过程中请不要进行其他操作</p>
+        <button type="button" onClick={() => setOverlayHidden(true)} style={{
+          marginTop: 4, padding: '8px 18px', borderRadius: 10, cursor: 'pointer',
+          border: '1px solid rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.08)',
+          color: '#e6e6e6', fontSize: 13,
+        }}>先收起提示，继续操作</button>
       </div>
     )}
       </main>

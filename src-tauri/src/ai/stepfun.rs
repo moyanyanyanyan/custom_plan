@@ -59,8 +59,24 @@ fn route_chain(key: &str) -> [&'static Route; 2] {
     }
 }
 
-/// 仓库当前未包含三视图资源，因此复用已纳入版本控制的引导头像，保证干净检出也能编译。
-const DEFAULT_REF: &[u8] = include_bytes!("../../../public/onboarding/avatar.jpg");
+/// 角色三视图参考图（编译期内嵌，随仓库分发）。
+///
+/// 2026-09-13 用户要求「锁死三张参考图」：合并进来的版本改用
+/// public/onboarding/avatar.jpg（用户头像）当参考图，生成出来的角色会跟着头像变，
+/// 与软件固定的角色形象不符。这里恢复项目自带的三视图，并在 .gitignore 里为
+/// src-tauri/assets/*.jpg 开了例外，保证干净检出（clone 后直接编译）也能拿到这三张图。
+const REF_FRONT: &[u8] = include_bytes!("../../assets/character_front.jpg");
+const REF_SIDE: &[u8] = include_bytes!("../../assets/character_side.jpg");
+const REF_BACK: &[u8] = include_bytes!("../../assets/character_back.jpg");
+
+/// 按 CHARACTER_REF_VARIANT 选一张三视图：front（默认）| side | back。
+fn builtin_ref() -> &'static [u8] {
+    match std::env::var("CHARACTER_REF_VARIANT").ok().as_deref() {
+        Some("side") => REF_SIDE,
+        Some("back") => REF_BACK,
+        _ => REF_FRONT,
+    }
+}
 
 pub struct StepFunProvider;
 
@@ -280,8 +296,9 @@ fn load_ref_image() -> Option<String> {
             return Some(format!("data:{};base64,{}", sniff_mime(&bytes), b64));
         }
     }
-    let b64 = base64::engine::general_purpose::STANDARD.encode(DEFAULT_REF);
-    Some(format!("data:{};base64,{}", sniff_mime(DEFAULT_REF), b64))
+    let reference = builtin_ref();
+    let b64 = base64::engine::general_purpose::STANDARD.encode(reference);
+    Some(format!("data:{};base64,{}", sniff_mime(reference), b64))
 }
 
 /// 单次生图请求（只用某一条后端；尺寸随该后端成套切换）。

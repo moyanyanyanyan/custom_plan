@@ -29,6 +29,10 @@
 .smart-add-main .task-settings-toggle { border-color: transparent; background: transparent; color: color-mix(in srgb, var(--theme-primary) 68%, transparent); }
 .smart-add-main .task-settings-toggle:hover, .smart-add-main .task-settings-toggle[aria-expanded="true"] { border-color: color-mix(in srgb, var(--theme-accent) 40%, transparent); background: color-mix(in srgb, var(--theme-accent) 15%, white); color: var(--theme-primary); }
 .smart-add-main button:disabled { opacity: .38; }
+/* 空输入时「＋」不再用 disabled（禁用按钮收不到点击，用户会以为「点了没用」），
+   改用 is-idle 降低存在感；点击它时由组件聚焦输入框并给出提示。 */
+.smart-add-main button.is-idle { opacity: .55; }
+.task-empty-hint { margin: 6px 2px 0; color: #a1491f; font-size: 10px; }
 .task-meta-summary, .split-suggestion { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; padding: 6px 2px 0; }
 .task-meta-summary span, .task-meta-summary strong { padding: 3px 7px; border: 1px solid color-mix(in srgb, var(--theme-accent) 28%, transparent); border-radius: 9px; background: #ffffff70; font-size: 9px; font-weight: 500; }
 .task-meta-summary strong { border-color: #b1764866; color: #8b522b; background: #ffe0bd80; }
