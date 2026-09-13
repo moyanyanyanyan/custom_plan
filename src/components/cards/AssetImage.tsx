@@ -14,5 +14,9 @@ export function AssetImage({ card, onError }: { card: InventionCard; onError?: (
     });
     return () => { active = false; };
   }, [card.imageAssetId, card.imagePath, onError]);
-  return source ? <img src={source} alt={card.name} loading="lazy" onError={onError} /> : null;
+  if (!source) return null;
+  return <img src={source} alt={card.name || '发明卡牌'} loading="lazy" onError={() => {
+    setSource('');
+    onError?.();
+  }} />;
 }

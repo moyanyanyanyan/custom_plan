@@ -95,7 +95,8 @@ export function ControlPanel() {
       : !tasks.length ? '先登记一项今天想完成的小事吧。'
         : generation.state === 'ready' ? '研究数据充足，今日发明机已经就绪。'
           : `还差 ${generation.remaining} 份稳定余波即可启动发明机。`;
-  const machineCopy = generation.state === 'generating' ? '发明机运转中…'
+  const machineCopy = generation.generatingImage ? '图片还在生成中，请耐心等待'
+    : generation.state === 'generating' ? '发明机运转中…'
     : generation.state === 'completed' ? '今日发明已完成'
       : '启动今日发明机';
 
@@ -108,7 +109,7 @@ export function ControlPanel() {
       windowAction('drag_panel');
     }}>
       <div className="brand"><span className="brand-mark">i<span>▲</span></span>
-        <div><h1>离谱发明所</h1><p>INSTITUTE OF ABSURD INVENTIONS</p></div>
+        <div><h1>离谱道具</h1><p>ABSURD GADGETS LAB</p></div>
       </div>
       <div className="window-actions"><span className="preview-label">界面预览</span>
         <button data-guide="settings" onClick={() => setSettingsOpen(true)} title="研究所设置" aria-label="研究所设置"><Icon name="settings" size={16} /></button>
@@ -151,7 +152,9 @@ export function ControlPanel() {
         moveToToday(date, id);
         setFocusedTaskId(id);
       }} /></div>
-    <button data-guide="machine" className={`invention-button secondary-content ${generation.state}`} onClick={handleGenerateCard}
+    <button type="button" data-guide="machine" className={`invention-button secondary-content ${generation.state}`}
+      onPointerDown={(event) => event.stopPropagation()}
+      onClick={(event) => { event.stopPropagation(); void handleGenerateCard(); }}
       disabled={generation.state !== 'ready'}>
       <span className="machine-symbol"><Icon name="flask" size={28} /></span>
       <strong>{machineCopy}</strong>
@@ -163,6 +166,18 @@ export function ControlPanel() {
       onClose={() => generation.setRevealedCard(null)} />
     <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} onReplayGuide={replayGuide} />
     <ArchiveModal open={archiveOpen} onClose={() => setArchiveOpen(false)} />
+    {generation.generatingImage && (
+      <div style={{
+        position: 'fixed', inset: 0, zIndex: 9999,
+        background: 'rgba(0,0,0,0.85)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexDirection: 'column', gap: 16, cursor: 'wait',
+      }}>
+        <div style={{ width: 48, height: 48, border: '3px solid rgba(255,255,255,0.2)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+        <p style={{ color: '#fff', fontSize: 16 }}>图片还在生成中，请耐心等待</p>
+        <p style={{ color: '#9aa0b5', fontSize: 12 }}>生成过程中请不要进行其他操作</p>
+      </div>
+    )}
       </main>
       <OnboardingGuide open={guideOpen} onFinish={finishGuide} />
     </>

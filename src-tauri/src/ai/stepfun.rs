@@ -3,10 +3,17 @@ use crate::data::AppStore;
 use base64::Engine;
 use std::time::Duration;
 
-const CHAT_MODEL: &str = "step-3.7-flash";
-const IMAGE_MODEL: &str = "step-image-edit-2";
-const CHAT_URL: &str = "https://api.stepfun.com/v1/chat/completions";
-const IMAGE_URL: &str = "https://api.stepfun.com/v1/images/generations";
+const CHAT_MODEL: &str = "deepseek-v4-flash";
+const IMAGE_MODEL: &str = "seedream-5.0-lite";
+const CHAT_URL: &str = "https://tokendance.space/gateway/v1/chat/completions";
+const IMAGE_URL: &str = "https://tokendance.space/gateway/v1/images/generations";
+
+/// 内置角色三视图（编译期内嵌，不依赖运行机器上的任何文件）。
+/// 默认用正面图：图生图时 AI 最容易还原五官、发色与服装细节。
+/// 可用环境变量 CHARACTER_REF_VARIANT=front|side|back 切换。
+const REF_FRONT: &[u8] = include_bytes!("../../assets/character_front.jpg");
+const REF_SIDE: &[u8] = include_bytes!("../../assets/character_side.jpg");
+const REF_BACK: &[u8] = include_bytes!("../../assets/character_back.jpg");
 
 pub struct StepFunProvider;
 
@@ -21,6 +28,12 @@ impl AiProvider for StepFunProvider {
 
 fn env_key() -> Result<String, AiError> {
     std::env::var("STEPFUN_API_KEY").map_err(|_| AiError::MissingKey)
+}
+
+fn tokendance_key() -> Result<String, AiError> {
+    std::env::var("TOKENDANCE_API_KEY")
+        .or_else(|_| std::env::var("STEPFUN_API_KEY"))
+        .map_err(|_| AiError::MissingKey)
 }
 
 pub fn stored_key(store: &AppStore) -> Result<String, AiError> {
@@ -46,11 +59,11 @@ async fn checked(response: reqwest::Response) -> Result<reqwest::Response, AiErr
 }
 
 pub async fn generate_copy(system: String, user: String) -> Result<GeneratedCopy, AiError> {
-    generate_copy_with_key(system, user, env_key()?).await
+    generate_copy_with_key(system, user, tokendance_key()?).await
 }
 
 pub async fn generate_image(prompt: String) -> Result<Vec<u8>, AiError> {
-    generate_image_with_key(prompt, env_key()?).await
+    generate_image_with_key(prompt, tokendance_key()?).await
 }
 
 pub async fn generate_copy_with_store(
@@ -99,11 +112,50 @@ pub fn extract_steps(raw: &str) -> Option<Vec<String>> {
     (steps.len() >= 2).then_some(steps)
 }
 
+/// 按真实文件头判断 MIME。历史上这里硬编码成 png，而实际参考图是 JPEG，
+/// 声明与实际格式不符（模型端可能拒收或误解），故改为嗅探。
+fn sniff_mime(bytes: &[u8]) -> &'static str {
+    if bytes.starts_with(&[0xFF, 0xD8, 0xFF]) { "image/jpeg" }
+    else if bytes.starts_with(&[0x89, 0x50, 0x4E, 0x47]) { "image/png" }
+    else if bytes.len() >= 12 && &bytes[0..4] == b"RIFF" && &bytes[8..12] == b"WEBP" { "image/webp" }
+    else { "image/jpeg" }
+}
+
+/// 参考图来源优先级：
+/// 1. 环境变量 CHARACTER_REF_PATH 指向的自定义文件（显式覆盖，供调试用）
+/// 2. 内置三视图（编译期内嵌，永远存在）：CHARACTER_REF_VARIANT=front|side|back，默认 front
+///
+/// 注意：**不再**静默读取 %APPDATA%\com.absurdlab.desktop\character_ref.png——
+/// 那张历史文件是一张背影图，正是「角色形象出不来」的元凶。
+fn load_ref_image() -> Option<String> {
+    if let Ok(custom) = std::env::var("CHARACTER_REF_PATH") {
+        let path = std::path::Path::new(&custom);
+        if let Ok(bytes) = std::fs::read(path) {
+            let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
+            return Some(format!("data:{};base64,{}", sniff_mime(&bytes), b64));
+        }
+    }
+    let variant = std::env::var("CHARACTER_REF_VARIANT").unwrap_or_default();
+    let bytes: &[u8] = match variant.as_str() {
+        "side" => REF_SIDE,
+        "back" => REF_BACK,
+        _ => REF_FRONT,
+    };
+    let b64 = base64::engine::general_purpose::STANDARD.encode(bytes);
+    Some(format!("data:{};base64,{}", sniff_mime(bytes), b64))
+}
+
 async fn generate_image_with_key(prompt: String, key: String) -> Result<Vec<u8>, AiError> {
-    let response = client()?.post(IMAGE_URL).bearer_auth(key).json(&serde_json::json!({
+    let mut body = serde_json::json!({
         "model": IMAGE_MODEL, "prompt": prompt, "n": 1,
-        "size": "1024x1024", "response_format": "b64_json"
-    })).send().await.map_err(|e| AiError::Network(e.to_string()))?;
+        "size": "1920x1920", "response_format": "b64_json"
+    });
+    // If a character reference image exists, include it for image-to-image
+    if let Some(data_url) = load_ref_image() {
+        body["image"] = serde_json::json!(data_url);
+    }
+    let response = client()?.post(IMAGE_URL).bearer_auth(key).json(&body)
+        .send().await.map_err(|e| AiError::Network(e.to_string()))?;
     let body: ImageResponse = checked(response).await?.json().await
         .map_err(|_| AiError::InvalidResponse)?;
     let encoded = body.data.first().and_then(|item| item.b64_json.as_ref())

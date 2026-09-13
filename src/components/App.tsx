@@ -20,7 +20,7 @@ function FloatingAvatar() {
   return <main className="avatar-surface"><button {...handlers}
     className={`avatar-launcher ${error ? 'has-error' : ''}`}
     style={{ '--task-progress': `${progress * 360}deg` } as React.CSSProperties}
-    title={error || '离谱发明所 · 点击展开，拖动贴边'} aria-label="展开或收起离谱发明所">
+    title={error || '离谱道具 · 点击展开，拖动贴边'} aria-label="展开或收起离谱道具">
     <span className="avatar-progress"><AvatarArt /></span>
     {tasks.length > 0 && completed === tasks.length && <span className="avatar-complete">✓</span>}
   </button></main>;

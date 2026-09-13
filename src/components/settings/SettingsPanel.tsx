@@ -119,9 +119,9 @@ export function SettingsPanel({ open, onClose, onReplayGuide }: { open: boolean;
           onChange={(event) => setDraft({ ...draft, theme: { ...draft.theme, [key]: event.target.value } })} /></label>)}</div>
       <label className="sound-setting"><input type="checkbox" checked={draft.soundEnabled}
         onChange={(event) => setDraft({ ...draft, soundEnabled: event.target.checked })} />播放任务反馈音效</label>
-      <label className="stepfun-key-setting"><span>StepFun API Key</span><input type="password" value={draft.stepfunApiKey}
+      <label className="stepfun-key-setting"><span>TokenDance API Key</span><input type="password" value={draft.stepfunApiKey}
         onChange={(event) => setDraft({ ...draft, stepfunApiKey: event.target.value })} placeholder="由开发者提供，可在此覆盖" />
-        <span className="setting-hint">仅保存在本机应用数据中</span></label>
+        <span className="setting-hint">在 <a href="https://tokendance.space/keys" target="_blank" rel="noopener noreferrer">tokendance.space/keys</a> 创建，以 sk- 开头；仅保存在本机应用数据中。未设置时 AI 生图与文案自动降级为离线模板</span></label>
       {saveError && <p role="alert">{saveError}</p>}
       {onReplayGuide && <button type="button" className="settings-replay-guide" onClick={onReplayGuide}>重新查看新手指引</button>}
       <footer><button disabled={saving} onClick={() => setDraft(createDefaultData().settings)}>恢复默认</button>
