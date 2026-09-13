@@ -30,7 +30,7 @@ function AssetPreview({ assetId, label, previewSource }: {
     ? <img src={source} alt={`${label}预览`} /> : <span>默认</span>}</span>;
 }
 
-export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function SettingsPanel({ open, onClose, onReplayGuide }: { open: boolean; onClose: () => void; onReplayGuide?: () => void }) {
   const { settings, save } = useSettings();
   const [draft, setDraft] = useState<AppSettings>(settings);
   const [saveError, setSaveError] = useState('');
@@ -42,13 +42,22 @@ export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () =>
     if (open && !wasOpen.current) { setDraft(settings); crop.reset(); setSaveError(''); }
     wasOpen.current = open;
   }, [open, settings]);
-  useEffect(() => { if (open) void applyTheme(draft); }, [draft, open]);
+  const wallpaperPreview = crop.pending.wallpaper?.previewSource;
+  useEffect(() => {
+    if (!open) return;
+    void applyTheme(draft, { wallpaperSource: wallpaperPreview })
+      .catch((reason) => setSaveError(String(reason)));
+  }, [draft, open, wallpaperPreview]);
   if (!open) return null;
   const closeWithoutSaving = () => {
     void applyTheme(settings); setDraft(settings); crop.reset(); setSaveError(''); onClose();
   };
   const acceptCrop = async (result: CropResult) => {
     const kind = crop.cropTarget?.kind; crop.acceptCrop(result);
+    if (kind === 'wallpaper') {
+      setDraft((current) => ({ ...current, panelOpacity: 0.6 }));
+      return;
+    }
     if (kind !== 'avatar') return;
     try { const theme = await extractTheme(result.previewSource); setDraft((current) => ({ ...current, theme })); }
     catch (reason) { crop.setErrors((current) => ({ ...current, avatar: `头像取色失败：${String(reason)}` })); }
@@ -102,7 +111,7 @@ export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () =>
         <small className="setting-hint">快捷键：Ctrl+Shift+M（切换窗口模式）</small>
       </fieldset>
       {(draft.wallpaperAssetId || crop.pending.wallpaper) && <label className="opacity-setting"><span>壁纸遮罩强度</span>
-        <input type="range" aria-label="壁纸遮罩强度" min="0.4" max="1" step="0.02" value={draft.panelOpacity}
+        <input type="range" aria-label="壁纸遮罩强度" min="0" max="1" step="0.02" value={draft.panelOpacity}
           onChange={(event) => setDraft({ ...draft, panelOpacity: Number(event.target.value) })} />
         <output>{Math.round(draft.panelOpacity * 100)}%</output></label>}
       <div className="theme-grid">{Object.entries(labels).map(([key, label]) => <label key={key}>{label}
@@ -114,6 +123,7 @@ export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () =>
         onChange={(event) => setDraft({ ...draft, stepfunApiKey: event.target.value })} placeholder="由开发者提供，可在此覆盖" />
         <span className="setting-hint">在 <a href="https://tokendance.space/keys" target="_blank" rel="noopener noreferrer">tokendance.space/keys</a> 创建，以 sk- 开头；仅保存在本机应用数据中。未设置时 AI 生图与文案自动降级为离线模板</span></label>
       {saveError && <p role="alert">{saveError}</p>}
+      {onReplayGuide && <button type="button" className="settings-replay-guide" onClick={onReplayGuide}>重新查看新手指引</button>}
       <footer><button disabled={saving} onClick={() => setDraft(createDefaultData().settings)}>恢复默认</button>
         <button disabled={saving} onClick={closeWithoutSaving}>取消</button>
         <button disabled={saving} className="settings-save" onClick={() => void submit()}>{saving ? '保存中…' : '应用设置'}</button></footer>

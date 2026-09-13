@@ -1,5 +1,5 @@
 * { box-sizing: border-box; }
-:root { --theme-primary: #142953; --theme-secondary: #27376a; --theme-accent: #a1c5ff; --theme-completed: #ffb276; --theme-pending: #f5d183; --theme-text: #eff4ff; --theme-card-highlight: #fbc375; --theme-slime: #8cd3bd; --theme-muted-text: #eff4ffb3; --theme-border: #a1c5ff4d; --theme-soft-surface: #27376a6b; --panel-opacity: .96; --panel-overlay-opacity: .96; --panel-wallpaper: none; font-family: "Segoe UI", "Microsoft YaHei UI", sans-serif; color: var(--theme-text); font-synthesis: none; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; background: transparent; }
+:root { --theme-primary: #eef7fb; --theme-secondary: #d9eff8; --theme-accent: #75c9ee; --theme-completed: #f3c879; --theme-pending: #dcecf3; --theme-text: #15243b; --theme-card-highlight: #4bbfe1; --theme-slime: #91d6c4; --theme-muted-text: #5e718a; --theme-border: #b7d8e8; --theme-soft-surface: #ffffffcc; --panel-opacity: .96; --panel-overlay-opacity: .82; --panel-wallpaper: none; font-family: "Segoe UI", "Microsoft YaHei UI", sans-serif; color: var(--theme-text); font-synthesis: none; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; background: transparent; }
 body { margin: 0; background: transparent; }
 button { font: inherit; color: inherit; }
 button:disabled { opacity: 1; cursor: default; }

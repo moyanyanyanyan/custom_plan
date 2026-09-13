@@ -40,6 +40,9 @@
 .panel-mode-setting .setting-hint { display: block; overflow-wrap: anywhere; }
 .setting-hint { color: var(--theme-muted-text); font-size: 10px; line-height: 1.4; }
 .settings-panel > p { margin-top: 12px; color: #ffb6a4; font-size: 11px; }
+.settings-replay-guide { display: block; margin-top: 16px; padding: 8px 16px; border: 1px solid #ffffff30; border-radius: 8px; color: var(--theme-text); background: #ffffff12; cursor: pointer; font: inherit; }
+.settings-replay-guide:hover { background: #ffffff1c; border-color: #ffffff4d; }
+.settings-replay-guide:focus-visible { outline: 2px solid var(--theme-accent); outline-offset: 2px; }
 .settings-panel footer { justify-content: flex-end; gap: 9px; margin-top: 20px; }
 .settings-panel footer button { padding: 8px 16px; border: 1px solid #ffffff30; border-radius: 8px; background: #ffffff12; cursor: pointer; }
 .settings-panel footer .settings-save { background: var(--theme-accent); color: var(--theme-primary); }

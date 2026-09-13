@@ -30,7 +30,7 @@ function findAppProcess(startedAt) {
     { encoding: 'utf8', windowsHide: true }).trim());
 }
 
-async function main() {
+async function runScenario(exitMethod) {
   const startedAt = Date.now();
   // Node 22 在 Windows 不再直接启动 .cmd，统一交给系统命令解释器处理。
   const tauri = spawn(process.env.ComSpec || 'cmd.exe', ['/d', '/s', '/c',
@@ -51,7 +51,7 @@ async function main() {
     appProcessId = findAppProcess(startedAt);
     if (!appProcessId) throw new Error('无法定位本轮启动的桌面应用进程');
     execFileSync(process.execPath, ['scripts/native-check.cjs'], {
-      env: { ...process.env, NATIVE_APP_PID: String(appProcessId) },
+      env: { ...process.env, NATIVE_APP_PID: String(appProcessId), NATIVE_EXIT_METHOD: exitMethod },
       stdio: 'inherit',
       windowsHide: true,
     });
@@ -68,6 +68,11 @@ async function main() {
     }
     tauri.kill();
   }
+}
+
+async function main() {
+  await runScenario('button');
+  await runScenario('system-close');
 }
 
 main().catch((error) => {

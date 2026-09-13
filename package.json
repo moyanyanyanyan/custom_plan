@@ -22,7 +22,7 @@
     "check": "pnpm run build && pnpm test && pnpm run test:native"
   },
   "tauri": {
-    "devCommand": "pnpm dev"
+    "devCommand": "npm run dev"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.11.0",
