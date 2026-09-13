@@ -17,7 +17,6 @@ export interface AppSettings {
   panelOpacity: number;
   soundEnabled: boolean;
   theme: ThemeSettings;
-  stepfunApiKey: string;
 }
 
 export type UserAssetKind = 'avatar' | 'wallpaper';
