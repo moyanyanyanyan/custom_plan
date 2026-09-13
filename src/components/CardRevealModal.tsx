@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { InventionCard } from '../types/card';
 import { TIER_LABELS } from '../types/card';
+import type { Task } from '../types/task';
+import { mergeBackTasks } from '../utils/cardBackTasks';
 import './reveal.css';
 import { AssetImage } from './cards/AssetImage';
 
@@ -8,9 +10,13 @@ interface CardRevealModalProps {
   card: InventionCard | null;
   open: boolean;
   onClose: () => void;
+  /** 该卡所属日期的任务：用于把生成之后新完成的任务补进卡背（见 cardBackTasks）。 */
+  tasks?: Task[];
 }
 
-function CardFace({ card, flipped }: { card: InventionCard; flipped: boolean }) {
+function CardFace({ card, flipped, backTasks }: {
+  card: InventionCard; flipped: boolean; backTasks: string[];
+}) {
   return (
     <div className={`card-flipper${flipped ? ' flipped' : ''}`}>
       <div className="card-face card-front">
@@ -35,7 +41,7 @@ function CardFace({ card, flipped }: { card: InventionCard; flipped: boolean }) 
         <div className="card-back-content">
           <h4>任务来源</h4>
           <ul>
-            {card.backTasks.map((task, idx) => (
+            {backTasks.map((task, idx) => (
               <li key={idx}>{idx + 1}. {task}</li>
             ))}
           </ul>
@@ -47,7 +53,7 @@ function CardFace({ card, flipped }: { card: InventionCard; flipped: boolean }) 
 }
 
 /** 居中揭示弹窗：点遮罩/ESC/右上角 × 关闭，支持点击翻转查看背面任务 */
-export function CardRevealModal({ card, open, onClose }: CardRevealModalProps) {
+export function CardRevealModal({ card, open, onClose, tasks }: CardRevealModalProps) {
   const closeRef = useRef<HTMLButtonElement>(null);
   const [flipped, setFlipped] = useState(false);
 
@@ -70,7 +76,7 @@ export function CardRevealModal({ card, open, onClose }: CardRevealModalProps) {
       <div className="reveal-card" onClick={(e) => e.stopPropagation()}>
         <button ref={closeRef} className="reveal-close" onClick={onClose} aria-label="关闭">×</button>
         <div onClick={toggleFlip}>
-          <CardFace card={card} flipped={flipped} />
+          <CardFace card={card} flipped={flipped} backTasks={mergeBackTasks(card, tasks)} />
         </div>
         <div className="reveal-hint">点击卡牌翻面</div>
       </div>

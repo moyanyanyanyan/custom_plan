@@ -11,6 +11,26 @@ pub struct GeneratedCopy {
     pub scene: Option<String>,
 }
 
+/// 道具附魔：名称与效果由 AI 按来源卡牌生成，kind 决定稀有度光效。
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct ItemEnchantment {
+    pub name: String,
+    pub effect: String,
+    #[serde(default)]
+    pub kind: Option<String>,
+}
+
+/// 道具文案：名称/描述必须与来源卡牌强相关，art 是给图片模型的英文视觉描述。
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct GeneratedItem {
+    pub name: String,
+    pub description: String,
+    #[serde(default)]
+    pub enchantment: Option<ItemEnchantment>,
+    #[serde(default)]
+    pub art: Option<String>,
+}
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct StepSuggestion {
     pub steps: Vec<String>,

@@ -1,7 +1,9 @@
 import type { CardCollection, InventionCard } from '../types/card';
 import { TIER_LABELS } from '../types/card';
+import type { Task } from '../types/task';
 import { useState, useMemo, useCallback } from 'react';
 import { AssetImage } from './cards/AssetImage';
+import { mergeBackTasks } from '../utils/cardBackTasks';
 import './collection.css';
 import './cards/browser.css';
 
@@ -25,8 +27,16 @@ function CardArt({ card, count }: { card: InventionCard; count: number }) {
   );
 }
 
-/** 游戏王比例（59:86）卡面：标题在顶部独立一条、插画居中、文案与落款在下，四段互不重叠。 */
-function CardFace({ card, count, flipped }: { card: InventionCard; count: number; flipped: boolean }) {
+function isRenderableCard(card: InventionCard): boolean {
+  return Boolean(card && typeof card.name === 'string' && typeof card.description === 'string'
+    && typeof card.stackKey === 'string' && Array.isArray(card.backTasks));
+}
+
+/** 游戏王比例（59:86）卡面：标题在顶部独立一条、插画居中、文案与落款在下，四段互不重叠。
+ *  backTasks 由调用方用 mergeBackTasks 组装（快照 + 该日期后来新完成的任务）。 */
+function CardFace({ card, count, flipped, backTasks }: {
+  card: InventionCard; count: number; flipped: boolean; backTasks: string[];
+}) {
   return (
     <div className={`card-flipper${flipped ? ' flipped' : ''}`}>
       <div className="card-face card-front">
@@ -45,7 +55,7 @@ function CardFace({ card, count, flipped }: { card: InventionCard; count: number
         <div className="card-back-content">
           <h4>任务来源</h4>
           <ul>
-            {card.backTasks.map((task, idx) => (
+            {backTasks.map((task, idx) => (
               <li key={idx}>{idx + 1}. {task}</li>
             ))}
           </ul>
@@ -56,12 +66,20 @@ function CardFace({ card, count, flipped }: { card: InventionCard; count: number
   );
 }
 
-export function CardCollection({ cards }: { cards: InventionCard[] }) {
-  const collection = useMemo(() => ({ cards, updatedAt: new Date().toISOString() }), [cards]);
+export function CardCollection({ cards, tasksByDate }: {
+  cards: InventionCard[];
+  tasksByDate?: Record<string, Task[]>;
+}) {
+  const collection = useMemo(() => ({ cards: cards.filter(isRenderableCard), updatedAt: new Date().toISOString() }), [cards]);
 
   const [expanding, setExpanding] = useState<{ stackKey: string; cards: InventionCard[]; index: number } | null>(null);
   // 翻牌只在「浏览」里发生：网格上的卡面保持正面，点浏览进来后才可翻面看任务来源。
   const [browsingFlipped, setBrowsingFlipped] = useState(false);
+
+  const backFor = useCallback(
+    (card: InventionCard) => mergeBackTasks(card, tasksByDate?.[card.dailyKey]),
+    [tasksByDate],
+  );
 
   const closeExpand = () => {
     setExpanding(null);
@@ -91,6 +109,7 @@ export function CardCollection({ cards }: { cards: InventionCard[] }) {
   }
 
   const stacks = Array.from(stackMap.values());
+  const activeCard = expanding ? expanding.cards[expanding.index] : null;
 
   return (
     <section className="collection-panel" aria-label="卡牌收藏册">
@@ -105,6 +124,7 @@ export function CardCollection({ cards }: { cards: InventionCard[] }) {
         </div>
       </div>
       <div className="card-grid">
+        {cards.length > 0 && collection.cards.length < cards.length && <p className="empty-hint">部分卡牌数据异常，已跳过显示</p>}
         {stacks.length === 0 && (
           <p className="empty-hint">完成今日任务后，启动发明机即可获得卡牌</p>
         )}
@@ -113,18 +133,18 @@ export function CardCollection({ cards }: { cards: InventionCard[] }) {
           const count = stack.length;
           return (
             <article key={representative.stackKey} className="card-slot" onClick={() => handleBrowseClick(stack)}>
-              <CardFace card={representative} count={count} flipped={false} />
+              <CardFace card={representative} count={count} flipped={false} backTasks={backFor(representative)} />
             </article>
           );
         })}
       </div>
 
-      {expanding && (
+      {expanding && activeCard && (
         <div className="expand-overlay" onClick={closeExpand}>
           <div className="expand-carousel" onClick={(e) => e.stopPropagation()}>
             <button className="expand-nav" onClick={() => step(-1)} aria-label="上一张">‹</button>
             <div className="expand-card" onClick={() => setBrowsingFlipped((v) => !v)}>
-              <CardFace card={expanding.cards[expanding.index]} count={1} flipped={browsingFlipped} />
+              <CardFace card={activeCard} count={1} flipped={browsingFlipped} backTasks={backFor(activeCard)} />
               <div className="expand-meta">
                 <span className="expand-index">{expanding.index + 1}/{expanding.cards.length}</span>
               </div>

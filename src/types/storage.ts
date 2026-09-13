@@ -1,4 +1,5 @@
 import type { InventionCard } from './card';
+import type { PixelItem } from './item';
 import type { AppSettings } from './settings';
 import type { SlimeMeal } from './slime';
 import type { Task } from './task';
@@ -8,6 +9,7 @@ export interface AppData {
   revision: number;
   tasksByDate: Record<string, Task[]>;
   cards: InventionCard[];
+  items: PixelItem[];
   slimes: SlimeMeal[];
   settings: AppSettings;
   updatedAt: string;

@@ -1,4 +1,4 @@
-use super::{models::{ChatResponse, GeneratedCopy, ImageResponse, StepSuggestion}, provider::{AiError, AiProvider}};
+use super::{models::{ChatResponse, GeneratedCopy, GeneratedItem, ImageResponse, ItemEnchantment, StepSuggestion}, provider::{AiError, AiProvider}};
 use crate::data::AppStore;
 use base64::Engine;
 use std::time::Duration;
@@ -7,6 +7,11 @@ use std::time::Duration;
 struct Route {
     chat_url: &'static str,
     image_url: &'static str,
+    /// 图生图端点。官方 step-image-edit-2 的 generations 是**纯文生图**：body 里的 image 字段
+    /// 被静默忽略（2026-09-13 实测四种字段名 image / init_image / image_url / image:[...]
+    /// 全部返回 200 但画面完全不跟随参考图）。只有 /v1/images/edits（multipart/form-data）
+    /// 才真正参考输入图：实测带参考图 200 且角色锁定，不带图则 400 `image file is required`。
+    edits_url: &'static str,
     chat_model: &'static str,
     image_model: &'static str,
     image_size: &'static str,
@@ -16,6 +21,7 @@ struct Route {
 static TOKENDANCE: Route = Route {
     chat_url: "https://tokendance.space/gateway/v1/chat/completions",
     image_url: "https://tokendance.space/gateway/v1/images/generations",
+    edits_url: "https://tokendance.space/gateway/v1/images/edits",
     chat_model: "deepseek-v4-flash",
     image_model: "seedream-5.0-lite",
     image_size: "1920x1920",
@@ -28,6 +34,7 @@ static TOKENDANCE: Route = Route {
 static STEPFUN: Route = Route {
     chat_url: "https://api.stepfun.com/v1/chat/completions",
     image_url: "https://api.stepfun.com/v1/images/generations",
+    edits_url: "https://api.stepfun.com/v1/images/edits",
     chat_model: "step-3.7-flash",
     image_model: "step-image-edit-2",
     image_size: "1024x1024",
@@ -59,8 +66,24 @@ fn route_chain(key: &str) -> [&'static Route; 2] {
     }
 }
 
-/// 仓库当前未包含三视图资源，因此复用已纳入版本控制的引导头像，保证干净检出也能编译。
-const DEFAULT_REF: &[u8] = include_bytes!("../../../public/onboarding/avatar.jpg");
+/// 角色三视图参考图（编译期内嵌，随仓库分发）。
+///
+/// 2026-09-13 用户要求「锁死三张参考图」：合并进来的版本改用
+/// public/onboarding/avatar.jpg（用户头像）当参考图，生成出来的角色会跟着头像变，
+/// 与软件固定的角色形象不符。这里恢复项目自带的三视图，并在 .gitignore 里为
+/// src-tauri/assets/*.jpg 开了例外，保证干净检出（clone 后直接编译）也能拿到这三张图。
+const REF_FRONT: &[u8] = include_bytes!("../../assets/character_front.jpg");
+const REF_SIDE: &[u8] = include_bytes!("../../assets/character_side.jpg");
+const REF_BACK: &[u8] = include_bytes!("../../assets/character_back.jpg");
+
+/// 按 CHARACTER_REF_VARIANT 选一张三视图：front（默认）| side | back。
+fn builtin_ref() -> &'static [u8] {
+    match std::env::var("CHARACTER_REF_VARIANT").ok().as_deref() {
+        Some("side") => REF_SIDE,
+        Some("back") => REF_BACK,
+        _ => REF_FRONT,
+    }
+}
 
 pub struct StepFunProvider;
 
@@ -160,6 +183,13 @@ pub async fn generate_image_with_store(
     generate_image_with_key(prompt, stored_key(store)?).await
 }
 
+pub async fn generate_item_with_store(
+    system: String, user: String, store: &AppStore,
+) -> Result<GeneratedItem, AiError> {
+    let raw = generate_chat_with_key(system, user, stored_key(store)?).await?;
+    extract_item(&raw).ok_or(AiError::InvalidResponse)
+}
+
 pub async fn generate_steps_with_store(
     system: String, user: String, store: &AppStore,
 ) -> Result<Vec<String>, AiError> {
@@ -189,15 +219,39 @@ async fn chat_once(route: &'static Route, key: &str, system: &str, user: &str) -
     if !content.is_empty() {
         return Ok(content.into());
     }
-    // 兜底：content 为空时从 reasoning_content 里截出最后一段 JSON（原本这里直接返回空串，
-    // 调用方 extract_copy 找不到 `{` 就报 InvalidResponse，界面表现为文案与插画都出不来）。
-    let reasoning = message.reasoning_content.unwrap_or_default();
-    let start = reasoning.find('{').ok_or(AiError::InvalidResponse)?;
-    let end = reasoning.rfind('}').ok_or(AiError::InvalidResponse)? + 1;
-    if start >= end {
-        return Err(AiError::InvalidResponse);
+    // 兜底：content 仍为空时，从思考内容里抠最后一段花括号 JSON（比直接丢给 extract_* 更稳，
+    // 因为思考里可能先出现示例 JSON 片段）。
+    message.reasoning_content.as_deref().and_then(last_json_block).ok_or(AiError::InvalidResponse)
+}
+
+/// 取文本里最后一段完整的花括号块（按深度扫描，忽略字符串字面量里的括号）。
+fn last_json_block(text: &str) -> Option<String> {
+    let mut depth = 0usize;
+    let mut start = 0usize;
+    let mut quoted = false;
+    let mut escaped = false;
+    let mut found: Option<String> = None;
+    for (index, byte) in text.bytes().enumerate() {
+        let ch = byte as char;
+        if quoted {
+            if escaped { escaped = false; }
+            else if ch == '\\' { escaped = true; }
+            else if ch == '"' { quoted = false; }
+            continue;
+        }
+        match ch {
+            '"' => quoted = true,
+            '{' => { if depth == 0 { start = index; } depth += 1; }
+            '}' => {
+                if depth > 0 {
+                    depth -= 1;
+                    if depth == 0 { found = Some(text[start..=index].to_string()); }
+                }
+            }
+            _ => {}
+        }
     }
-    Ok(reasoning[start..end].to_string())
+    found
 }
 
 /// 依次尝试所有后端：首选失败（401 / 网络不通 / 429 / 5xx）就换另一条重试，
@@ -241,32 +295,97 @@ fn sniff_mime(bytes: &[u8]) -> &'static str {
 ///
 /// 注意：**不再**静默读取 %APPDATA%\com.absurdlab.desktop\character_ref.png——
 /// 那张历史文件是一张背影图，正是「角色形象出不来」的元凶。
-fn load_ref_image() -> Option<String> {
+/// 返回 (原始字节, MIME)。必须是**原始字节**而不是 data URL：
+/// 图生图端点 /v1/images/edits 收的是 multipart 文件，data URL 字符串它不认。
+fn load_ref() -> Option<(Vec<u8>, &'static str)> {
     if let Ok(custom) = std::env::var("CHARACTER_REF_PATH") {
         let path = std::path::Path::new(&custom);
         if let Ok(bytes) = std::fs::read(path) {
-            let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
-            return Some(format!("data:{};base64,{}", sniff_mime(&bytes), b64));
+            let mime = sniff_mime(&bytes);
+            return Some((bytes, mime));
         }
     }
-    let b64 = base64::engine::general_purpose::STANDARD.encode(DEFAULT_REF);
-    Some(format!("data:{};base64,{}", sniff_mime(DEFAULT_REF), b64))
+    let reference = builtin_ref().to_vec();
+    let mime = sniff_mime(&reference);
+    Some((reference, mime))
+}
+
+/// multipart 的边界串。固定值即可：body 是自己拼的字节，不参与任何外部输入。
+const MULTIPART_BOUNDARY: &str = "----absurd-invention-lab-ref-20260913";
+
+fn push_field(body: &mut Vec<u8>, name: &str, value: &str) {
+    let header = format!(
+        "--{MULTIPART_BOUNDARY}\r\nContent-Disposition: form-data; name=\"{name}\"\r\n\r\n{value}\r\n"
+    );
+    body.extend_from_slice(header.as_bytes());
+}
+
+/// 手拼 multipart/form-data。不引入 reqwest 的 multipart feature（会连带 mime_guess 等依赖）。
+fn multipart_body(model: &str, prompt: &str, image: &[u8], mime: &str) -> (String, Vec<u8>) {
+    let mut body = Vec::with_capacity(image.len() + 1024);
+    push_field(&mut body, "model", model);
+    push_field(&mut body, "prompt", prompt);
+    push_field(&mut body, "response_format", "b64_json");
+    let part = format!(
+        "--{MULTIPART_BOUNDARY}\r\nContent-Disposition: form-data; name=\"image\"; filename=\"reference.jpg\"\r\nContent-Type: {mime}\r\n\r\n"
+    );
+    body.extend_from_slice(part.as_bytes());
+    body.extend_from_slice(image);
+    body.extend_from_slice(format!("\r\n--{MULTIPART_BOUNDARY}--\r\n").as_bytes());
+    (
+        format!("multipart/form-data; boundary={MULTIPART_BOUNDARY}"),
+        body,
+    )
+}
+
+/// edits 端点的 prompt 上限是 512 字符（官方文档），超了会 400。按字符边界安全截断。
+fn clamp_prompt(prompt: &str) -> &str {
+    const LIMIT: usize = 500;
+    if prompt.chars().count() <= LIMIT {
+        return prompt;
+    }
+    let end = prompt
+        .char_indices()
+        .nth(LIMIT)
+        .map(|(index, _)| index)
+        .unwrap_or(prompt.len());
+    prompt[..end].trim_end()
 }
 
 /// 单次生图请求（只用某一条后端；尺寸随该后端成套切换）。
+///
+/// 有角色参考图时走 `/images/edits`（multipart 图生图）——**只有这条真读参考图**；
+/// 没有参考图时才退回 `/images/generations`（纯文生图）。
 async fn image_once(route: &'static Route, key: &str, prompt: &str) -> Result<Vec<u8>, AiError> {
-    let mut body = serde_json::json!({
-        "model": route.image_model, "prompt": prompt, "n": 1,
-        // 尺寸必须用该后端支持的档位：阶跃官方 step-image-edit-2 只接受
-        // 1024x1024 / 768x1360 / 896x1184 / 1360x768 / 1184x896，传 1920x1920 会 400 size_invalid。
-        "size": route.image_size, "response_format": "b64_json"
-    });
-    // If a character reference image exists, include it for image-to-image
-    if let Some(data_url) = load_ref_image() {
-        body["image"] = serde_json::json!(data_url);
-    }
-    let response = client()?.post(route.image_url).bearer_auth(key).json(&body)
-        .send().await.map_err(|e| AiError::Network(e.to_string()))?;
+    let response = match load_ref() {
+        Some((bytes, mime)) => {
+            let (content_type, body) =
+                multipart_body(route.image_model, clamp_prompt(prompt), &bytes, mime);
+            client()?
+                .post(route.edits_url)
+                .bearer_auth(key)
+                .header("content-type", content_type)
+                .body(body)
+                .send()
+                .await
+                .map_err(|e| AiError::Network(e.to_string()))?
+        }
+        None => {
+            let body = serde_json::json!({
+                "model": route.image_model, "prompt": prompt, "n": 1,
+                // 尺寸必须用该后端支持的档位：阶跃官方 step-image-edit-2 只接受
+                // 1024x1024 / 768x1360 / 896x1184 / 1360x768 / 1184x896，传 1920x1920 会 400 size_invalid。
+                "size": route.image_size, "response_format": "b64_json"
+            });
+            client()?
+                .post(route.image_url)
+                .bearer_auth(key)
+                .json(&body)
+                .send()
+                .await
+                .map_err(|e| AiError::Network(e.to_string()))?
+        }
+    };
     let body: ImageResponse = checked(response).await?.json().await
         .map_err(|_| AiError::InvalidResponse)?;
     let encoded = body.data.first().and_then(|item| item.b64_json.as_ref())
@@ -297,9 +416,34 @@ pub fn extract_copy(raw: &str) -> Option<GeneratedCopy> {
     serde_json::from_str(&candidate[start..end]).ok()
 }
 
+/// 道具文案解析：名称/描述为空即视为无效，交给前端走降级道具池。
+pub fn extract_item(raw: &str) -> Option<GeneratedItem> {
+    let candidate = raw.trim().trim_start_matches("```json").trim_start_matches("```")
+        .trim_end_matches("```").trim();
+    let start = candidate.find('{')?;
+    let end = candidate.rfind('}')? + 1;
+    let parsed: GeneratedItem = serde_json::from_str(&candidate[start..end]).ok()?;
+    let name = parsed.name.trim().to_string();
+    let description = parsed.description.trim().to_string();
+    if name.is_empty() || description.is_empty() { return None; }
+    Some(GeneratedItem {
+        name,
+        description,
+        enchantment: parsed.enchantment.and_then(|item| {
+            let enchanted_name = item.name.trim().to_string();
+            (!enchanted_name.is_empty()).then(|| ItemEnchantment {
+                name: enchanted_name,
+                effect: item.effect.trim().to_string(),
+                kind: item.kind.map(|kind| kind.trim().to_lowercase()),
+            })
+        }),
+        art: parsed.art.map(|art| art.trim().to_string()).filter(|art| !art.is_empty()),
+    })
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{extract_copy, extract_steps};
+    use super::{extract_copy, extract_item, extract_steps, last_json_block};
     #[test]
     fn extracts_json_with_or_without_fence() {
         assert_eq!(extract_copy(r#"{"name":"A","description":"B"}"#).unwrap().name, "A");
@@ -311,5 +455,29 @@ mod tests {
     fn validates_step_count() {
         assert_eq!(extract_steps(r#"{"steps":["订酒店","买机票"]}"#).unwrap().len(), 2);
         assert!(extract_steps(r#"{"steps":["只有一步"]}"#).is_none());
+    }
+    #[test]
+    fn extracts_item_with_enchantment_and_art() {
+        let raw = r#"```json
+{"name":"会走的汤勺","description":"来自「深夜煮面」的纪念品。","enchantment":{"name":"回锅","effect":"每次盛汤都会自己走回灶台","kind":"UPGRADE"},"art":"a bent steel ladle with a glowing blue handle"}
+```"#;
+        let item = extract_item(raw).unwrap();
+        assert_eq!(item.name, "会走的汤勺");
+        assert_eq!(item.enchantment.unwrap().kind.as_deref(), Some("upgrade"));
+        assert!(item.art.unwrap().contains("ladle"));
+    }
+    #[test]
+    fn rejects_item_without_name() {
+        assert!(extract_item(r#"{"name":"","description":"有描述"}"#).is_none());
+        assert!(extract_item("not json").is_none());
+    }
+    /// 推理模型把预算烧光时 content 为空，只能回退到 reasoning_content 里最后一段 JSON。
+    #[test]
+    fn picks_last_json_block_from_reasoning() {
+        let thinking = "先试写一版:{\"name\":\"草稿\",\"description\":\"忽略\"} 最终答案 {\"name\":\"流光箸\",\"description\":\"描述\"}";
+        assert_eq!(last_json_block(thinking).unwrap(), r#"{"name":"流光箸","description":"描述"}"#);
+        assert_eq!(last_json_block(r#"{"a":"}"}"#).unwrap(), r#"{"a":"}"}"#);
+        assert!(last_json_block("只有思考没有 JSON").is_none());
+        assert!(last_json_block("{\"name\":\"未闭合\"").is_none());
     }
 }

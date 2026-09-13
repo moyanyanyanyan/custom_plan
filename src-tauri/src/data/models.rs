@@ -9,6 +9,7 @@ pub struct AppData {
     pub revision: u64,
     pub tasks_by_date: HashMap<String, Vec<serde_json::Value>>,
     pub cards: Vec<serde_json::Value>,
+    pub items: Vec<serde_json::Value>,
     pub slimes: Vec<serde_json::Value>,
     pub settings: serde_json::Value,
     pub updated_at: String,

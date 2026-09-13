@@ -14,6 +14,9 @@ export function AddTaskControl({ date, onAdd }: { date: Date; onAdd: (draft: Tas
   const [draft, setDraft] = useState(() => parseTaskInput('', date));
   const [suggestion, setSuggestion] = useState<string[]>([]);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // 空输入点「＋」时的引导文案：按钮不再 disabled（disabled 的按钮收不到点击，
+  // 用户会以为「点了没用」），改为点击后聚焦输入框并给出提示。
+  const [emptyHint, setEmptyHint] = useState('');
   const [reminderDateDraft, setReminderDateDraft] = useState('');
   const [reminderTimeDraft, setReminderTimeDraft] = useState('');
   const version = useRef(0);
@@ -51,6 +54,7 @@ export function AddTaskControl({ date, onAdd }: { date: Date; onAdd: (draft: Tas
   const changeRaw = (value: string) => {
     const parsed = parseTaskInput(value, date);
     setRaw(value); setDraft(parsed);
+    if (value.trim()) setEmptyHint('');
     const reminder = parsed.reminderAt ? new Date(parsed.reminderAt) : null;
     setReminderDateDraft(reminder ? `${reminder.getFullYear()}-${String(reminder.getMonth() + 1).padStart(2, '0')}-${String(reminder.getDate()).padStart(2, '0')}` : '');
     setReminderTimeDraft(reminder ? reminder.toTimeString().slice(0, 5) : '');
@@ -58,8 +62,15 @@ export function AddTaskControl({ date, onAdd }: { date: Date; onAdd: (draft: Tas
   };
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
-    if (!draft.title.trim() || !draft.targetDate) return;
-    onAdd(draft); setRaw(''); setDraft(parseTaskInput('', date)); setSuggestion([]); setSettingsOpen(false);
+    if (!draft.title.trim() || !draft.targetDate) {
+      // 空输入不再静默 return：按钮已去掉 disabled（disabled 的按钮收不到点击，
+      // 用户会以为「点了没用」），这里给出提示并把光标送回输入框。
+      setEmptyHint('请先输入任务内容');
+      inputRef.current?.focus();
+      return;
+    }
+    onAdd(draft); setRaw(''); setDraft(parseTaskInput('', date));
+    setSuggestion([]); setSettingsOpen(false); setEmptyHint('');
   };
   const setRepeat = (value: string) => setDraft((current) => ({ ...current,
     repeatRule: value ? value as RepeatRule : null }));
@@ -83,8 +94,9 @@ export function AddTaskControl({ date, onAdd }: { date: Date; onAdd: (draft: Tas
       <button ref={settingsButtonRef} type="button" className="task-settings-toggle" aria-label="任务设置"
         title="任务设置" aria-expanded={settingsOpen} onClick={() => setSettingsOpen((open) => !open)}>
         <Icon name="settings" size={15} /></button>
-      <button type="submit" aria-label="添加" title="添加任务"
-        disabled={!draft.title.trim()}><span aria-hidden="true">＋</span></button></div>
+      <button type="submit" aria-label="添加" title="添加任务" aria-disabled={!draft.title.trim()}
+        className={draft.title.trim() ? '' : 'is-idle'}><span aria-hidden="true">＋</span></button></div>
+    {emptyHint && <p className="task-empty-hint" role="alert">{emptyHint}</p>}
     {(summaries.length > 0 || draft.confidence === 'partial') && <div className="task-meta-summary"
       aria-label="解析结果" aria-live="polite">{summaries.map((summary) => <span key={summary}>{summary}</span>)}
       {draft.confidence === 'partial' && <strong>提醒时间待设置</strong>}</div>}

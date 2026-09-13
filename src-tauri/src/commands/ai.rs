@@ -17,7 +17,11 @@ pub async fn generate_card_art(
     description: String,
     scene: Option<String>,
 ) -> Result<String, String> {
-    let prompt = prompts::card_art(&name, &description, scene.as_deref());
+    // name/description 仅保留在签名里以维持前端 invoke 的参数名（Tauri v2 用形参名做 JS key，
+    // 改名会直接断掉 src/utils/aiClient.ts 的调用）；提示词已不再使用它们 ——
+    // 中文名会被 step-image-edit-2 当标题画在图顶部（2026-09-13 实测），主题相关性改由英文 scene 承载。
+    let _ = (&name, &description);
+    let prompt = prompts::card_art(scene.as_deref());
     let image = generate_image_with_store(prompt, &store)
         .await
         .map_err(|e| e.to_string())?;
@@ -57,3 +61,20 @@ pub async fn suggest_task_steps(
         .await.map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+pub async fn generate_item_copy(
+    store: State<'_, crate::data::AppStore>, card_name: String, card_description: String,
+) -> Result<crate::ai::models::GeneratedItem, String> {
+    let (system, user) = prompts::item_copy(&card_name, &card_description);
+    crate::ai::stepfun::generate_item_with_store(system, user, &store)
+        .await.map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn generate_item_art(
+    store: State<'_, crate::data::AppStore>, item_id: String, name: String, art: String,
+) -> Result<String, String> {
+    let bytes = generate_image_with_store(prompts::item_art(&name, &art), &store)
+        .await.map_err(|e| e.to_string())?;
+    store.save_asset(&item_id, &bytes, "png")
+}
