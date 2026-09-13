@@ -4,6 +4,9 @@ import { DAILY_CARD_THRESHOLD } from '../constants/generation';
 import { localDateKey } from './date';
 import type { InventionMachineState } from '../types/card';
 
+/** 卡背任务名的统一截断长度：生成与事后追加都走它，保证同一条任务在卡背显示一致。 */
+export const BACK_TASK_MAX = 10;
+
 /** 计算连续活跃天数（从现有卡片的 dailyKey 推算） */
 export function calcStreak(existingCards: { dailyKey: string }[]): number {
   if (!existingCards.length) return 0;
@@ -211,8 +214,26 @@ export function generateCardFromTasks(
     imagePath: undefined,
     type: 'daily',
     stackKey: name,
-    backTasks: completedTasks.map((t) => t.slice(0, 10)),
+    backTasks: completedTasks.map((t) => t.slice(0, BACK_TASK_MAX)),
     date: dateStr,
     tier: getTier(streak),
+  };
+}
+
+/**
+ * 方案 A：卡牌生成后，当天新完成的任务自动补进这张卡的背面。
+ * 返回需要 updateCard 的字段（只含 sourceTasks / backTasks 两个纯数据字段）；
+ * 没有新任务（或全部已在卡上）时返回 null，调用方据此跳过写盘——这同时也是 effect 的死循环防线。
+ * 只动数据，不动卡面比例、内部布局、插画与文案。
+ */
+export function appendBackTasks(
+  card: Pick<InventionCard, 'sourceTasks' | 'backTasks'>,
+  completedNames: string[],
+): Pick<InventionCard, 'sourceTasks' | 'backTasks'> | null {
+  const appended = completedNames.filter((name) => !card.sourceTasks.includes(name));
+  if (!appended.length) return null;
+  return {
+    sourceTasks: [...card.sourceTasks, ...appended],
+    backTasks: [...card.backTasks, ...appended.map((name) => name.slice(0, BACK_TASK_MAX))],
   };
 }

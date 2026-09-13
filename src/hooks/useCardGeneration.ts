@@ -1,7 +1,7 @@
-import { useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Experiment } from '../types/experiment';
 import type { InventionCard, InventionMachineState } from '../types/card';
-import { generateCardFromTasks, getMachineState, remainingTasksForCard } from '../utils/cardGenerator';
+import { appendBackTasks, generateCardFromTasks, getMachineState, remainingTasksForCard } from '../utils/cardGenerator';
 import { generateCardArt, generateCardCopy } from '../utils/aiClient';
 import { useCards } from './useCards';
 
@@ -10,7 +10,7 @@ export function useCardGeneration(tasks: Experiment[]) {
   const [generatingImage, setGeneratingImage] = useState(false);
   const [warning, setWarning] = useState('');
   const [revealedCard, setRevealedCard] = useState<InventionCard | null>(null);
-  const { cards, claim, updateCard, canGenerate } = useCards();
+  const { cards, claim, updateCard, canGenerate, dateKey } = useCards();
   const generatingRef = useRef(false);
   const remaining = remainingTasksForCard(tasks);
   const alreadyGenerated = !canGenerate();
@@ -18,6 +18,29 @@ export function useCardGeneration(tasks: Experiment[]) {
   /** 生成期间不可交互 */
   const locked = inventing || generatingImage;
   const state: InventionMachineState = locked ? 'generating' : getMachineState(remaining, alreadyGenerated, false);
+
+  // 追写互斥锁：同一批任务在 updateCard 落盘前，防止 effect 被重复触发而重复追加。
+  const backSyncRef = useRef(false);
+
+  /**
+   * 卡牌生成后，当天新完成的任务自动补进这张卡的背面（方案 A）。
+   * 只追写 sourceTasks / backTasks 两个纯数据字段——卡面比例、内部布局、插画、文案一律不动。
+   */
+  useEffect(() => {
+    if (backSyncRef.current) return;
+    // 当天已生成的卡（演示模式的 dailyKey 形如 `${dateKey}-test-<ts>`，一并匹配）
+    const todayCard = cards.find(
+      (card) => card.dailyKey === dateKey || card.dailyKey.startsWith(`${dateKey}-test-`),
+    );
+    if (!todayCard) return;
+    const doneNames = tasks.filter((t) => t.completed).map((t) => t.name);
+    const patch = appendBackTasks(todayCard, doneNames);
+    if (!patch) return; // 没有新任务：这也是避免 effect 自激的死循环防线
+    backSyncRef.current = true;
+    updateCard(todayCard.id, patch)
+      .catch(() => undefined) // 落盘失败不断界面，下一次任务变化会再试
+      .finally(() => { backSyncRef.current = false; });
+  }, [cards, dateKey, tasks, updateCard]);
 
   const generate = async () => {
     if (locked || remaining > 0 || !canGenerate()) return;

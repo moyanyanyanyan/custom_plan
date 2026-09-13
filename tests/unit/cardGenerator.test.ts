@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { generateCardFromTasks, getMachineState, remainingTasksForCard } from '../../src/utils/cardGenerator';
+import { appendBackTasks, generateCardFromTasks, getMachineState, remainingTasksForCard } from '../../src/utils/cardGenerator';
 import type { Task } from '../../src/types/task';
 import { localDateKey } from '../../src/utils/date';
 
@@ -50,5 +50,24 @@ describe('cardGenerator', () => {
     expect(generateCardFromTasks(five, date, [1, 2, 3].map((o) => dayKey(date, o)))?.tier).toBe('silver');
     // 今天 + 前 8 天 = 连续 9 天 → 金
     expect(generateCardFromTasks(five, date, [1, 2, 3, 4, 5, 6, 7, 8].map((o) => dayKey(date, o)))?.tier).toBe('gold');
+  });
+
+  it('追加背面任务时去重、截断到 10 字符，无新任务返回 null', () => {
+    const card = { sourceTasks: ['已有任务'], backTasks: ['已有任务'] };
+    // 已在卡上的任务不再追加，只补新的；新任务名与生成时一致截断到 10 字符
+    expect(appendBackTasks(card, ['已有任务', '一个非常长的任务名字啊啊'])).toEqual({
+      sourceTasks: ['已有任务', '一个非常长的任务名字啊啊'],
+      backTasks: ['已有任务', '一个非常长的任务名字'],
+    });
+    // 完全没有新任务 → null（调用方据此跳过写盘）
+    expect(appendBackTasks(card, ['已有任务'])).toBeNull();
+  });
+
+  it('追加时保留原有顺序、只补新增项', () => {
+    const card = { sourceTasks: ['A'], backTasks: ['A'] };
+    expect(appendBackTasks(card, ['B', 'A', 'C'])).toEqual({
+      sourceTasks: ['A', 'B', 'C'],
+      backTasks: ['A', 'B', 'C'],
+    });
   });
 });
