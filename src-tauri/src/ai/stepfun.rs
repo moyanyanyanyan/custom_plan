@@ -352,46 +352,68 @@ fn clamp_prompt(prompt: &str) -> &str {
     prompt[..end].trim_end()
 }
 
-/// 单次生图请求（只用某一条后端；尺寸随该后端成套切换）。
-///
-/// 有角色参考图时走 `/images/edits`（multipart 图生图）——**只有这条真读参考图**；
-/// 没有参考图时才退回 `/images/generations`（纯文生图）。
-async fn image_once(route: &'static Route, key: &str, prompt: &str) -> Result<Vec<u8>, AiError> {
-    let response = match load_ref() {
-        Some((bytes, mime)) => {
-            let (content_type, body) =
-                multipart_body(route.image_model, clamp_prompt(prompt), &bytes, mime);
-            client()?
-                .post(route.edits_url)
-                .bearer_auth(key)
-                .header("content-type", content_type)
-                .body(body)
-                .send()
-                .await
-                .map_err(|e| AiError::Network(e.to_string()))?
-        }
-        None => {
-            let body = serde_json::json!({
-                "model": route.image_model, "prompt": prompt, "n": 1,
-                // 尺寸必须用该后端支持的档位：阶跃官方 step-image-edit-2 只接受
-                // 1024x1024 / 768x1360 / 896x1184 / 1360x768 / 1184x896，传 1920x1920 会 400 size_invalid。
-                "size": route.image_size, "response_format": "b64_json"
-            });
-            client()?
-                .post(route.image_url)
-                .bearer_auth(key)
-                .json(&body)
-                .send()
-                .await
-                .map_err(|e| AiError::Network(e.to_string()))?
-        }
-    };
+/// 解析生图响应：校验状态码 → 取 b64_json → 解码成字节。
+async fn decode_image(response: reqwest::Response) -> Result<Vec<u8>, AiError> {
     let body: ImageResponse = checked(response).await?.json().await
         .map_err(|_| AiError::InvalidResponse)?;
     let encoded = body.data.first().and_then(|item| item.b64_json.as_ref())
         .ok_or(AiError::InvalidResponse)?;
     base64::engine::general_purpose::STANDARD.decode(encoded)
         .map_err(|_| AiError::InvalidResponse)
+}
+
+/// 纯文生图（该后端没有 edits、喂不了参考图）时，用一段**英文**角色外观描述顶上，
+/// 否则角色会变成随机路人脸。措辞与内嵌参考图一致：白+浅蓝短发、蓝发夹、白裙蓝领结、白大衣蓝边。
+/// 铁律：只喂英文视觉描述，绝不喂中文名称——step 系列会把名称当标题画在图上。
+const CHARACTER_CLAUSE: &str = "A cute chibi girl with short pale-blue and white hair, a blue hairpin, big blue eyes, wearing a white dress with a blue-white bow and a white coat with blue trim,";
+
+/// 该后端的纯文生图（`/images/generations`，JSON）。
+async fn text2img_once(route: &'static Route, key: &str, prompt: &str) -> Result<Vec<u8>, AiError> {
+    let composed = format!("{CHARACTER_CLAUSE} {prompt}");
+    let body = serde_json::json!({
+        "model": route.image_model, "prompt": composed, "n": 1,
+        // 尺寸必须用该后端支持的档位：阶跃官方 step-image-edit-2 只接受
+        // 1024x1024 / 768x1360 / 896x1184 / 1360x768 / 1184x896，传 1920x1920 会 400 size_invalid。
+        "size": route.image_size, "response_format": "b64_json"
+    });
+    let response = client()?
+        .post(route.image_url)
+        .bearer_auth(key)
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| AiError::Network(e.to_string()))?;
+    decode_image(response).await
+}
+
+/// 单次生图请求（只用某一条后端；尺寸随该后端成套切换）。
+///
+/// 有角色参考图时**先试** `/images/edits`（multipart 图生图）——只有这条真读参考图；
+/// **该后端不支持 edits 就退回它自己的 `/images/generations` 文生图**。
+///
+/// 这条「同一后端内部回退」是必需的：TokenDance 网关**没有** edits 端点
+/// （2026-09-13 实测 multipart 打 `gateway/v1/images/edits` → 404 Not Found），
+/// 而全新安装的用户没有自己的 key、只能落到编译期内嵌 key → 只能走网关。
+/// 若这里直接失败，跨后端的 `route_chain` 兜底会拿同一把 sk- key 去打阶跃官方吃 401，
+/// 结果是**图片一张都出不来**（卡牌插画、离谱道具像素图全废）。
+async fn image_once(route: &'static Route, key: &str, prompt: &str) -> Result<Vec<u8>, AiError> {
+    if let Some((bytes, mime)) = load_ref() {
+        let (content_type, body) =
+            multipart_body(route.image_model, clamp_prompt(prompt), &bytes, mime);
+        if let Ok(response) = client()?
+            .post(route.edits_url)
+            .bearer_auth(key)
+            .header("content-type", content_type)
+            .body(body)
+            .send()
+            .await
+        {
+            if let Ok(image) = decode_image(response).await {
+                return Ok(image);
+            }
+        }
+    }
+    text2img_once(route, key, prompt).await
 }
 
 /// 与 `generate_chat_with_key` 同样的兜底策略：首选后端失败（401 / 网络 / 429 / 5xx）就换另一条重试，
