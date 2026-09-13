@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { InventionCard } from '../types/card';
+import { TIER_LABELS } from '../types/card';
 import './reveal.css';
 import { AssetImage } from './cards/AssetImage';
 
@@ -14,6 +15,7 @@ function CardFace({ card, flipped }: { card: InventionCard; flipped: boolean }) 
     <div className={`card-flipper${flipped ? ' flipped' : ''}`}>
       <div className="card-face card-front">
         <div className={`card-front-inner tier-${card.tier}`}>
+          <span className="card-tier-badge" title="材质等级">{TIER_LABELS[card.tier] ?? '铜'}</span>
           <div className="card-name">{card.name}</div>
           <div className="card-art reveal-card-art">
             {(card.imageAssetId || card.imagePath) ? (
@@ -24,7 +26,7 @@ function CardFace({ card, flipped }: { card: InventionCard; flipped: boolean }) 
           </div>
           <div className="card-desc">{card.description}</div>
           <div className="card-footer">
-            <span>离谱发明所</span>
+            <span>离谱道具</span>
             <time>{card.date}</time>
           </div>
         </div>

@@ -27,7 +27,7 @@ export function useCardGeneration(tasks: Experiment[]) {
     // 让 React 先刷新 UI（显示"发明机运转中…"），再开始耗时操作
     await new Promise((resolve) => setTimeout(resolve, 0));
     try {
-      const base = generateCardFromTasks(tasks);
+      const base = generateCardFromTasks(tasks, new Date(), cards);
       if (!base) return;
 
       // 先获取 AI 文案

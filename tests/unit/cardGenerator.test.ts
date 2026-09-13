@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { generateCardFromTasks, getMachineState, remainingTasksForCard } from '../../src/utils/cardGenerator';
 import type { Task } from '../../src/types/task';
+import { localDateKey } from '../../src/utils/date';
+
+/** 相对基准日往前 offset 天的卡牌日期键（材质等级靠它推连续天数）。 */
+function dayKey(base: Date, offset: number): { dailyKey: string } {
+  const d = new Date(base);
+  d.setDate(d.getDate() - offset);
+  return { dailyKey: localDateKey(d) };
+}
 
 function task(index: number, completed = true): Task {
   return {
@@ -29,5 +37,18 @@ describe('cardGenerator', () => {
     const tasks = [task(1), task(2), task(3, false)];
     expect(remainingTasksForCard(tasks)).toBe(3);
     expect(generateCardFromTasks(tasks)).toBeNull();
+  });
+
+  it('连续研究天数决定卡牌材质等级', () => {
+    const date = new Date();
+    const five = [0, 1, 2, 3, 4].map((index) => task(index));
+    // 首张卡：连今天一起算 1 天 → 铜
+    expect(generateCardFromTasks(five, date, [])?.tier).toBe('copper');
+    // 断档（只有前天，接不上今天）→ 仍算 1 天 → 铜
+    expect(generateCardFromTasks(five, date, [dayKey(date, 2)])?.tier).toBe('copper');
+    // 今天 + 前 3 天 = 连续 4 天 → 银
+    expect(generateCardFromTasks(five, date, [1, 2, 3].map((o) => dayKey(date, o)))?.tier).toBe('silver');
+    // 今天 + 前 8 天 = 连续 9 天 → 金
+    expect(generateCardFromTasks(five, date, [1, 2, 3, 4, 5, 6, 7, 8].map((o) => dayKey(date, o)))?.tier).toBe('gold');
   });
 });

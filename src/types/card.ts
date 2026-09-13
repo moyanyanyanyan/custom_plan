@@ -1,5 +1,12 @@
 export type CardTier = 'copper' | 'silver' | 'gold' | 'diamond';
 
+/** 材质等级的展示标签（卡面右上角徽章用）。 */
+export const TIER_LABELS: Record<CardTier, string> = {
+  copper: '铜', silver: '银', gold: '金', diamond: '钻',
+};
+
+export const CARD_TIERS: readonly CardTier[] = ['copper', 'silver', 'gold', 'diamond'];
+
 export type InventionCard = {
   id: string;
   name: string;

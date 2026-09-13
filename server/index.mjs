@@ -63,7 +63,7 @@ async function handle(req, res) {
   try {
     if (kind === 'copy') {
       const result = await stepfun('chat/completions', { model: 'step-3.7-flash', messages: [
-        { role: 'system', content: '你是离谱发明所的卡牌文案生成器。卡牌名称4-10个汉字，描述40-80字，只输出JSON：{"name":"名称","description":"描述"}。' },
+        { role: 'system', content: '你是离谱道具的卡牌文案生成器。卡牌名称4-10个汉字，描述40-80字，只输出JSON：{"name":"名称","description":"描述"}。' },
         { role: 'user', content: `今日完成任务：${body.sourceTasks.join('、')}` },
       ], temperature: 1, max_tokens: 1000 });
       const content = result.choices?.[0]?.message?.content || '';

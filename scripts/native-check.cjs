@@ -23,8 +23,8 @@ async function main() {
   assert.ok(avatar && panel, 'Both native webviews must exist');
   const errors = [];
   for (const page of [avatar, panel]) page.on('pageerror', (error) => errors.push(error.message));
-  const avatarTitle = '离谱发明所 · 头像';
-  const panelTitle = '离谱发明所';
+  const avatarTitle = '离谱道具 · 头像';
+  const panelTitle = '离谱道具';
   const original = probe(avatarTitle);
   assert.ok(original.visible);
   assert.ok(original.frameless && original.topmost);

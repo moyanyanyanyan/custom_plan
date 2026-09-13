@@ -179,9 +179,17 @@ export function getMachineState(
  * 注意：这里只负责"卡牌结构"（来源/时间由程序填），名称与描述由 AI 文案模块异步生成，
  * 失败时由 aiCopy 层降级到本地模板，因此本函数只返回结构占位所需的完成列表。
  */
-export function generateCardFromTasks(tasks: Experiment[], date = new Date()): InventionCard | null {
+export function generateCardFromTasks(
+  tasks: Experiment[],
+  date = new Date(),
+  /** 已有卡牌历史。材质等级由连续研究天数决定，不传就只能算成第 1 天。 */
+  existingCards: { dailyKey: string }[] = [],
+): InventionCard | null {
   const completedTasks = tasks.filter((t) => t.completed).map((t) => t.name);
   if (completedTasks.length < DAILY_CARD_THRESHOLD) return null;
+
+  // 这张卡就是今天的：先把它并入日常序列再数连续天数，否则永远少算今天这一天。
+  const streak = calcStreak([...existingCards, { dailyKey: localDateKey(date) }]);
 
   // 本地降级命名：基于任务文本摘要出“当天总结/鼓励”式卡名与说明
   const summary = summarizeTasks(completedTasks);
@@ -205,6 +213,6 @@ export function generateCardFromTasks(tasks: Experiment[], date = new Date()): I
     stackKey: name,
     backTasks: completedTasks.map((t) => t.slice(0, 10)),
     date: dateStr,
-    tier: 'copper',
+    tier: getTier(streak),
   };
 }

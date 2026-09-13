@@ -104,7 +104,7 @@ export function ControlPanel() {
       windowAction('drag_panel');
     }}>
       <div className="brand"><span className="brand-mark">i<span>▲</span></span>
-        <div><h1>离谱发明所</h1><p>INSTITUTE OF ABSURD INVENTIONS</p></div>
+        <div><h1>离谱道具</h1><p>ABSURD GADGETS LAB</p></div>
       </div>
       <div className="window-actions"><span className="preview-label">界面预览</span>
         <button onClick={() => setSettingsOpen(true)} title="研究所设置" aria-label="研究所设置"><Icon name="settings" size={16} /></button>
