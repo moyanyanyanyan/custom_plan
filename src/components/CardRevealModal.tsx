@@ -1,12 +1,49 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { InventionCard } from '../types/card';
-import { AssetImage } from './cards/AssetImage';
+import { TIER_LABELS } from '../types/card';
 import './reveal.css';
+import { AssetImage } from './cards/AssetImage';
 
 interface CardRevealModalProps {
   card: InventionCard | null;
   open: boolean;
   onClose: () => void;
+}
+
+function CardFace({ card, flipped }: { card: InventionCard; flipped: boolean }) {
+  return (
+    <div className={`card-flipper${flipped ? ' flipped' : ''}`}>
+      <div className="card-face card-front">
+        <div className={`card-front-inner tier-${card.tier}`}>
+          <span className="card-tier-badge" title="材质等级">{TIER_LABELS[card.tier] ?? '铜'}</span>
+          <div className="card-name">{card.name}</div>
+          <div className="card-art reveal-card-art">
+            {(card.imageAssetId || card.imagePath) ? (
+              <AssetImage card={card} />
+            ) : (
+              <span className="card-placeholder">{card.name.slice(0, 2)}</span>
+            )}
+          </div>
+          <div className="card-desc">{card.description}</div>
+          <div className="card-footer">
+            <span>离谱发明所</span>
+            <time>{card.date}</time>
+          </div>
+        </div>
+      </div>
+      <div className="card-face card-back">
+        <div className="card-back-content">
+          <h4>任务来源</h4>
+          <ul>
+            {card.backTasks.map((task, idx) => (
+              <li key={idx}>{idx + 1}. {task}</li>
+            ))}
+          </ul>
+          <time>{card.date}</time>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 /** 居中揭示弹窗：点遮罩/ESC/右上角 × 关闭，支持点击翻转查看背面任务 */
@@ -24,42 +61,16 @@ export function CardRevealModal({ card, open, onClose }: CardRevealModalProps) {
     return () => document.removeEventListener('keydown', onKey);
   }, [open, onClose]);
 
+  const toggleFlip = useCallback(() => setFlipped((v) => !v), []);
+
   if (!open || !card) return null;
 
   return (
     <div className="reveal-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label="新卡揭示">
       <div className="reveal-card" onClick={(e) => e.stopPropagation()}>
         <button ref={closeRef} className="reveal-close" onClick={onClose} aria-label="关闭">×</button>
-        <div className="card-viewport" onClick={() => setFlipped((v) => !v)}>
-          <div className={`card-face${flipped ? ' back' : ' front'}`}>
-            {!flipped && (
-              <>
-                <div className="reveal-art">
-                  {(card.imageAssetId || card.imagePath) ? (
-                    <AssetImage card={card} />
-                  ) : (
-                    <span className="card-placeholder">{card.name.slice(0, 2)}</span>
-                  )}
-                </div>
-                <div className="reveal-info">
-                  <h3>{card.name}</h3>
-                  <p>{card.description}</p>
-                  <time>{card.date}</time>
-                </div>
-              </>
-            )}
-            {flipped && (
-              <div className="reveal-back">
-                <h3>任务来源</h3>
-                <ul>
-                  {card.backTasks.map((task, idx) => (
-                    <li key={idx}>{idx + 1}. {task}</li>
-                  ))}
-                </ul>
-                <time>{card.date}</time>
-              </div>
-            )}
-          </div>
+        <div onClick={toggleFlip}>
+          <CardFace card={card} flipped={flipped} />
         </div>
         <div className="reveal-hint">点击卡牌翻面</div>
       </div>

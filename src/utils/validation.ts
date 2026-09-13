@@ -1,6 +1,7 @@
 import type { Task } from '../types/task';
 import type { InventionCard } from '../types/card';
 import type { PixelItem } from '../types/item';
+import { CARD_TIERS } from '../types/card';
 import type { AppData } from '../types/storage';
 import type { AppSettings } from '../types/settings';
 import { normalizeTask } from './taskModel';
@@ -38,9 +39,14 @@ export function normalizeCards(value: unknown): InventionCard[] {
     const derived = earnedAt && !Number.isNaN(earnedAt.getTime())
       ? `${earnedAt.getFullYear()}-${String(earnedAt.getMonth() + 1).padStart(2, '0')}-${String(earnedAt.getDate()).padStart(2, '0')}`
       : '';
+    // 旧卡没有材质等级：补 copper，避免卡面渲染出 tier-undefined。
+    const tier = typeof card.tier === 'string' && (CARD_TIERS as readonly string[]).includes(card.tier)
+      ? (card.tier as InventionCard['tier'])
+      : 'copper';
     const normalized = {
       ...card,
       dailyKey: typeof card.dailyKey === 'string' ? card.dailyKey : derived,
+      tier,
       backTasks: Array.isArray(card.backTasks) ? card.backTasks.filter((task): task is string => typeof task === 'string') :
         (Array.isArray(card.sourceTasks) ? card.sourceTasks.filter((task): task is string => typeof task === 'string') : []),
       date: typeof card.date === 'string' && card.date ? card.date : derived,
@@ -67,6 +73,7 @@ function normalizeSettings(value: unknown, fallback: AppSettings): AppSettings {
     panelMode: value.panelMode === 'compact' ? 'compact' : 'standard',
     username: typeof value.username === 'string' && value.username.trim() ? value.username.trim() : fallback.username,
     soundEnabled: typeof value.soundEnabled === 'boolean' ? value.soundEnabled : true,
+    stepfunApiKey: typeof value.stepfunApiKey === 'string' ? value.stepfunApiKey : fallback.stepfunApiKey,
     theme: { ...fallback.theme, ...value.theme },
   };
 }

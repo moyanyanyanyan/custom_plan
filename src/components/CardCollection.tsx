@@ -1,4 +1,5 @@
 import type { CardCollection, InventionCard } from '../types/card';
+import { TIER_LABELS } from '../types/card';
 import { useState, useMemo, useCallback } from 'react';
 import { AssetImage } from './cards/AssetImage';
 import './collection.css';
@@ -34,7 +35,8 @@ function CardFace({ card, count, flipped }: { card: InventionCard; count: number
   return (
     <div className={`card-flipper${flipped ? ' flipped' : ''}`}>
       <div className="card-face card-front">
-        <div className="card-front-inner">
+        <div className={`card-front-inner tier-${card.tier}`}>
+          <span className="card-tier-badge" title="材质等级">{TIER_LABELS[card.tier] ?? '铜'}</span>
           <div className="card-name">{card.name}</div>
           <CardArt card={card} count={count} />
           <div className="card-desc">{card.description}</div>
@@ -130,7 +132,6 @@ export function CardCollection({ cards }: { cards: InventionCard[] }) {
             <div className="expand-card" onClick={() => setBrowsingFlipped((v) => !v)}>
               <CardFace card={expanding.cards[expanding.index]} count={1} flipped={browsingFlipped} />
               <div className="expand-meta">
-                <span className="expand-count">拥有 {expanding.cards.length} 张</span>
                 <span className="expand-index">{expanding.index + 1}/{expanding.cards.length}</span>
               </div>
               <p className="expand-tip">{browsingFlipped ? '点击卡牌翻回正面' : '点击卡牌翻面 · 查看任务来源'}</p>

@@ -10,29 +10,6 @@ mod placement;
 
 use tauri::Manager;
 
-/** 隐藏窗口完成定位后再展示，避免启动时在屏幕中央闪现。 */
-fn read_stepfun_key_from_dsh() -> Option<String> {
-    let home = std::env::var_os("USERPROFILE")?;
-    let path = std::path::Path::new(&home).join(".dsh").join(".credentials.yaml");
-    let bytes = std::fs::read(path).ok()?;
-    let content = String::from_utf8_lossy(&bytes);
-    for line in content.lines() {
-        if let Some(rest) = line.strip_prefix("STEPFUN_API_KEY:") {
-            let trimmed = rest.trim();
-            if !trimmed.is_empty() {
-                return Some(trimmed.into());
-            }
-        }
-    }
-    None
-}
-
-fn default_stepfun_api_key() -> Option<&'static str> {
-    // Embedded fallback so first-run users get a usable default API key.
-    // Actual value is read at runtime from the DSH credentials file when available.
-    Some("1sMPgJBIWjiz6rxSDyJZIhTU5sx4hJm7pLiEZevYP9xgiOjlDnUbHLmZN1JZ46upG")
-}
-
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
@@ -55,9 +32,10 @@ fn main() {
                     .map(|s| s.is_empty())
                     .unwrap_or(true);
                 if missing {
-                    let key = read_stepfun_key_from_dsh()
-                        .or_else(|| default_stepfun_api_key().map(|s| s.into()));
-                    if let Some(key) = key {
+                    // key 解析链（DSH 凭据 → 内嵌默认）已下沉到 ai::stepfun::stored_key，
+                    // 这里只是首次启动就把它落盘，保证用户不打开设置也能立刻用 AI。
+                    let key = crate::ai::stepfun::fallback_api_key();
+                    {
                         if !current.settings.is_object() {
                             current.settings = serde_json::Value::Object(Default::default());
                         }
