@@ -96,6 +96,8 @@ fn main() {
             commands::data::save_user_asset,
             commands::ai::generate_card_copy,
             commands::ai::generate_card_art,
+            commands::ai::generate_item_copy,
+            commands::ai::generate_item_art,
             commands::ai::generate_slime_copy,
             commands::ai::suggest_task_steps,
             commands::ai::save_stepfun_api_key,

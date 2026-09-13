@@ -11,7 +11,7 @@ type Props = { open: boolean; onClose: () => void; tasks: Task[] };
 
 type ArchiveTab = 'cards' | 'items';
 
-export function ArchiveModal({ open, onClose, tasks }: Props) {
+export function ArchiveModal({ open, onClose }: Props) {
   const [tab, setTab] = useState<ArchiveTab>('cards');
   const { data } = useAppData();
   if (!open) return null;
@@ -25,7 +25,7 @@ export function ArchiveModal({ open, onClose, tasks }: Props) {
         <button className={tab === 'items' ? 'is-active' : ''} onClick={() => setTab('items')}>离谱道具</button>
       </nav>
       {tab === 'cards' ? <CardArchiveErrorBoundary><CardCollection cards={data.cards} /></CardArchiveErrorBoundary>
-        : <ItemCollection tasks={tasks} />}
+        : <ItemCollection />}
     </section>
   </div>;
 }

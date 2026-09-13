@@ -263,7 +263,37 @@
 @keyframes enchantSpark { 0%, 100% { transform: rotate(-12deg) scale(.85); opacity: .7; } 50% { transform: rotate(12deg) scale(1.15); opacity: 1; } }
 @keyframes enchantPulse { 0%, 100% { opacity: .7; } 50% { opacity: 1; } }
 
+/* --- AI 像素道具图（与卡牌插画同一条 asset 链路） --- */
+.pixel-item-art-wrap { position: relative; flex: 0 0 60px; width: 60px; height: 60px; }
+.pixel-item-art-wrap .pixel-item-art { width: 100%; height: 100%; }
+.pixel-item-art.is-art,
+.item-pixel-icon.is-art { object-fit: contain; image-rendering: pixelated; background: linear-gradient(145deg, #221d38, #131a2e); padding: 3px; }
+.pixel-item-spark { position: absolute; z-index: 1; right: -4px; top: -9px; color: #ffe48b; font-size: 18px; text-shadow: 0 0 9px rgba(255, 207, 73, 0.95); animation: enchantPulse 1.8s ease-in-out infinite; }
+.item-degraded-tag { flex: none; padding: 2px 5px; color: rgba(235, 231, 220, 0.62); background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 4px; font-size: 9px; }
+
+/* 两段式 AI 没有确定进度，改用不定量循环动画 */
+.forge-progress.is-indeterminate span { width: 38%; animation: forgeProgress 1.4s cubic-bezier(.4, .1, .4, .9) infinite; }
+
+/* 锻造中投入的卡牌 */
+.forge-source-card { position: relative; display: flex; align-items: center; justify-content: center; gap: 9px; margin: 16px 0 2px; color: rgba(255, 226, 150, 0.8); font-size: 11px; }
+.forge-source-art { width: 44px; height: 44px; display: grid; place-items: center; overflow: hidden; background: linear-gradient(145deg, #3b3158, #1c233c); border: 1px solid rgba(255, 216, 113, 0.45); border-radius: 8px; }
+.forge-source-art img { width: 100%; height: 100%; object-fit: cover; }
+.item-origin-note { position: relative; margin: 0 0 14px; color: rgba(239, 235, 224, 0.4); font-size: 10px; }
+
+/* 选材浮层：挑一张卡牌作为锻造素材 */
+.forge-picker-panel { width: min(520px, 100%); text-align: center; }
+.forge-card-grid { position: relative; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; max-height: 46vh; margin: 18px 0 14px; overflow-y: auto; }
+.forge-card-tile { display: flex; flex-direction: column; gap: 6px; padding: 9px; color: #f3ead7; text-align: left; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 10px; cursor: pointer; transition: transform 160ms ease, border-color 160ms ease; }
+.forge-card-tile:hover { transform: translateY(-2px); border-color: rgba(255, 214, 117, 0.7); }
+.forge-card-art { display: grid; place-items: center; width: 100%; aspect-ratio: 1 / 1; overflow: hidden; color: #f5d27b; font-size: 30px; font-weight: 800; background: linear-gradient(145deg, #3b3158, #1c233c); border-radius: 8px; }
+.forge-card-art img { width: 100%; height: 100%; object-fit: cover; }
+.forge-card-tile b { font-size: 12px; }
+.forge-card-tile small { display: -webkit-box; overflow: hidden; color: rgba(235, 231, 220, 0.55); font-size: 10px; line-height: 1.4; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.forge-skip-button { position: relative; display: block; width: 100%; padding: 9px 14px; color: rgba(243, 234, 215, 0.8); background: rgba(255, 255, 255, 0.05); border: 1px dashed rgba(255, 255, 255, 0.22); border-radius: 9px; cursor: pointer; font-size: 11px; }
+.forge-skip-button:hover { color: #ffe19a; border-color: rgba(255, 214, 117, 0.6); }
+
 @media (max-width: 520px) {
   .pixel-item-grid { grid-template-columns: 1fr; }
   .item-forge-overlay { padding: 14px; }
+  .forge-card-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
 }

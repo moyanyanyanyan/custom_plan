@@ -36,6 +36,24 @@ pub async fn generate_card_art(
 }
 
 #[tauri::command]
+pub async fn generate_item_copy(
+    store: State<'_, crate::data::AppStore>, card_name: String, card_description: String,
+) -> Result<crate::ai::models::GeneratedItem, String> {
+    let (system, user) = prompts::item_copy(&card_name, &card_description);
+    crate::ai::stepfun::generate_item_with_store(system, user, &store)
+        .await.map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn generate_item_art(
+    store: State<'_, crate::data::AppStore>, item_id: String, name: String, art: String,
+) -> Result<String, String> {
+    let bytes = generate_image_with_store(prompts::item_art(&name, &art), &store)
+        .await.map_err(|e| e.to_string())?;
+    store.save_asset(&item_id, &bytes, "png")
+}
+
+#[tauri::command]
 pub fn save_stepfun_api_key(store: State<'_, crate::data::AppStore>, key: String) -> Result<(), String> {
     let mut current = store.load().map_err(|e| e.to_string())?;
     let settings = current.settings.as_object_mut()
