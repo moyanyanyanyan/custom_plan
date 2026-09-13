@@ -22,13 +22,22 @@ export function mergeBackTasks(card: InventionCard, tasksForDate: Task[] | undef
   const snapshot = Array.isArray(card.backTasks) ? card.backTasks : [];
   const later = completedTaskLabels(tasksForDate);
   if (later.length === 0) return snapshot;
+
+  // 按「出现次数」补足，而不是按名字去重：同名任务（比如一天做了 7 次「吃饭」）每完成一次
+  // 都该在卡背多出一条。快照里已有的同名条目先抵消掉，剩下的才是新增。
+  const remaining = new Map<string, number>();
+  for (const label of snapshot) {
+    remaining.set(label, (remaining.get(label) ?? 0) + 1);
+  }
+
   const merged = [...snapshot];
-  const seen = new Set(merged);
   for (const label of later) {
-    if (!seen.has(label)) {
-      seen.add(label);
-      merged.push(label);
+    const already = remaining.get(label) ?? 0;
+    if (already > 0) {
+      remaining.set(label, already - 1);
+      continue;
     }
+    merged.push(label);
   }
   return merged;
 }

@@ -7,6 +7,11 @@ use std::time::Duration;
 struct Route {
     chat_url: &'static str,
     image_url: &'static str,
+    /// 图生图端点。官方 step-image-edit-2 的 generations 是**纯文生图**：body 里的 image 字段
+    /// 被静默忽略（2026-09-13 实测四种字段名 image / init_image / image_url / image:[...]
+    /// 全部返回 200 但画面完全不跟随参考图）。只有 /v1/images/edits（multipart/form-data）
+    /// 才真正参考输入图：实测带参考图 200 且角色锁定，不带图则 400 `image file is required`。
+    edits_url: &'static str,
     chat_model: &'static str,
     image_model: &'static str,
     image_size: &'static str,
@@ -16,6 +21,7 @@ struct Route {
 static TOKENDANCE: Route = Route {
     chat_url: "https://tokendance.space/gateway/v1/chat/completions",
     image_url: "https://tokendance.space/gateway/v1/images/generations",
+    edits_url: "https://tokendance.space/gateway/v1/images/edits",
     chat_model: "deepseek-v4-flash",
     image_model: "seedream-5.0-lite",
     image_size: "1920x1920",
@@ -28,6 +34,7 @@ static TOKENDANCE: Route = Route {
 static STEPFUN: Route = Route {
     chat_url: "https://api.stepfun.com/v1/chat/completions",
     image_url: "https://api.stepfun.com/v1/images/generations",
+    edits_url: "https://api.stepfun.com/v1/images/edits",
     chat_model: "step-3.7-flash",
     image_model: "step-image-edit-2",
     image_size: "1024x1024",
@@ -288,33 +295,97 @@ fn sniff_mime(bytes: &[u8]) -> &'static str {
 ///
 /// 注意：**不再**静默读取 %APPDATA%\com.absurdlab.desktop\character_ref.png——
 /// 那张历史文件是一张背影图，正是「角色形象出不来」的元凶。
-fn load_ref_image() -> Option<String> {
+/// 返回 (原始字节, MIME)。必须是**原始字节**而不是 data URL：
+/// 图生图端点 /v1/images/edits 收的是 multipart 文件，data URL 字符串它不认。
+fn load_ref() -> Option<(Vec<u8>, &'static str)> {
     if let Ok(custom) = std::env::var("CHARACTER_REF_PATH") {
         let path = std::path::Path::new(&custom);
         if let Ok(bytes) = std::fs::read(path) {
-            let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
-            return Some(format!("data:{};base64,{}", sniff_mime(&bytes), b64));
+            let mime = sniff_mime(&bytes);
+            return Some((bytes, mime));
         }
     }
-    let reference = builtin_ref();
-    let b64 = base64::engine::general_purpose::STANDARD.encode(reference);
-    Some(format!("data:{};base64,{}", sniff_mime(reference), b64))
+    let reference = builtin_ref().to_vec();
+    let mime = sniff_mime(&reference);
+    Some((reference, mime))
+}
+
+/// multipart 的边界串。固定值即可：body 是自己拼的字节，不参与任何外部输入。
+const MULTIPART_BOUNDARY: &str = "----absurd-invention-lab-ref-20260913";
+
+fn push_field(body: &mut Vec<u8>, name: &str, value: &str) {
+    let header = format!(
+        "--{MULTIPART_BOUNDARY}\r\nContent-Disposition: form-data; name=\"{name}\"\r\n\r\n{value}\r\n"
+    );
+    body.extend_from_slice(header.as_bytes());
+}
+
+/// 手拼 multipart/form-data。不引入 reqwest 的 multipart feature（会连带 mime_guess 等依赖）。
+fn multipart_body(model: &str, prompt: &str, image: &[u8], mime: &str) -> (String, Vec<u8>) {
+    let mut body = Vec::with_capacity(image.len() + 1024);
+    push_field(&mut body, "model", model);
+    push_field(&mut body, "prompt", prompt);
+    push_field(&mut body, "response_format", "b64_json");
+    let part = format!(
+        "--{MULTIPART_BOUNDARY}\r\nContent-Disposition: form-data; name=\"image\"; filename=\"reference.jpg\"\r\nContent-Type: {mime}\r\n\r\n"
+    );
+    body.extend_from_slice(part.as_bytes());
+    body.extend_from_slice(image);
+    body.extend_from_slice(format!("\r\n--{MULTIPART_BOUNDARY}--\r\n").as_bytes());
+    (
+        format!("multipart/form-data; boundary={MULTIPART_BOUNDARY}"),
+        body,
+    )
+}
+
+/// edits 端点的 prompt 上限是 512 字符（官方文档），超了会 400。按字符边界安全截断。
+fn clamp_prompt(prompt: &str) -> &str {
+    const LIMIT: usize = 500;
+    if prompt.chars().count() <= LIMIT {
+        return prompt;
+    }
+    let end = prompt
+        .char_indices()
+        .nth(LIMIT)
+        .map(|(index, _)| index)
+        .unwrap_or(prompt.len());
+    prompt[..end].trim_end()
 }
 
 /// 单次生图请求（只用某一条后端；尺寸随该后端成套切换）。
+///
+/// 有角色参考图时走 `/images/edits`（multipart 图生图）——**只有这条真读参考图**；
+/// 没有参考图时才退回 `/images/generations`（纯文生图）。
 async fn image_once(route: &'static Route, key: &str, prompt: &str) -> Result<Vec<u8>, AiError> {
-    let mut body = serde_json::json!({
-        "model": route.image_model, "prompt": prompt, "n": 1,
-        // 尺寸必须用该后端支持的档位：阶跃官方 step-image-edit-2 只接受
-        // 1024x1024 / 768x1360 / 896x1184 / 1360x768 / 1184x896，传 1920x1920 会 400 size_invalid。
-        "size": route.image_size, "response_format": "b64_json"
-    });
-    // If a character reference image exists, include it for image-to-image
-    if let Some(data_url) = load_ref_image() {
-        body["image"] = serde_json::json!(data_url);
-    }
-    let response = client()?.post(route.image_url).bearer_auth(key).json(&body)
-        .send().await.map_err(|e| AiError::Network(e.to_string()))?;
+    let response = match load_ref() {
+        Some((bytes, mime)) => {
+            let (content_type, body) =
+                multipart_body(route.image_model, clamp_prompt(prompt), &bytes, mime);
+            client()?
+                .post(route.edits_url)
+                .bearer_auth(key)
+                .header("content-type", content_type)
+                .body(body)
+                .send()
+                .await
+                .map_err(|e| AiError::Network(e.to_string()))?
+        }
+        None => {
+            let body = serde_json::json!({
+                "model": route.image_model, "prompt": prompt, "n": 1,
+                // 尺寸必须用该后端支持的档位：阶跃官方 step-image-edit-2 只接受
+                // 1024x1024 / 768x1360 / 896x1184 / 1360x768 / 1184x896，传 1920x1920 会 400 size_invalid。
+                "size": route.image_size, "response_format": "b64_json"
+            });
+            client()?
+                .post(route.image_url)
+                .bearer_auth(key)
+                .json(&body)
+                .send()
+                .await
+                .map_err(|e| AiError::Network(e.to_string()))?
+        }
+    };
     let body: ImageResponse = checked(response).await?.json().await
         .map_err(|_| AiError::InvalidResponse)?;
     let encoded = body.data.first().and_then(|item| item.b64_json.as_ref())
