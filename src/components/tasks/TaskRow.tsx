@@ -49,7 +49,7 @@ export function TaskRow({ task, dateKey, todayKey, future = false, open, onExpan
     {open && <><TaskDetails task={task} dateKey={dateKey} onPatch={onPatch}
       onReschedule={onReschedule} /><div className="task-more-actions">
       {future && <button type="button" onClick={onMoveToday}>移到今天</button>}
-      <button type="button" className="danger" disabled title="删除功能暂未开放" aria-label="删除任务（暂未开放）">删除任务</button>
+      <button type="button" className="danger" title="删除功能暂未开放" aria-label="删除任务（暂未开放）" onClick={() => window.alert("删除功能暂未开放")}>删除任务</button>
     </div></>}
   </article>;
 }
