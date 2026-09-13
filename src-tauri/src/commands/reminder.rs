@@ -64,7 +64,7 @@ pub fn fire_task_reminder(app: AppHandle, store: State<'_, AppStore>, task_id: S
         }
     }
     if let Some(title) = title {
-        app.notification().builder().title("离谱道具 · 任务提醒").body(title)
+    app.notification().builder().title("离谱发明所 · 任务提醒").body(title)
             .show().map_err(|e| e.to_string())?;
         for tasks in data.tasks_by_date.values_mut() {
             for task in tasks.iter_mut().filter(|task| task.get("id").and_then(|v| v.as_str()) == Some(task_id.as_str())) {
@@ -89,7 +89,7 @@ pub fn fire_task_reminder_now(app: &AppHandle, store: &AppStore, task_id: &str) 
         }
     }
     if let Some(title) = title {
-        app.notification().builder().title("离谱道具 · 任务提醒").body(title).show().map_err(|e| e.to_string())?;
+        app.notification().builder().title("离谱发明所 · 任务提醒").body(title).show().map_err(|e| e.to_string())?;
         for tasks in data.tasks_by_date.values_mut() { for task in tasks.iter_mut().filter(|task| task.get("id").and_then(|v| v.as_str()) == Some(task_id)) { task["remindedAt"] = serde_json::Value::String(now.to_rfc3339()); } }
         let revision = data.revision; store.save(data, revision).map_err(|e| e.to_string())?;
     }

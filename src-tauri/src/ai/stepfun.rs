@@ -8,12 +8,8 @@ const IMAGE_MODEL: &str = "seedream-5.0-lite";
 const CHAT_URL: &str = "https://tokendance.space/gateway/v1/chat/completions";
 const IMAGE_URL: &str = "https://tokendance.space/gateway/v1/images/generations";
 
-/// 内置角色三视图（编译期内嵌，不依赖运行机器上的任何文件）。
-/// 默认用正面图：图生图时 AI 最容易还原五官、发色与服装细节。
-/// 可用环境变量 CHARACTER_REF_VARIANT=front|side|back 切换。
-const REF_FRONT: &[u8] = include_bytes!("../../assets/character_front.jpg");
-const REF_SIDE: &[u8] = include_bytes!("../../assets/character_side.jpg");
-const REF_BACK: &[u8] = include_bytes!("../../assets/character_back.jpg");
+/// 仓库当前未包含三视图资源，因此复用已纳入版本控制的引导头像，保证干净检出也能编译。
+const DEFAULT_REF: &[u8] = include_bytes!("../../../public/onboarding/avatar.jpg");
 
 pub struct StepFunProvider;
 
@@ -135,14 +131,8 @@ fn load_ref_image() -> Option<String> {
             return Some(format!("data:{};base64,{}", sniff_mime(&bytes), b64));
         }
     }
-    let variant = std::env::var("CHARACTER_REF_VARIANT").unwrap_or_default();
-    let bytes: &[u8] = match variant.as_str() {
-        "side" => REF_SIDE,
-        "back" => REF_BACK,
-        _ => REF_FRONT,
-    };
-    let b64 = base64::engine::general_purpose::STANDARD.encode(bytes);
-    Some(format!("data:{};base64,{}", sniff_mime(bytes), b64))
+    let b64 = base64::engine::general_purpose::STANDARD.encode(DEFAULT_REF);
+    Some(format!("data:{};base64,{}", sniff_mime(DEFAULT_REF), b64))
 }
 
 async fn generate_image_with_key(prompt: String, key: String) -> Result<Vec<u8>, AiError> {

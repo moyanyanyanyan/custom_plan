@@ -13,6 +13,6 @@ pub fn ensure_notification_permission(app: AppHandle) -> Result<bool, String> {
 
 #[tauri::command]
 pub fn send_task_notification(app: AppHandle, title: String) -> Result<(), String> {
-    app.notification().builder().title("离谱道具 · 任务提醒")
+    app.notification().builder().title("离谱发明所 · 任务提醒")
         .body(title).show().map_err(|error| error.to_string())
 }

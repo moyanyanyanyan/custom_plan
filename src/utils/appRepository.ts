@@ -8,6 +8,7 @@ import { normalizeCards, normalizeData } from './validation';
 import { createTask, normalizeTask } from './taskModel';
 import { isDesktop } from './desktop';
 import { localDateKey } from './date';
+import { getBrowserAsset, putBrowserAsset } from './browserAssets';
 
 const WEB_STATE_KEY = 'absurd.app-data.v1';
 const CARD_KEY = 'hackathon-card-collection';
@@ -110,7 +111,7 @@ export async function updateStoredCard(cardId: string, patch: Partial<InventionC
 
 export async function loadAsset(assetId: string): Promise<string> {
   if (assetId.startsWith('data:') || assetId.startsWith('/')) return assetId;
-  return isDesktop ? invoke<string>('load_asset_data_url', { assetId }) : '';
+  return isDesktop ? invoke<string>('load_asset_data_url', { assetId }) : getBrowserAsset(assetId);
 }
 
 /** 只读取一次用户图片，避免预览、取色和落盘使用不同的临时地址。 */
@@ -127,7 +128,16 @@ export async function saveUserAsset(
   file: File, kind: 'avatar' | 'wallpaper', source?: string,
 ): Promise<string> {
   const dataUrl = source ?? await readUserAsset(file);
-  if (!isDesktop) return dataUrl;
+  if (!isDesktop) {
+    const assetId = `${kind}-${Date.now().toString(36)}`;
+    await putBrowserAsset(assetId, dataUrl);
+    return assetId;
+  }
   const assetId = `${kind}-${Date.now().toString(36)}`;
   return invoke<string>('save_user_asset', { assetId, dataUrl });
+}
+
+export async function saveBrowserAsset(assetId: string, dataUrl: string): Promise<string> {
+  await putBrowserAsset(assetId, dataUrl);
+  return assetId;
 }

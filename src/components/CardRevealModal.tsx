@@ -26,7 +26,7 @@ function CardFace({ card, flipped }: { card: InventionCard; flipped: boolean }) 
           </div>
           <div className="card-desc">{card.description}</div>
           <div className="card-footer">
-            <span>离谱道具</span>
+            <span>离谱发明所</span>
             <time>{card.date}</time>
           </div>
         </div>

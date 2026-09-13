@@ -15,7 +15,7 @@ async function main() {
     for (const [width, height] of [[760, 800], [520, 680], [360, 600]]) {
       await page.setViewportSize({ width, height });
       await page.goto('http://127.0.0.1:1420/#panel');
-      await page.getByRole('heading', { name: '离谱道具', exact: true }).waitFor();
+      await page.getByRole('heading', { name: '离谱发明所', exact: true }).waitFor();
       assert.equal(await page.locator('.task-pill').count(), 5);
       assert.equal(await page.locator('.task-pill.completed').count(), 2);
       assert.equal(await page.locator('.static-button:not(:disabled)').count(), 0);

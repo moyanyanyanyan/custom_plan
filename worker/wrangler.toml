@@ -1,0 +1,16 @@
+name = "absurd-invention-ai"
+main = "src/index.ts"
+compatibility_date = "2026-09-13"
+
+[vars]
+CARD_COPY_DAILY_LIMIT = "20"
+CARD_ART_DAILY_LIMIT = "5"
+ALLOWED_ORIGIN = "https://absurd-invention-lab.pages.dev"
+
+[[durable_objects.bindings]]
+name = "USAGE_LIMITER"
+class_name = "UsageLimiter"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["UsageLimiter"]

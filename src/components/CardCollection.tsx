@@ -36,7 +36,7 @@ function CardFace({ card, count, flipped }: { card: InventionCard; count: number
           <CardArt card={card} count={count} />
           <div className="card-desc">{card.description}</div>
           <div className="card-footer">
-            <span>离谱道具</span>
+            <span>离谱发明所</span>
             <time>{card.date}</time>
           </div>
         </div>

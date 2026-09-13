@@ -6,6 +6,7 @@ import { invoke } from '@tauri-apps/api/core';
 import type { GeneratedCopy } from '../types/ai';
 import { isDesktop } from './desktop';
 import { getDeviceId } from './deviceId';
+import { saveBrowserAsset } from './appRepository';
 
 const proxyUrl = (import.meta.env.VITE_AI_PROXY_URL as string | undefined)?.replace(/\/$/, '');
 
@@ -39,11 +40,10 @@ export async function generateCardArt(card: {
     if (!base64) throw new Error('AI 插画返回为空');
     return invoke<string>('save_user_asset', { assetId: card.id, dataUrl: `data:image/png;base64,${base64}` });
   }
-  // 浏览器版没有本地资产目录，插画无法落盘，保持原有降级行为。
-  await proxy<{ imageBase64: string; mimeType: string }>('/api/cards/art', {
+  const result = await proxy<{ imageBase64: string; mimeType: string }>('/api/cards/art', {
     name: card.name, description: card.description, scene: card.scene,
   });
-  return null;
+  return saveBrowserAsset(card.id, `data:${result.mimeType};base64,${result.imageBase64}`);
 }
 
 export async function generateSlimeCopy(taskContext: string): Promise<GeneratedCopy | null> {
