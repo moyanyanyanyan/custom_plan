@@ -28,7 +28,12 @@ pub struct Choice {
 
 #[derive(Debug, Deserialize)]
 pub struct Message {
+    #[serde(default)]
     pub content: String,
+    /// 推理模型（step-3.7-flash / deepseek-v4-flash）会把思考过程放在这里。
+    /// token 预算被思考吃光时 content 会是空串，需要回退到这段文本里找 JSON。
+    #[serde(default)]
+    pub reasoning_content: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]

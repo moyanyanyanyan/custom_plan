@@ -3,10 +3,48 @@ use crate::data::AppStore;
 use base64::Engine;
 use std::time::Duration;
 
-const CHAT_MODEL: &str = "deepseek-v4-flash";
-const IMAGE_MODEL: &str = "seedream-5.0-lite";
-const CHAT_URL: &str = "https://tokendance.space/gateway/v1/chat/completions";
-const IMAGE_URL: &str = "https://tokendance.space/gateway/v1/images/generations";
+/// 一条可用的 AI 后端：端点 + 模型名 + 生图尺寸三者必须成套，不能混用。
+struct Route {
+    chat_url: &'static str,
+    image_url: &'static str,
+    chat_model: &'static str,
+    image_model: &'static str,
+    image_size: &'static str,
+}
+
+/// TokenDance 网关（key 形如 sk-…）。生图走 seedream，尺寸 1920x1920。
+const TOKENDANCE: Route = Route {
+    chat_url: "https://tokendance.space/gateway/v1/chat/completions",
+    image_url: "https://tokendance.space/gateway/v1/images/generations",
+    chat_model: "deepseek-v4-flash",
+    image_model: "seedream-5.0-lite",
+    image_size: "1920x1920",
+};
+
+/// 阶跃星辰官方 API（key 形如 1sMPgJ…，非 sk- 前缀）。
+///
+/// size 只能用官方文档列出的档位：1024x1024 / 768x1360 / 896x1184 / 1360x768 / 1184x896；
+/// 传 1920x1920 会 400 `size_invalid`。
+const STEPFUN: Route = Route {
+    chat_url: "https://api.stepfun.com/v1/chat/completions",
+    image_url: "https://api.stepfun.com/v1/images/generations",
+    chat_model: "step-3.7-flash",
+    image_model: "step-image-edit-2",
+    image_size: "1024x1024",
+};
+
+/// 按 key 形态选后端：显式设置 TOKENDANCE_API_KEY，或 key 是 sk- 前缀 → 网关；否则走阶跃官方。
+///
+/// 2026-09-13 的线上故障根因就是这里：端点被整体切到 TokenDance 网关，但大家手上的 key 仍是
+/// 阶跃官方 key，网关一律回 401「API 密钥不存在」，文案与插画都拿不到，界面表现为「无法生成图片」。
+/// 用同一把 key 直连 api.stepfun.com 的 chat 与 images 接口均为 200。
+fn route_for(key: &str) -> &'static Route {
+    if std::env::var("TOKENDANCE_API_KEY").is_ok() || key.starts_with("sk-") {
+        &TOKENDANCE
+    } else {
+        &STEPFUN
+    }
+}
 
 /// 仓库当前未包含三视图资源，因此复用已纳入版本控制的引导头像，保证干净检出也能编译。
 const DEFAULT_REF: &[u8] = include_bytes!("../../../public/onboarding/avatar.jpg");
@@ -26,7 +64,9 @@ fn env_key() -> Result<String, AiError> {
     std::env::var("STEPFUN_API_KEY").map_err(|_| AiError::MissingKey)
 }
 
-fn tokendance_key() -> Result<String, AiError> {
+/// 没有保存过的 key 时读环境变量：TOKENDANCE_API_KEY 优先，其次 STEPFUN_API_KEY。
+/// 具体走哪个后端由 `route_for` 按 key 形态决定，不在这里硬编码。
+fn env_api_key() -> Result<String, AiError> {
     std::env::var("TOKENDANCE_API_KEY")
         .or_else(|_| std::env::var("STEPFUN_API_KEY"))
         .map_err(|_| AiError::MissingKey)
@@ -55,11 +95,11 @@ async fn checked(response: reqwest::Response) -> Result<reqwest::Response, AiErr
 }
 
 pub async fn generate_copy(system: String, user: String) -> Result<GeneratedCopy, AiError> {
-    generate_copy_with_key(system, user, tokendance_key()?).await
+    generate_copy_with_key(system, user, env_api_key()?).await
 }
 
 pub async fn generate_image(prompt: String) -> Result<Vec<u8>, AiError> {
-    generate_image_with_key(prompt, tokendance_key()?).await
+    generate_image_with_key(prompt, env_api_key()?).await
 }
 
 pub async fn generate_copy_with_store(
@@ -87,14 +127,31 @@ async fn generate_copy_with_key(system: String, user: String, key: String) -> Re
 }
 
 async fn generate_chat_with_key(system: String, user: String, key: String) -> Result<String, AiError> {
-    let response = client()?.post(CHAT_URL).bearer_auth(key).json(&serde_json::json!({
-        "model": CHAT_MODEL, "messages": [
+    let route = route_for(&key);
+    let response = client()?.post(route.chat_url).bearer_auth(key).json(&serde_json::json!({
+        "model": route.chat_model, "messages": [
             {"role": "system", "content": system}, {"role": "user", "content": user}
-        ], "temperature": 1.0, "max_tokens": 1000
+        ], "temperature": 1.0,
+        // 3000 而不是 1000：step-3.7-flash / deepseek-v4-flash 都是推理模型，思考过程也计费，
+        // 预算太小会被思考吃光、content 返回空串（2026-09-13 实测 max_tokens=1000 时 completion 全是 reasoning）。
+        "max_tokens": 3000
     })).send().await.map_err(|e| AiError::Network(e.to_string()))?;
     let body: ChatResponse = checked(response).await?.json().await
         .map_err(|_| AiError::InvalidResponse)?;
-    Ok(body.choices.first().ok_or(AiError::InvalidResponse)?.message.content.trim().into())
+    let message = body.choices.into_iter().next().ok_or(AiError::InvalidResponse)?.message;
+    let content = message.content.trim();
+    if !content.is_empty() {
+        return Ok(content.into());
+    }
+    // 兜底：content 为空时从 reasoning_content 里截出最后一段 JSON（原本这里直接返回空串，
+    // 调用方 extract_copy 找不到 `{` 就报 InvalidResponse，界面表现为文案与插画都出不来）。
+    let reasoning = message.reasoning_content.unwrap_or_default();
+    let start = reasoning.find('{').ok_or(AiError::InvalidResponse)?;
+    let end = reasoning.rfind('}').ok_or(AiError::InvalidResponse)? + 1;
+    if start >= end {
+        return Err(AiError::InvalidResponse);
+    }
+    Ok(reasoning[start..end].to_string())
 }
 
 pub fn extract_steps(raw: &str) -> Option<Vec<String>> {
@@ -136,15 +193,18 @@ fn load_ref_image() -> Option<String> {
 }
 
 async fn generate_image_with_key(prompt: String, key: String) -> Result<Vec<u8>, AiError> {
+    let route = route_for(&key);
     let mut body = serde_json::json!({
-        "model": IMAGE_MODEL, "prompt": prompt, "n": 1,
-        "size": "1920x1920", "response_format": "b64_json"
+        "model": route.image_model, "prompt": prompt, "n": 1,
+        // 尺寸必须用该后端支持的档位：阶跃官方 step-image-edit-2 只接受
+        // 1024x1024 / 768x1360 / 896x1184 / 1360x768 / 1184x896，传 1920x1920 会 400 size_invalid。
+        "size": route.image_size, "response_format": "b64_json"
     });
     // If a character reference image exists, include it for image-to-image
     if let Some(data_url) = load_ref_image() {
         body["image"] = serde_json::json!(data_url);
     }
-    let response = client()?.post(IMAGE_URL).bearer_auth(key).json(&body)
+    let response = client()?.post(route.image_url).bearer_auth(key).json(&body)
         .send().await.map_err(|e| AiError::Network(e.to_string()))?;
     let body: ImageResponse = checked(response).await?.json().await
         .map_err(|_| AiError::InvalidResponse)?;
