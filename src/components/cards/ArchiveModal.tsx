@@ -24,7 +24,7 @@ export function ArchiveModal({ open, onClose }: Props) {
         <button className={tab === 'cards' ? 'is-active' : ''} onClick={() => setTab('cards')}>发明卡牌</button>
         <button className={tab === 'items' ? 'is-active' : ''} onClick={() => setTab('items')}>离谱道具</button>
       </nav>
-      {tab === 'cards' ? <CardArchiveErrorBoundary><CardCollection cards={data.cards} /></CardArchiveErrorBoundary>
+      {tab === 'cards' ? <CardArchiveErrorBoundary><CardCollection cards={data.cards} tasksByDate={data.tasksByDate} /></CardArchiveErrorBoundary>
         : <ItemCollection />}
     </section>
   </div>;

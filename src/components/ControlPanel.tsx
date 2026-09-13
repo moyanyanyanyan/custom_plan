@@ -163,7 +163,7 @@ export function ControlPanel() {
     {energyToast && <div className="energy-toast" role="status">稳定余波 +1</div>}
     {addedTaskMessage && <div className="task-added-status" role="status">{addedTaskMessage}</div>}
     <CardRevealModal card={generation.revealedCard} open={!!generation.revealedCard}
-      onClose={() => generation.setRevealedCard(null)} />
+      tasks={tasks} onClose={() => generation.setRevealedCard(null)} />
     <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} onReplayGuide={replayGuide} />
     <ArchiveModal open={archiveOpen} tasks={tasks} onClose={() => setArchiveOpen(false)} />
     {generation.generatingImage && (
