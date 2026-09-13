@@ -15,8 +15,10 @@ pub fn card_art(name: &str, description: &str) -> String {
     format!(
         "Cute chibi scene. ABSOLUTELY NO TEXT, NO WATERMARK, NO SIGNATURE, NO LETTERS, NO WORDS, NO CHINESE CHARACTERS anywhere. \
          MAIN CHARACTER (EXACT design, NEVER change): female chibi, short spiky silver-blue hair, large blue eyes, white hoodie with blue sleeves and blue hood, blue bowtie, white skirt, white shoes with blue trim. \
+         ANATOMY LOCK: exactly one head, one torso, exactly two shoulders, exactly two arms, exactly two hands and exactly five fingers per hand; both arms must connect naturally to the two shoulders. NO extra arms, NO third hand, NO duplicate hand, NO detached limb, NO duplicated body parts, NO malformed anatomy, NO multiple copies of the character. \
+         Keep the character in a simple single action related to \"{name}\" ({description}); use at most one held prop so both hands remain clearly readable. Do not show a complex multi-object pose. \
          NEVER change outfit, hair, gender, proportions or any design detail. \
-         Show this exact character doing ONE simple action related to \"{name}\" ({description}) in a relevant background scene. \
+         Show this exact character doing ONE simple action in a relevant background scene. Use a normal stable pose, not a motion trail or anatomical afterimage. \
          No card frame, no borders. Fill the canvas edge to edge."
     )
 }
