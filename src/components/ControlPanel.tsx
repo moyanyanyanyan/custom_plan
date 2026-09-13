@@ -15,12 +15,15 @@ import { useCurrentDate } from '../hooks/useCurrentDate';
 import { useTaskReminders } from '../hooks/useTaskReminders';
 import { playCompletionSound, playTaskAddedSound } from '../utils/feedback';
 import { calculateCardStreak } from '../utils/streak';
+import { OnboardingGuide } from './onboarding/OnboardingGuide';
+import { loadJson, saveJson } from '../utils/storage';
 import './panel.css';
 import './collection.css';
 import './reveal.css';
 
 /** 控制面板统一持有任务状态，并将真实完成任务交给卡牌生成流程。 */
 export function ControlPanel() {
+  const [guideOpen, setGuideOpen] = useState(() => !loadJson('onboarding-seen', false));
   const [error, setError] = useState('');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [archiveOpen, setArchiveOpen] = useState(false);
@@ -57,6 +60,8 @@ export function ControlPanel() {
   const windowAction = (command: 'minimize_panel' | 'exit_app' | 'drag_panel') => {
     void desktopCommand(command).catch((reason) => setError(String(reason)));
   };
+  const finishGuide = () => { saveJson('onboarding-seen', true); setGuideOpen(false); };
+  const replayGuide = () => { setSettingsOpen(false); setGuideOpen(true); };
 
   const handleToggle = (id: string) => {
     const completing = !tasks.find((task) => task.id === id)?.completed;
@@ -107,7 +112,7 @@ export function ControlPanel() {
         <div><h1>离谱道具</h1><p>ABSURD GADGETS LAB</p></div>
       </div>
       <div className="window-actions"><span className="preview-label">界面预览</span>
-        <button onClick={() => setSettingsOpen(true)} title="研究所设置" aria-label="研究所设置"><Icon name="settings" size={16} /></button>
+        <button data-guide="settings" onClick={() => setSettingsOpen(true)} title="研究所设置" aria-label="研究所设置"><Icon name="settings" size={16} /></button>
         <button disabled={!isDesktop} onClick={() => windowAction('minimize_panel')} title="最小化面板" aria-label="最小化面板"><Icon name="minus" size={17} /></button>
         <button disabled={!isDesktop} onClick={() => windowAction('exit_app')} title="退出应用" aria-label="退出应用"><Icon name="power" size={16} /></button>
       </div>
@@ -128,13 +133,13 @@ export function ControlPanel() {
         </div>
         <p className="assistant-message"><span className="signal-dot" />{assistantCopy}</p>
       </div>
-      <button className="collection secondary-content" aria-label={`打开发明档案馆，共 ${generation.cards.length} 张`}
+      <button data-guide="collection" className="collection secondary-content" aria-label={`打开发明档案馆，共 ${generation.cards.length} 张`}
         onClick={() => setArchiveOpen(true)}><span className="collection-orbit" />
         <span className="eyebrow">ARCHIVE / 001</span><h3>发明卡牌</h3>
         <div><strong>{generation.cards.length}</strong><Icon name="arrow" /></div><span className="collection-caption">收藏每一次认真生活</span>
       </button>
     </section>
-    <TodayTaskBoard tasks={tasks} laterTasks={laterTasks} dateKey={dateKey}
+    <div className="today-board-shell" data-guide="task-list"><TodayTaskBoard tasks={tasks} laterTasks={laterTasks} dateKey={dateKey}
       date={now} focusTaskId={focusedTaskId} recentlyAddedTaskId={recentlyAddedTaskId}
       slime={slime} onAdd={handleAdd}
       onToggle={(date, id) => date === dateKey ? handleToggle(id) : toggle(date, id)}
@@ -146,8 +151,8 @@ export function ControlPanel() {
       }} onSlimeSplit={(date, id) => {
         moveToToday(date, id);
         setFocusedTaskId(id);
-      }} />
-    <button type="button" className={`invention-button secondary-content ${generation.state}`}
+      }} /></div>
+    <button type="button" data-guide="machine" className={`invention-button secondary-content ${generation.state}`}
       onPointerDown={(event) => event.stopPropagation()}
       onClick={(event) => { event.stopPropagation(); void handleGenerateCard(); }}
       disabled={generation.state !== 'ready'}>
@@ -159,7 +164,7 @@ export function ControlPanel() {
     {addedTaskMessage && <div className="task-added-status" role="status">{addedTaskMessage}</div>}
     <CardRevealModal card={generation.revealedCard} open={!!generation.revealedCard}
       onClose={() => generation.setRevealedCard(null)} />
-    <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+    <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} onReplayGuide={replayGuide} />
     <ArchiveModal open={archiveOpen} onClose={() => setArchiveOpen(false)} />
     {generation.generatingImage && (
       <div style={{
@@ -174,6 +179,7 @@ export function ControlPanel() {
       </div>
     )}
       </main>
+      <OnboardingGuide open={guideOpen} onFinish={finishGuide} />
     </>
   );
 }

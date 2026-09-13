@@ -14,6 +14,18 @@ function mockCrop(kind: 'avatar' | 'wallpaper') {
 }
 
 describe('SettingsPanel', () => {
+  it('显示重新查看新手指引按钮并触发回调', () => {
+    const data = createDefaultData(new Date('2026-09-10T00:00:00Z'));
+    const onReplayGuide = vi.fn();
+    render(<AppDataContext.Provider value={{ data, ready: true, error: '', update: vi.fn() }}>
+      <SettingsPanel open onClose={vi.fn()} onReplayGuide={onReplayGuide} />
+    </AppDataContext.Provider>);
+    const button = screen.getByRole('button', { name: '重新查看新手指引' });
+    expect(button).toHaveClass('settings-replay-guide');
+    fireEvent.click(button);
+    expect(onReplayGuide).toHaveBeenCalledOnce();
+  });
+
   it('窗口模式使用可访问的分段选项并同步选中态', () => {
     const data = createDefaultData(new Date('2026-09-10T00:00:00Z'));
     render(<AppDataContext.Provider value={{ data, ready: true, error: '', update: vi.fn() }}>
@@ -37,16 +49,29 @@ describe('SettingsPanel', () => {
     expect(screen.queryByRole('slider')).not.toBeInTheDocument();
   });
 
-  it('已有壁纸时调整遮罩强度并提交完整设置', () => {
+  it('已有壁纸时调整遮罩强度并提交完整设置', async () => {
     const data = createDefaultData(new Date('2026-09-10T00:00:00Z'));
-    data.settings.wallpaperAssetId = 'saved-wallpaper';
+    data.settings.wallpaperAssetId = 'data:image/jpeg;base64,saved-wallpaper';
     const update = vi.fn();
     render(<AppDataContext.Provider value={{ data, ready: true, error: '', update }}>
       <SettingsPanel open onClose={vi.fn()} />
     </AppDataContext.Provider>);
-    fireEvent.change(screen.getByRole('slider'), { target: { value: '0.7' } });
+    const slider = screen.getByRole('slider');
+    expect(slider).toHaveAttribute('min', '0');
+    fireEvent.change(slider, { target: { value: '0' } });
+    await waitFor(() => expect(document.documentElement.style.getPropertyValue('--panel-overlay-opacity')).toBe('0'));
     fireEvent.click(screen.getByRole('button', { name: '应用设置' }));
     expect(update).toHaveBeenCalledOnce();
+  });
+
+  it('无壁纸时忽略零遮罩并保持默认渐变', async () => {
+    const data = createDefaultData(new Date('2026-09-10T00:00:00Z'));
+    data.settings.panelOpacity = 0;
+    render(<AppDataContext.Provider value={{ data, ready: true, error: '', update: vi.fn() }}>
+      <SettingsPanel open onClose={vi.fn()} />
+    </AppDataContext.Provider>);
+    await waitFor(() => expect(document.documentElement.style.getPropertyValue('--panel-overlay-opacity')).toBe('1'));
+    expect(document.documentElement.style.getPropertyValue('--panel-wallpaper')).toBe('none');
   });
 
   it('确认壁纸裁剪后显示预览和遮罩设置', async () => {
@@ -65,6 +90,9 @@ describe('SettingsPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: '确认裁剪' }));
     await screen.findByAltText('面板壁纸预览');
     expect(screen.getByRole('slider', { name: '壁纸遮罩强度' })).toBeVisible();
+    expect(screen.getByRole('slider', { name: '壁纸遮罩强度' })).toHaveValue('0.6');
+    await waitFor(() => expect(document.documentElement.style.getPropertyValue('--panel-wallpaper'))
+      .toContain('data:image/jpeg;base64,wallpaper'));
   });
 
   it('确认头像裁剪后更新预览和自动配色', async () => {
@@ -112,5 +140,18 @@ describe('SettingsPanel', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: '取消' }));
     expect(screen.queryByAltText('面板壁纸预览')).not.toBeInTheDocument();
     expect(saveAsset).not.toHaveBeenCalled();
+  });
+
+  it('取消设置后恢复已经保存的壁纸', async () => {
+    const data = createDefaultData(new Date('2026-09-10T00:00:00Z'));
+    data.settings.wallpaperAssetId = 'data:image/jpeg;base64,saved';
+    render(<AppDataContext.Provider value={{ data, ready: true, error: '', update: vi.fn() }}>
+      <SettingsPanel open onClose={vi.fn()} />
+    </AppDataContext.Provider>);
+    await waitFor(() => expect(document.documentElement.style.getPropertyValue('--panel-wallpaper'))
+      .toContain('data:image/jpeg;base64,saved'));
+    fireEvent.click(screen.getByRole('button', { name: '取消' }));
+    expect(document.documentElement.style.getPropertyValue('--panel-wallpaper'))
+      .toContain('data:image/jpeg;base64,saved');
   });
 });
