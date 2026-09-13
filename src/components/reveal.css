@@ -43,7 +43,9 @@
   height: 100%;
   object-fit: cover;
 }
-.card-placeholder {
+/* 同样限定作用域：collection.css 里卡册网格的 .card-placeholder 是 22px，
+   这里不限定就会按注入顺序把卡册的占位首字放到 48px。 */
+.reveal-art .card-placeholder {
   font-size: 48px;
   color: #888;
 }
@@ -69,7 +71,13 @@
   cursor: pointer;
 }
 
-.card-face {
+/* 必须限定在 .card-viewport 之内：collection.css 的卡册网格也用 .card-face（那里要
+   position:absolute + inset:0 叠成 59:86 卡面）。两个文件都定义 .card-face 且都没有作用域时，
+   谁生效取决于 CSS 注入顺序——dev 按 import 顺序（reveal.css 在 ControlPanel 里后 import）会
+   让这条 relative/320px 赢，卡册网格的正面+背面就都变成流内 320px 高块、撑爆 59:86 的
+   .card-flipper 并向下溢出，表现为「两张卡叠在一起」；打包产物里 Rollup 把顺序反过来又正常，
+   于是同一份代码 dev 坏、exe 好。加作用域既保住了本弹窗观感，也消除了这个顺序依赖。 */
+.card-viewport .card-face {
   position: relative;
   width: 100%;
   min-height: 320px;
@@ -79,7 +87,7 @@
   overflow: hidden;
 }
 
-.card-face.back {
+.card-viewport .card-face.back {
   transform: rotateY(180deg);
 }
 
