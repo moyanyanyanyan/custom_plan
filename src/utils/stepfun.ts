@@ -23,16 +23,9 @@ export async function generateAICopy(sourceTasks: string[]): Promise<AICopy | nu
   }
 }
 
-/** 生成卡牌插画，返回 data:image/png;base64,... 。失败/非桌面环境返回 null。 */
-export async function generateArtworkDataURL(prompt: string): Promise<string | null> {
-  if (!isDesktop) return null;
-  try {
-    const b64 = await invoke<string | null>('generate_card_art', { prompt });
-    return b64 ? `data:image/png;base64,${b64}` : null;
-  } catch {
-    return null;
-  }
-}
+// 注：旧版 generateArtworkDataURL（返回 dataURL 给 canvas 处理）已随 cardImage.ts 一起删除。
+// 现在插画统一走 aiClient.generateCardArt → 原生命令 generate_card_art → save_user_asset，
+// 由 Rust 侧 prompts::card_art 组装提示词（含 AI 生成的 scene 场景描述）。
 
 /** 持久化 StepFun key 到本地设置；非桌面环境直接返回。 */
 export async function saveStepfunKey(key: string): Promise<void> {

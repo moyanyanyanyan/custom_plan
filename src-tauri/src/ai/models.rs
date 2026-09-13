@@ -4,6 +4,11 @@ use serde::{Deserialize, Serialize};
 pub struct GeneratedCopy {
     pub name: String,
     pub description: String,
+    /// 供文生图使用的英文场景描述（背景 + 动作 + 道具）。
+    /// 由文案模型在生成名称/描述时一并产出，使插画真正贴合卡牌标题与内容。
+    /// `default` 保证旧格式（只有 name/description）的响应仍能解析。
+    #[serde(default)]
+    pub scene: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

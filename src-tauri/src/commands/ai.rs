@@ -12,8 +12,12 @@ pub async fn generate_card_copy(
 
 #[tauri::command]
 pub async fn generate_card_art(
-    store: State<'_, crate::data::AppStore>, prompt: String,
+    store: State<'_, crate::data::AppStore>,
+    name: String,
+    description: String,
+    scene: Option<String>,
 ) -> Result<String, String> {
+    let prompt = prompts::card_art(&name, &description, scene.as_deref());
     let image = generate_image_with_store(prompt, &store)
         .await
         .map_err(|e| e.to_string())?;

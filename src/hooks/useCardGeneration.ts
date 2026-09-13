@@ -30,11 +30,16 @@ export function useCardGeneration(tasks: Experiment[]) {
       const base = generateCardFromTasks(tasks, new Date(), cards);
       if (!base) return;
 
-      // 先获取 AI 文案
+      // 先获取 AI 文案（scene 是供文生图使用的英文场景描述，不进入卡面显示字段）
       let card = base;
+      let scene: string | undefined;
       try {
         const copy = await generateCardCopy(base.sourceTasks);
-        if (copy) card = { ...base, ...copy, stackKey: copy.name };
+        if (copy) {
+          const { scene: copyScene, ...text } = copy;
+          scene = copyScene ?? undefined;
+          card = { ...base, ...text, stackKey: copy.name };
+        }
       } catch (reason) {
         setWarning(`AI 文案暂不可用，已采用本地模板：${String(reason)}`);
       }
@@ -43,7 +48,7 @@ export function useCardGeneration(tasks: Experiment[]) {
       setInventing(false);
       setGeneratingImage(true);
       try {
-        const imageAssetId = await generateCardArt(card);
+        const imageAssetId = await generateCardArt({ ...card, scene });
         if (imageAssetId) card = { ...card, imageAssetId };
       } catch (reason) {
         setWarning((current) => current || `AI 插画暂不可用：${String(reason)}`);
