@@ -16,7 +16,7 @@ interface RustAICopy {
 export async function generateAICopy(sourceTasks: string[]): Promise<AICopy | null> {
   if (!isDesktop) return null;
   try {
-    const result = await invoke<RustAICopy | null>('generate_stepfun_copy', { sourceTasks });
+    const result = await invoke<RustAICopy | null>('generate_card_copy', { tasks: sourceTasks });
     return result ? { name: result.name, description: result.description } : null;
   } catch {
     return null;
