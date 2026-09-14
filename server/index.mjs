@@ -1,4 +1,5 @@
 import http from 'node:http';
+import { CARD_COPY_SYSTEM_PROMPT, generateCardCopy } from '../public/card-copy-policy.js';
 
 const port = Number(process.env.PORT || 8787);
 const apiKey = process.env.STEPFUN_API_KEY || '';
@@ -45,6 +46,22 @@ async function stepfun(path, payload) {
   return response.json();
 }
 
+/** 名称或响应格式不合规时仅纠错一次，之后让调用方使用本地模板。 */
+async function generateValidatedCopy(sourceTasks) {
+  return generateCardCopy(async (user) => {
+    const result = await stepfun('chat/completions', {
+      model: 'step-3.7-flash',
+      messages: [
+        { role: 'system', content: CARD_COPY_SYSTEM_PROMPT },
+        { role: 'user', content: user },
+      ],
+      temperature: 1,
+      max_tokens: 3000,
+    });
+    return result.choices?.[0]?.message?.content || '';
+  }, sourceTasks);
+}
+
 async function handle(req, res) {
   if (req.method === 'GET' && req.url === '/health') return json(res, 200, { ok: true });
   if (req.method !== 'POST' || !['/api/cards/copy', '/api/cards/art'].includes(req.url)) return json(res, 404, { code: 'NOT_FOUND', message: 'Not found' });
@@ -62,14 +79,7 @@ async function handle(req, res) {
   if (!allowed(body.deviceId, ip, kind, limit)) return json(res, 429, { code: 'RATE_LIMITED', message: '今日 AI 额度已用完' });
   try {
     if (kind === 'copy') {
-      const result = await stepfun('chat/completions', { model: 'step-3.7-flash', messages: [
-        { role: 'system', content: '你是离谱发明所的卡牌文案生成器。卡牌名称4-10个汉字，描述40-80字，只输出JSON：{"name":"名称","description":"描述"}。' },
-        { role: 'user', content: `今日完成任务：${body.sourceTasks.join('、')}` },
-      ], temperature: 1, max_tokens: 1000 });
-      const content = result.choices?.[0]?.message?.content || '';
-      const start = content.indexOf('{'); const end = content.lastIndexOf('}');
-      if (start < 0 || end <= start) throw new Error('INVALID_UPSTREAM_RESPONSE');
-      return json(res, 200, JSON.parse(content.slice(start, end + 1)));
+      return json(res, 200, await generateValidatedCopy(body.sourceTasks));
     }
     const result = await stepfun('images/generations', { model: 'step-image-edit-2', prompt: `Square illustration. STRICTLY NO TEXT, NO LETTERS, NO WORDS, NO CHINESE CHARACTERS, NO TITLES, NO LABELS anywhere in the image. Pure scene artwork only. Theme inspired by "${body.name}" (${body.description}). Dark blue lab background, steampunk machinery in center, neon glowing tubes, sci-fi atmosphere. No card frame, no card border.`, n: 1, size: '1024x1024', response_format: 'b64_json' });
     const imageBase64 = result.data?.[0]?.b64_json;

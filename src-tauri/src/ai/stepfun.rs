@@ -177,6 +177,13 @@ pub async fn generate_copy_with_store(
     generate_copy_with_key(system, user, stored_key(store)?).await
 }
 
+/** 卡牌文案专用入口：校验荒诞发明物名称，首次失败时携带原因纠错一次。 */
+pub async fn generate_card_copy_with_store(
+    system: String, user: String, store: &AppStore,
+) -> Result<GeneratedCopy, AiError> {
+    generate_card_copy_with_key(system, user, stored_key(store)?).await
+}
+
 pub async fn generate_image_with_store(
     prompt: String, store: &AppStore,
 ) -> Result<Vec<u8>, AiError> {
@@ -200,6 +207,26 @@ pub async fn generate_steps_with_store(
 async fn generate_copy_with_key(system: String, user: String, key: String) -> Result<GeneratedCopy, AiError> {
     let raw = generate_chat_with_key(system, user, key).await?;
     extract_copy(&raw).ok_or(AiError::InvalidResponse)
+}
+
+async fn generate_card_copy_with_key(
+    system: String, user: String, key: String,
+) -> Result<GeneratedCopy, AiError> {
+    let mut request = user.clone();
+    for _ in 0..2 {
+        let raw = generate_chat_with_key(system.clone(), request, key.clone()).await?;
+        match extract_card_copy(&raw) {
+            Ok(copy) => return Ok(copy),
+            Err((reason, rejected)) => {
+                let original = rejected.map(|name| format!("原名称：{name}。"))
+                    .unwrap_or_default();
+                request = format!(
+                    "{user}。上一次输出不合规：{reason}。{original}请纠正后重新输出完整JSON。"
+                );
+            }
+        }
+    }
+    Err(AiError::InvalidResponse)
 }
 
 /// 单次对话请求（只用某一条后端）。
@@ -438,6 +465,38 @@ pub fn extract_copy(raw: &str) -> Option<GeneratedCopy> {
     serde_json::from_str(&candidate[start..end]).ok()
 }
 
+/** 名称校验只用于卡牌；史莱姆等其他文案仍沿用通用 JSON 解析。 */
+pub fn validate_card_name(name: &str) -> Result<(), String> {
+    let value = name.trim();
+    let length = value.chars().count();
+    if length < 5 || length > 12 { return Err("名称必须为5-12个汉字".into()); }
+    if !value.chars().all(is_han) { return Err("名称只能包含汉字".into()); }
+    for title in ["达人", "大师", "王者", "守望者", "小能手"] {
+        if value.contains(title) { return Err(format!("名称不得包含人物称号“{title}”")); }
+    }
+    if !["装置", "器", "机", "仪", "箱", "炉", "罐"].iter().any(|suffix| value.ends_with(suffix)) {
+        return Err("名称必须以器、机、仪、箱、炉、罐或装置结尾".into());
+    }
+    Ok(())
+}
+
+fn is_han(ch: char) -> bool {
+    matches!(ch as u32, 0x3400..=0x4DBF | 0x4E00..=0x9FFF | 0xF900..=0xFAFF)
+}
+
+fn extract_card_copy(raw: &str) -> Result<GeneratedCopy, (String, Option<String>)> {
+    let copy = extract_copy(raw).ok_or_else(|| ("响应中没有可解析的完整JSON".into(), None))?;
+    validate_card_name(&copy.name).map_err(|reason| (reason, Some(copy.name.clone())))?;
+    if copy.description.trim().is_empty() {
+        return Err(("描述不能为空".into(), Some(copy.name)));
+    }
+    Ok(GeneratedCopy {
+        name: copy.name.trim().into(),
+        description: copy.description.trim().into(),
+        scene: copy.scene.map(|scene| scene.trim().to_string()).filter(|scene| !scene.is_empty()),
+    })
+}
+
 /// 道具文案解析：名称/描述为空即视为无效，交给前端走降级道具池。
 pub fn extract_item(raw: &str) -> Option<GeneratedItem> {
     let candidate = raw.trim().trim_start_matches("```json").trim_start_matches("```")
@@ -465,7 +524,7 @@ pub fn extract_item(raw: &str) -> Option<GeneratedItem> {
 
 #[cfg(test)]
 mod tests {
-    use super::{extract_copy, extract_item, extract_steps, last_json_block};
+    use super::{extract_card_copy, extract_copy, extract_item, extract_steps, last_json_block, validate_card_name};
     #[test]
     fn extracts_json_with_or_without_fence() {
         assert_eq!(extract_copy(r#"{"name":"A","description":"B"}"#).unwrap().name, "A");
@@ -473,6 +532,20 @@ mod tests {
     }
     #[test]
     fn rejects_invalid_copy() { assert!(extract_copy("not json").is_none()); }
+    #[test]
+    fn validates_absurd_invention_card_names() {
+        assert!(validate_card_name("桌面秩序压缩机").is_ok());
+        for invalid in ["短小机", "这个名字实在是非常非常漫长的处理装置", "代码Bug处理器", "代码大师处理器", "桌面秩序维护员", ""] {
+            assert!(validate_card_name(invalid).is_err(), "应拒绝：{invalid}");
+        }
+    }
+    #[test]
+    fn card_copy_requires_valid_name_and_description() {
+        assert!(extract_card_copy(r#"{"name":"凌晨代码驯服箱","description":"有效描述"}"#).is_ok());
+        assert!(extract_card_copy(r#"{"name":"代码大师","description":"错误"}"#).is_err());
+        assert!(extract_card_copy(r#"{"name":"凌晨代码驯服箱","description":""}"#).is_err());
+        assert!(extract_card_copy("not json").is_err());
+    }
     #[test]
     fn validates_step_count() {
         assert_eq!(extract_steps(r#"{"steps":["订酒店","买机票"]}"#).unwrap().len(), 2);

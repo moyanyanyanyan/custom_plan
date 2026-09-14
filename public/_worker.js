@@ -1,3 +1,5 @@
+import { CARD_COPY_SYSTEM_PROMPT, generateCardCopy } from './card-copy-policy.js';
+
 /**
  * 离谱发明所 · 网页版 AI 代理（Cloudflare Pages Advanced Mode Worker）
  *
@@ -64,6 +66,22 @@ async function upstream(env, path, payload) {
   if (response.status === 429) throw new Error('UPSTREAM_RATE_LIMITED');
   if (!response.ok) throw new Error(`UPSTREAM_${response.status}`);
   return response.json();
+}
+
+/** 名称不合规或格式错误时只纠错一次，避免异常内容进入收藏。 */
+async function generateValidatedCopy(env, sourceTasks) {
+  return generateCardCopy(async (user) => {
+    const result = await upstream(env, 'chat/completions', {
+      model: 'step-3.7-flash',
+      messages: [
+        { role: 'system', content: CARD_COPY_SYSTEM_PROMPT },
+        { role: 'user', content: user },
+      ],
+      temperature: 1,
+      max_tokens: 3000,
+    });
+    return result.choices?.[0]?.message?.content || '';
+  }, sourceTasks);
 }
 
 /**
@@ -161,38 +179,7 @@ async function handleApi(request, env, url, cors) {
 
   try {
     if (kind === 'copy') {
-      const result = await upstream(env, 'chat/completions', {
-        model: 'step-3.7-flash',
-        messages: [
-          {
-            // 与 Rust 侧 src-tauri/src/ai/prompts.rs::card_copy 保持一致（桌面版/网页版同一口径）。
-            // scene 是插画主题相关性的唯一载体：名称与描述都**不进**生图提示词。
-            role: 'system',
-            content: '你是「离谱发明所」的卡牌文案生成器。'
-              + '为用户今日完成的任务生成一张成就卡牌。'
-              + '名称用 4-10 个汉字，文采斐然、有诗意，避免直白描述任务内容。'
-              + '例如：墨染书卷、清风阅者、绿意守望者、净室儒生、步履成诗。'
-              + '描述 40-80 字，幽默冷静的说明书口吻。'
-              + 'scene 字段：一句英文场景描述，20-35 个单词，供文生图使用。'
-              + 'scene 必须通过这条硬指标：**只看这一句、看不到任务原文的人，也能猜出今天大概做了什么**。'
-              + '必须同时写清三件事：①具体地点与时间光线（如清晨的厨房、深夜书桌前的台灯）；②角色正在做的一个明确动作，用动词写出画面（如举筷夹菜、翻开书页、弯腰系鞋带）；③两件与这件事直接相关、能被画出来的道具，写清种类与样子。'
-              + '禁止空泛：不得只写 a cozy room / a laboratory / a desk 这类与任务无关的通用背景，不得写抽象心理活动、情绪词或结果评价（如 feeling accomplished）。'
-              + '示例（任务「吃饭」→ 22 词）：At a wooden dining table in warm morning light, she raises chopsticks to lift a steamed bun beside a bowl of congee.'
-              + 'scene 里严禁描述任何文字、字母、汉字、招牌、标签、铭牌或书写内容；也不要写相机参数、画质词与风格词。'
-              + '只能围绕给定任务，不得编造。'
-              + '只输出 JSON：{"name":"名称","description":"描述","scene":"english scene"}',
-          },
-          { role: 'user', content: `今日完成任务：${body.sourceTasks.join('、')}` },
-        ],
-        temperature: 1,
-        max_tokens: 1000,
-      });
-      const content = (result.choices && result.choices[0] && result.choices[0].message
-        && result.choices[0].message.content) || '';
-      const start = content.indexOf('{');
-      const end = content.lastIndexOf('}');
-      if (start < 0 || end <= start) throw new Error('INVALID_UPSTREAM_RESPONSE');
-      return json(JSON.parse(content.slice(start, end + 1)), 200, cors);
+      return json(await generateValidatedCopy(env, body.sourceTasks), 200, cors);
     }
 
     const result = await upstream(env, 'images/generations', {

@@ -1,4 +1,4 @@
-use crate::ai::{prompts, stepfun::{generate_copy_with_store, generate_image_with_store}};
+use crate::ai::{prompts, stepfun::{generate_card_copy_with_store, generate_copy_with_store, generate_image_with_store}};
 use base64::Engine;
 use tauri::State;
 
@@ -7,7 +7,7 @@ pub async fn generate_card_copy(
     store: State<'_, crate::data::AppStore>, tasks: Vec<String>,
 ) -> Result<crate::ai::models::GeneratedCopy, String> {
     let (system, user) = prompts::card_copy(&tasks);
-    generate_copy_with_store(system, user, &store).await.map_err(|e| e.to_string())
+    generate_card_copy_with_store(system, user, &store).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]

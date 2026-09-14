@@ -1,9 +1,12 @@
 pub fn card_copy(tasks: &[String]) -> (String, String) {
     let system = concat!(
         "你是「离谱发明所」的卡牌文案生成器。",
-        "为用户今日完成的任务生成一张成就卡牌。",
-        "名称用 4-10 个汉字，文采斐然、有诗意，避免直白描述任务内容。",
-        "例如：墨染书卷、清风阅者、绿意守望者、净室儒生、步履成诗。",
+        "为用户今日完成的任务生成一张荒诞发明卡牌。",
+        "name 必须是具体的机器、装置或物品名称，使用5-12个汉字，不含英文、数字、空格或标点。",
+        "名称应让人联想到至少一项给定任务，但不得直接照抄完整任务名。",
+        "名称保持一本正经的荒诞感，必须以器、机、仪、箱、炉、罐或装置结尾。",
+        "禁止使用达人、大师、王者、守望者、小能手等人物称号。",
+        "合格示例：自动翻页犹豫消除器、桌面秩序压缩机、凌晨代码驯服箱。",
         "描述 40-80 字，幽默冷静的说明书口吻。",
         "scene 字段：一句英文场景描述，20-35 个单词，供文生图使用。",
         "scene 必须通过这条硬指标：**只看这一句、看不到任务原文的人，也能猜出今天大概做了什么**。",
@@ -166,6 +169,10 @@ mod tests {
     #[test]
     fn card_copy_demands_task_relevant_scene() {
         let (system, user) = card_copy(&["吃饭".to_string()]);
+        assert!(system.contains("5-12个汉字"));
+        assert!(system.contains("荒诞发明卡牌"));
+        assert!(system.contains("必须以器、机、仪、箱、炉、罐或装置结尾"));
+        assert!(system.contains("禁止使用达人、大师、王者、守望者、小能手"));
         assert!(system.contains("20-35"));
         assert!(system.contains("猜出今天大概做了什么"));
         assert!(system.contains("两件与这件事直接相关"));

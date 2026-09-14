@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { generateCardFromTasks, getMachineState, remainingTasksForCard } from '../../src/utils/cardGenerator';
+import { generateCardFromTasks, getMachineState, remainingTasksForCard, summarizeTasks } from '../../src/utils/cardGenerator';
 import type { Task } from '../../src/types/task';
 import { localDateKey } from '../../src/utils/date';
+import { CARD_NAME_POOLS, GENERIC_CARD_NAMES } from '../../src/constants/cardNames';
 
 /** 相对基准日往前 offset 天的卡牌日期键（材质等级靠它推连续天数）。 */
 function dayKey(base: Date, offset: number): { dailyKey: string } {
@@ -19,6 +20,21 @@ function task(index: number, completed = true): Task {
 }
 
 describe('cardGenerator', () => {
+  it('各类任务和通用降级都生成荒诞发明物名称', () => {
+    const samples = ['读书', '整理房间', '跑步', '修复代码', '画插图', '做饭', '写日记', '开会', '休息', '给绿萝浇水', '取快递'];
+    for (const sample of samples) {
+      const name = summarizeTasks([sample]).title;
+      expect(name).toMatch(/^\p{Script=Han}{5,12}$/u);
+      expect(name).toMatch(/(?:装置|器|机|仪|箱|炉|罐)$/u);
+      expect(name).not.toMatch(/达人|大师|王者|守望者|小能手/u);
+      expect(summarizeTasks([sample]).title).toBe(name);
+    }
+    const allNames = [...CARD_NAME_POOLS.flatMap((pool) => pool.names), ...GENERIC_CARD_NAMES];
+    for (const { title } of allNames) {
+      expect(title).toMatch(/^\p{Script=Han}{5,12}$/u);
+      expect(title).toMatch(/(?:装置|器|机|仪|箱|炉|罐)$/u);
+    }
+  });
   it('覆盖发明机的四种状态', () => {
     expect(getMachineState(5, false, false)).toBe('locked');
     expect(getMachineState(0, false, false)).toBe('ready');
