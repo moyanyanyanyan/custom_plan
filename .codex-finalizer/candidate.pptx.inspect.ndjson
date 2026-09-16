@@ -1,0 +1,79 @@
+{"kind":"deck","id":"pr/8i8yt3","name":"Deck"}
+{"kind":"layout","layoutId":"8fa11c08-631a-4246-91bc-c2f7f2feb2ac","name":"Master","type":"master"}
+{"kind":"layout","layoutId":"56f73f6c-f560-4c90-a82a-382b92ca3744","name":"Title Slide","type":"title"}
+{"kind":"slide","id":"sl/ey266t","slide":1,"title":"离谱发明所","textShapes":5}
+{"kind":"shape","id":"sh/epw3etcr","slide":1,"bbox":[0,0,1280,720]}
+{"kind":"shape","id":"sh/1snm98vi","slide":1,"bbox":[70,70,7,520]}
+{"kind":"textbox","id":"sh/0relg3ux","slide":1,"text":"离谱发明所","textPreview":"离谱发明所","textChars":5,"textLines":1,"bbox":[105,115,520,90]}
+{"kind":"textbox","id":"sh/nup4bido","slide":1,"text":"ABSURD INVENTION LAB","textPreview":"ABSURD INVENTION LAB","textChars":20,"textLines":1,"bbox":[108,205,430,28]}
+{"kind":"textbox","id":"sh/mtw3idc3","slide":1,"text":"一款常驻桌面的游戏化计划工具","textPreview":"一款常驻桌面的游戏化计划工具","textChars":14,"textLines":1,"bbox":[108,282,480,60]}
+{"kind":"textbox","id":"sh/9w7mdsve","slide":1,"text":"把每天完成的小事，\n炼成值得收藏的荒诞发明。","textPreview":"把每天完成的小事， | 炼成值得收藏的荒诞发明。","textChars":22,"textLines":2,"bbox":[108,365,470,100]}
+{"kind":"textbox","id":"sh/ovylknu9","slide":1,"text":"WINDOWS DESKTOP · HACKATHON DEMO","textPreview":"WINDOWS DESKTOP · HACKATHON DEMO","textChars":32,"textLines":1,"bbox":[108,555,460,28]}
+{"kind":"image","id":"im/i1cf61or","slide":1,"name":"","geometry":"roundRect","alt":"离谱发明所标准模式与桌面悬浮头像","bbox":[655,48,540,624]}
+{"kind":"notes","id":"nt/ey266t","slide":1,"text":"大家好，这是“离谱发明所”，一款常驻 Windows 桌面的游戏化计划工具。它会把每天完成的小事，炼成值得收藏的荒诞发明。"}
+{"kind":"slide","id":"sl/t1a10l","slide":2,"title":"需要随时看到计划，也希望桌面足够好看的人","textShapes":10}
+{"kind":"textbox","id":"sh/p4fi90v6","slide":2,"text":"需要随时看到计划，也希望桌面足够好看的人","textPreview":"需要随时看到计划，也希望桌面足够好看的人","textChars":20,"textLines":1,"bbox":[64,40,1080,54]}
+{"kind":"textbox","id":"sh/21ojylcv","slide":2,"text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[1170,42,48,40]}
+{"kind":"shape","id":"sh/n2x07qdg","slide":2,"bbox":[64,104,54,4]}
+{"kind":"textbox","id":"sh/crq14fux","slide":2,"text":"计划一旦离开视线，就容易被忘记","textPreview":"计划一旦离开视线，就容易被忘记","textChars":15,"textLines":1,"bbox":[64,130,610,62]}
+{"kind":"textbox","id":"sh/xsz2d0vi","slide":2,"text":"轻量","textPreview":"轻量","textChars":2,"textLines":1,"bbox":[66,235,110,44]}
+{"kind":"textbox","id":"sh/a5oj25cr","slide":2,"text":"只想快速管理当天任务，不需要复杂项目流程","textPreview":"只想快速管理当天任务，不需要复杂项目流程","textChars":20,"textLines":1,"bbox":[176,231,465,58]}
+{"kind":"shape","id":"sh/b6h0badc","slide":2,"bbox":[66,307,560,1]}
+{"kind":"textbox","id":"sh/kvq18fu9","slide":2,"text":"可见","textPreview":"可见","textChars":2,"textLines":1,"bbox":[66,347,110,44]}
+{"kind":"textbox","id":"sh/lwz2hkve","slide":2,"text":"工作或学习时，容易忘记主动打开计划软件","textPreview":"工作或学习时，容易忘记主动打开计划软件","textChars":19,"textLines":1,"bbox":[176,343,465,58]}
+{"kind":"shape","id":"sh/lwr6t0j2","slide":2,"bbox":[66,419,560,1]}
+{"kind":"textbox","id":"sh/0vip0vih","slide":2,"text":"个性","textPreview":"个性","textChars":2,"textLines":1,"bbox":[66,459,110,44]}
+{"kind":"textbox","id":"sh/zu9o7a1w","slide":2,"text":"在意桌面美观、个性化表达和轻游戏化反馈","textPreview":"在意桌面美观、个性化表达和轻游戏化反馈","textChars":19,"textLines":1,"bbox":[176,455,465,58]}
+{"kind":"shape","id":"sh/ytg7y50b","slide":2,"bbox":[66,531,560,1]}
+{"kind":"shape","id":"sh/8zip4fit","slide":2,"bbox":[722,166,5,408]}
+{"kind":"textbox","id":"sh/ny9ovah8","slide":2,"text":"悬浮头像持续但低打扰\n需要时，一点即开","textPreview":"悬浮头像持续但低打扰 | 需要时，一点即开","textChars":19,"textLines":2,"bbox":[748,623,450,48]}
+{"kind":"image","id":"im/ql0zutwj","slide":2,"name":"","geometry":"roundRect","alt":"紧凑模式常驻桌面的实际效果","bbox":[760,125,430,500]}
+{"kind":"notes","id":"nt/t1a10l","slide":2,"text":"我们面向只想管理当天小任务，却容易忘记打开计划软件的用户。他们也在意桌面审美和个性表达。因此我们把计划入口放在桌面上，始终可见，但保持低打扰。"}
+{"kind":"slide","id":"sl/vz5iu0","slide":3,"title":"一个头像，两种计划面板","textShapes":9}
+{"kind":"textbox","id":"sh/7atsny58","slide":3,"text":"一个头像，两种计划面板","textPreview":"一个头像，两种计划面板","textChars":11,"textLines":1,"bbox":[64,40,1080,54]}
+{"kind":"textbox","id":"sh/8b2tw3md","slide":3,"text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[1170,42,48,40]}
+{"kind":"shape","id":"sh/tcvap8ny","slide":3,"bbox":[64,104,54,4]}
+{"kind":"textbox","id":"sh/ud4byd4j","slide":3,"text":"标准模式","textPreview":"标准模式","textChars":4,"textLines":1,"bbox":[70,122,260,38]}
+{"kind":"textbox","id":"sh/vydsry54","slide":3,"text":"完整管理与每日发明","textPreview":"完整管理与每日发明","textChars":9,"textLines":1,"bbox":[70,159,300,28]}
+{"kind":"textbox","id":"sh/gzmt03mp","slide":3,"text":"紧凑模式","textPreview":"紧凑模式","textChars":4,"textLines":1,"bbox":[690,122,260,38]}
+{"kind":"textbox","id":"sh/h0vat8na","slide":3,"text":"保留任务与进度，降低占用","textPreview":"保留任务与进度，降低占用","textChars":12,"textLines":1,"bbox":[690,159,350,28]}
+{"kind":"shape","id":"sh/jil8fm9g","slide":3,"bbox":[66,645,1120,1]}
+{"kind":"textbox","id":"sh/ihc761sv","slide":3,"text":"悬浮头像一点即开","textPreview":"悬浮头像一点即开","textChars":8,"textLines":1,"bbox":[68,657,330,30]}
+{"kind":"textbox","id":"sh/5k3qhwrm","slide":3,"text":"Ctrl + Shift + M  应用内切换模式","textPreview":"Ctrl + Shift + M  应用内切换模式","textChars":25,"textLines":1,"bbox":[430,657,430,30]}
+{"kind":"textbox","id":"sh/4jup8ra1","slide":3,"text":"可安装的 Windows 桌面 App","textPreview":"可安装的 Windows 桌面 App","textChars":19,"textLines":1,"bbox":[866,657,320,30]}
+{"kind":"image","id":"im/bitcv25o","slide":3,"name":"","geometry":"roundRect","alt":"标准模式完整面板","bbox":[66,197,540,420]}
+{"kind":"image","id":"im/ahkv2xo3","slide":3,"name":"","geometry":"roundRect","alt":"紧凑模式计划面板","bbox":[687,197,500,420]}
+{"kind":"notes","id":"nt/vz5iu0","slide":3,"text":"软件平时是桌面边缘的悬浮头像，外圈显示今日进度，点击即可展开完整 App。标准模式用于完整管理，紧凑模式保留任务和进度。用户还可在应用内按 Ctrl Shift M 快速切换。"}
+{"kind":"slide","id":"sl/bt0bj1","slide":4,"title":"低打扰入口与个性化激励闭环","textShapes":5}
+{"kind":"textbox","id":"sh/1w3ed0zq","slide":4,"text":"低打扰入口与个性化激励闭环","textPreview":"低打扰入口与个性化激励闭环","textChars":13,"textLines":1,"bbox":[64,40,1080,54]}
+{"kind":"textbox","id":"sh/etcvi5gz","slide":4,"text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[1170,42,48,40]}
+{"kind":"shape","id":"sh/fulwbqhk","slide":4,"bbox":[64,104,54,4]}
+{"kind":"textbox","id":"sh/2xwvm5gv","slide":4,"text":"用户可自定义","textPreview":"用户可自定义","textChars":6,"textLines":1,"bbox":[920,520,250,28]}
+{"kind":"textbox","id":"sh/ny5wfahg","slide":4,"text":"头像  背景  透明度  主题色","textPreview":"头像  背景  透明度  主题色","textChars":16,"textLines":1,"bbox":[890,552,320,32]}
+{"kind":"textbox","id":"sh/cnexsfyd","slide":4,"text":"更方便地看计划，也把计划工具变成自己的桌面空间","textPreview":"更方便地看计划，也把计划工具变成自己的桌面空间","textChars":23,"textLines":1,"bbox":[130,636,1020,40]}
+{"kind":"table","id":"tb/xsned83i","slide":4,"name":"","rows":6,"cols":3,"preview":"比较维度 | 常规计划体验 | 离谱发明所","bbox":[64,137,800,475]}
+{"kind":"image","id":"im/s7ex07ut","slide":4,"name":"","geometry":"roundRect","alt":"个性化主题效果","bbox":[902,140,306,355]}
+{"kind":"notes","id":"nt/bt0bj1","slide":4,"text":"用户可更换头像、背景、透明度和主题色，让面板融入自己的桌面。完成任务会产生稳定余波，拖延会形成史莱姆，AI 则把真实完成事项生成发明卡牌和像素道具，把认真生活留成收藏。"}
+{"kind":"slide","id":"sl/3atb1w","slide":5,"title":"支撑完整桌面体验的技术实现","textShapes":14}
+{"kind":"textbox","id":"sh/k7ql87yx","slide":5,"text":"支撑完整桌面体验的技术实现","textPreview":"支撑完整桌面体验的技术实现","textChars":13,"textLines":1,"bbox":[64,40,1080,54]}
+{"kind":"textbox","id":"sh/z6xkz2xs","slide":5,"text":"05","textPreview":"05","textChars":2,"textLines":1,"bbox":[1170,42,48,40]}
+{"kind":"shape","id":"sh/ylo36xg7","slide":5,"bbox":[64,104,54,4]}
+{"kind":"textbox","id":"sh/xkf2xsfm","slide":5,"text":"已完成可安装运行的\nWindows 单机原型","textPreview":"已完成可安装运行的 | Windows 单机原型","textChars":22,"textLines":2,"bbox":[64,135,520,100]}
+{"kind":"shape","id":"sh/cj6l4ny1","slide":5,"bbox":[66,281,7,48]}
+{"kind":"textbox","id":"sh/bixkv2xg","slide":5,"text":"React 19 · TypeScript · Vite","textPreview":"React 19 · TypeScript · Vite","textChars":28,"textLines":1,"bbox":[92,275,390,30]}
+{"kind":"textbox","id":"sh/ahoj2xgv","slide":5,"text":"计划界面与个性化主题","textPreview":"计划界面与个性化主题","textChars":10,"textLines":1,"bbox":[92,306,470,30]}
+{"kind":"shape","id":"sh/hgj29wfq","slide":5,"bbox":[66,359,7,48]}
+{"kind":"textbox","id":"sh/wfalgre5","slide":5,"text":"Tauri 2 · Rust","textPreview":"Tauri 2 · Rust","textChars":14,"textLines":1,"bbox":[92,353,390,30]}
+{"kind":"textbox","id":"sh/u1kvyhoj","slide":5,"text":"Windows 双窗口、悬浮置顶、贴边与尺寸切换","textPreview":"Windows 双窗口、悬浮置顶、贴边与尺寸切换","textChars":24,"textLines":1,"bbox":[92,384,470,30]}
+{"kind":"shape","id":"sh/v2tw7mp4","slide":5,"bbox":[66,437,7,48]}
+{"kind":"textbox","id":"sh/w32d0r6p","slide":5,"text":"本地数据仓库","textPreview":"本地数据仓库","textChars":6,"textLines":1,"bbox":[92,431,390,30]}
+{"kind":"textbox","id":"sh/h4be9w7a","slide":5,"text":"任务、设置、收藏与图片资产保存在本地","textPreview":"任务、设置、收藏与图片资产保存在本地","textChars":18,"textLines":1,"bbox":[92,462,470,30]}
+{"kind":"shape","id":"sh/mx0vuh8n","slide":5,"bbox":[66,515,7,48]}
+{"kind":"textbox","id":"sh/7y9c3mps","slide":5,"text":"AI 生成","textPreview":"AI 生成","textChars":5,"textLines":1,"bbox":[92,509,390,30]}
+{"kind":"textbox","id":"sh/8zidwrqd","slide":5,"text":"发明文案、卡牌插图与像素道具","textPreview":"发明文案、卡牌插图与像素道具","textChars":14,"textLines":1,"bbox":[92,540,470,30]}
+{"kind":"shape","id":"sh/6t4v61or","slide":5,"bbox":[650,603,550,1]}
+{"kind":"textbox","id":"sh/rudwf6pc","slide":5,"text":"NEXT","textPreview":"NEXT","textChars":4,"textLines":1,"bbox":[674,620,70,28]}
+{"kind":"textbox","id":"sh/3e5s7y5o","slide":5,"text":"更丰富的主题内容、桌面交互与长期使用验证","textPreview":"更丰富的主题内容、桌面交互与长期使用验证","textChars":20,"textLines":1,"bbox":[750,614,430,42]}
+{"kind":"textbox","id":"sh/2dwbyto3","slide":5,"text":"用户负责认真生活，AI 负责胡乱发明。","textPreview":"用户负责认真生活，AI 负责胡乱发明。","textChars":19,"textLines":1,"bbox":[64,656,540,32]}
+{"kind":"image","id":"im/y90rapk7","slide":5,"name":"","geometry":"roundRect","alt":"已完成的 Windows 桌面原型","bbox":[670,106,500,475]}
+{"kind":"notes","id":"nt/3atb1w","slide":5,"text":"我们用 React、TypeScript 和 Vite 完成界面，用 Tauri 和 Rust 实现 Windows 双窗口、悬浮置顶、贴边和模式切换。任务和收藏保存在本地，AI 生成发明内容。目前可安装的 Windows 原型和主要闭环已经完成。用户负责认真生活，AI 负责胡乱发明。"}
