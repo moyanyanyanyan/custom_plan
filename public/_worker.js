@@ -1,14 +1,11 @@
 /**
  * 离谱发明所 · 网页版 AI 代理（Cloudflare Pages Advanced Mode Worker）
  *
- * 为什么放在这里：原先代理部署在 `absurd-invention-ai.<account>.workers.dev`，
- * 而 `*.workers.dev` 在中国大陆被 DNS 投毒 + SNI 阻断（实测：换 DNS 拿到真 IP 后
- * 直连仍 ECONNRESET），网页版 AI 必然连不上。Pages 站点域名（`*.pages.dev`）不受影响，
- * 因此把代理搬到 Pages 自己身上、与网页版**同域**，前端改用相对路径 `/api/cards/*`。
+ * 与站点同域可以让前端使用相对路径，减少跨域与外部代理配置。
  *
  * 部署方式：本文件位于 `public/`，`vite build` 会把它原样复制到 `dist/_worker.js`，
  * Pages 见到输出目录根部的 `_worker.js` 即以它作为唯一入口（Advanced Mode），
- * 静态资源由 `env.ASSETS` 转发。控制台直传 zip 与连 Gitee 自动构建两种方式都适用。
+ * 静态资源由 `env.ASSETS` 转发。控制台直传 zip 与连 GitHub 自动构建两种方式都适用。
  *
  * 必需配置：Pages 项目 → Settings → 变量和机密 → 添加 `STEPFUN_API_KEY`
  *          （密钥只存在服务端，绝不可打进前端产物）。

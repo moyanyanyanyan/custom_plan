@@ -48,3 +48,16 @@ modsearch-temp/
 # 必须随仓库分发 —— 否则干净检出（clone 后直接编译）会因找不到文件而编译失败。
 # 历史上正是因为这条 *.jpg 规则把它们挡在版本控制外，才导致「上线准备」把参考图换成了用户头像。
 !src-tauri/assets/*.jpg
+
+# 路演资料及生成工具不属于应用源码
+.codex-finalizer/
+.ppt-build/
+output/
+
+# 测试报告和 Cloudflare 本地缓存可重新生成
+test-results/
+playwright-report/
+.wrangler/
+
+# 项目统一使用 pnpm，避免混入其他包管理器的锁文件
+/package-lock.json

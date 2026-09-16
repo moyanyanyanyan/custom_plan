@@ -17,7 +17,6 @@
     "desktop": "tauri dev",
     "desktop:build": "tauri build --bundles nsis",
     "desktop:build:binary": "tauri build --no-bundle",
-    "server": "node server/index.mjs",
     "test:native": "cargo test --manifest-path src-tauri/Cargo.toml",
     "test:desktop": "node scripts/desktop-test.cjs",
     "check": "pnpm run build && pnpm test && pnpm run test:native"

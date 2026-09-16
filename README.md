@@ -15,9 +15,16 @@
 
 ## 快速开始
 
+Windows 安装包与校验文件均从 GitHub 下载：
+
+- [下载 Windows 安装包](https://raw.githubusercontent.com/moyanyanyanyan/custom_plan/master/release/离谱发明所_0.1.0_x64-setup.exe)
+- [查看 SHA-256 校验文件](https://raw.githubusercontent.com/moyanyanyanyan/custom_plan/master/release/离谱发明所_0.1.0_x64-setup.exe.sha256)
+
+安装包为未签名测试版，安装前请核对校验值。以下步骤用于源码开发。
+
 ```bash
-git clone https://gitee.com/moyanyanyanyan/hackson.git
-cd hackson
+git clone https://github.com/moyanyanyanyan/custom_plan.git
+cd custom_plan
 pnpm install
 ```
 

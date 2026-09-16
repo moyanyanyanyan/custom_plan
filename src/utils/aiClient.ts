@@ -1,8 +1,7 @@
 // 卡牌 AI 调用层（文案 + 插画）。
 // 桌面版：走 Tauri command，由 Rust 后端直连网关，API key 存在本地设置、不回传前端。
 // 浏览器版：走**同域** HTTP 代理（/api/cards/*，由 public/_worker.js 在 Pages 上提供）。
-// 不再使用外部代理地址：原先的 *.workers.dev 域名在国内被 DNS 投毒 + SNI 阻断，
-// 同域相对路径既绕开该问题，也免去跨域与部署期配置。
+// 同域相对路径避免跨域请求，并减少部署期配置。
 
 import { invoke } from '@tauri-apps/api/core';
 import type { GeneratedCopy } from '../types/ai';

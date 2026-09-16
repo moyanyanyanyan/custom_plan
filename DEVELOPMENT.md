@@ -1,6 +1,6 @@
 # 离谱发明所 · 开发说明
 
-当前版本是 Windows 桌面原型：可拖动贴边的头像，以及带本地任务操作的控制面板。
+当前版本支持 Windows 桌面端和浏览器预览：可拖动贴边的头像，以及带本地任务操作的控制面板。
 任务支持添加、完成、取消完成、删除和按日期保存；卡牌生成、收藏及外观设置已接入统一数据层。
 史莱姆已支持跨日生成、图鉴浏览和完成来源任务后的自动收容。
 
@@ -43,11 +43,7 @@ corepack pnpm run desktop:build
 安装程序采用当前用户安装模式，不要求管理员权限，并创建开始菜单及卸载入口。
 目标机器需要联网：缺少 Microsoft Edge WebView2 Runtime 时，安装程序会在线下载安装。
 当前 `0.1.0` 安装包尚未进行代码签名，Windows 可能显示“未知发布者”或 SmartScreen 提示；
-确认安装包来自项目的 Gitee Release 且 SHA-256 一致后，可在“更多信息”中选择“仍要运行”。
-
-本次已生成并验收的原型程序为 `src-tauri/target/debug/absurd-invention-lab.exe`，可直接双击。
-复现该构建使用 `corepack pnpm run tauri -- build --debug --no-bundle`，程序内已包含界面资源，
-运行时不需要预览服务，也不会额外打开控制台窗口。
+确认安装包来自项目的 GitHub 仓库 且 SHA-256 一致后，可在“更多信息”中选择“仍要运行”。
 
 只看 UI 时执行 `corepack pnpm run dev`，访问 `http://127.0.0.1:1420/`。
 浏览器里窗口操作按钮不可用；头像吸附必须在桌面应用中体验。
@@ -81,26 +77,13 @@ corepack pnpm run desktop:build
 截图类人工验收仍可运行 `node scripts/preview-check.cjs`，产物保存在 `.artifacts/`。
 浏览器截图不替代 Windows 上真实拖动、跨屏和退出操作的验收。
 
-### 本次验证记录（2026-09-10）
+本机 Corepack 若报跨设备缓存错误，可先设置开发脚本使用的缓存路径：
+`$env:COREPACK_HOME = 'D:\app\nvm\corepack-cache'`。
+测试并发过高时可执行 `corepack pnpm exec vitest run --maxWorkers=1 --no-file-parallelism`。
 
-- TypeScript 检查、Vite 生产构建和 Tauri release 构建通过。
-- 8 项 Rust 测试通过，覆盖窗口几何、AI 响应解析、数据修订冲突与每日卡牌原子领取。
-- 新增任务、任务聚焦和发明机状态的前端测试已补充；当前本机未安装可执行的 Vitest，尚待恢复依赖后运行。
-- `cargo fmt --check` 发现既有 Rust 文件尚未统一格式，本轮未改写这些无关文件。
+## 后续开发提示词
 
-### 本次验证记录（2026-09-07）
-
-- TypeScript 检查、前端构建、Rust 编译和格式检查通过。
-- 4 项原生几何测试通过；760×800、520×680、360×600 的预览检查通过。
-- Windows 单屏 150% 缩放实测：启动仅显示头像、无边框置顶、左右吸附、向内展开、
-  收起、系统关闭后重新展开、失焦保持显示、拖动不误触展开、退出应用均通过。
-- 面板拖动实测：标题和顶部空白可拖动，松手停留，任务区不拖动，头像不跟随；
-  收起再打开回到头像旁，头像调用面板专用拖动命令会被拒绝。
-- 多屏负坐标和小工作区由几何测试覆盖，未在多显示器硬件上实测。
-- 原生窗口截图保存在 `.artifacts/native-panel.png` 和 `.artifacts/native-avatar.png`。
-- `scripts/native-check.cjs` 用于专门的桌面验收实例，要求设置 `NATIVE_APP_PID` 为目标进程，
-  并仅为该实例临时启用本机 WebView2 调试端口 9222；正常启动不启用该端口。
-
-推荐后续开发提示词：
-“先读取 PRODUCT_MEMORY.md 和 DEVELOPMENT.md；只修改本轮要求的模块，
-保持业务按钮静态，每个手写文件不超过 150 行，不批量删除、不删除 node_modules。”
+“先读取当前代码、REQUIREMENTS.md 和 DEVELOPMENT.md；PRODUCT_MEMORY.md 仅作产品方向参考。
+不沿用历史验收结果，不把设想写成已实现。
+只修改本轮要求的模块，入口只做组装，每个新增手写代码文件不超过 150 行。
+删除前列出具体路径和依据，多个文件交由我手动删除，不删除 node_modules。”
