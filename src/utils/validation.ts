@@ -1,3 +1,4 @@
+import { isFantasyCard, cardStackKey } from './fantasyCards';
 import type { Task } from '../types/task';
 import type { InventionCard } from '../types/card';
 import type { PixelItem } from '../types/item';
@@ -24,9 +25,9 @@ export function isCard(value: unknown): value is InventionCard {
   if (!value || typeof value !== 'object') return false;
   const card = value as Record<string, unknown>;
   return typeof card.id === 'string' && typeof card.name === 'string'
-    && typeof card.description === 'string' && Array.isArray(card.sourceTasks)
+    && typeof card.description === 'string' && Array.isArray(card.sourceTasks) && card.sourceTasks.every(task => typeof task === 'string')
     && typeof card.earnedAt === 'string' && typeof card.stackKey === 'string'
-    && typeof card.dailyKey === 'string';
+    && typeof card.dailyKey === 'string' && (card.version == null || (card.version === 2 && isFantasyCard(card as InventionCard)));
 }
 
 /** 旧卡牌允许缺少 dailyKey；迁移时从有效的获得时间补齐。 */
@@ -51,7 +52,7 @@ export function normalizeCards(value: unknown): InventionCard[] {
         (Array.isArray(card.sourceTasks) ? card.sourceTasks.filter((task): task is string => typeof task === 'string') : []),
       date: typeof card.date === 'string' && card.date ? card.date : derived,
     };
-    return isCard(normalized) ? [normalized] : [];
+    return isCard(normalized) ? [{ ...normalized, stackKey: cardStackKey(normalized) }] : [];
   });
 }
 
@@ -73,6 +74,7 @@ function normalizeSettings(value: unknown, fallback: AppSettings): AppSettings {
     panelMode: value.panelMode === 'compact' ? 'compact' : 'standard',
     username: typeof value.username === 'string' && value.username.trim() ? value.username.trim() : fallback.username,
     soundEnabled: typeof value.soundEnabled === 'boolean' ? value.soundEnabled : true,
+    aiProvider: ['auto','siliconflow','tokendance','stepfun'].includes(String(value.aiProvider)) ? value.aiProvider : 'auto',
     stepfunApiKey: typeof value.stepfunApiKey === 'string' ? value.stepfunApiKey : fallback.stepfunApiKey,
     theme: { ...fallback.theme, ...value.theme },
   };

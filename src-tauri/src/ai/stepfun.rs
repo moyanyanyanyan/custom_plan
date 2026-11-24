@@ -5,6 +5,7 @@ use std::time::Duration;
 
 /// 一条可用的 AI 后端：端点 + 模型名 + 生图尺寸三者必须成套，不能混用。
 struct Route {
+    name: &'static str,
     chat_url: &'static str,
     image_url: &'static str,
     /// 图生图端点。官方 step-image-edit-2 的 generations 是**纯文生图**：body 里的 image 字段
@@ -19,6 +20,7 @@ struct Route {
 
 /// TokenDance 网关（key 形如 sk-…）。生图走 seedream，尺寸 1920x1920。
 static TOKENDANCE: Route = Route {
+    name: "TokenDance",
     chat_url: "https://tokendance.space/gateway/v1/chat/completions",
     image_url: "https://tokendance.space/gateway/v1/images/generations",
     edits_url: "https://tokendance.space/gateway/v1/images/edits",
@@ -32,6 +34,7 @@ static TOKENDANCE: Route = Route {
 /// size 只能用官方文档列出的档位：1024x1024 / 768x1360 / 896x1184 / 1360x768 / 1184x896；
 /// 传 1920x1920 会 400 `size_invalid`。
 static STEPFUN: Route = Route {
+    name: "阶跃星辰",
     chat_url: "https://api.stepfun.com/v1/chat/completions",
     image_url: "https://api.stepfun.com/v1/images/generations",
     edits_url: "https://api.stepfun.com/v1/images/edits",
@@ -58,11 +61,16 @@ fn route_for(key: &str) -> &'static Route {
 /// 为什么需要它：`route_for` 只能靠 key 形态猜后端，一旦猜错（例如官方 key 恰好是 sk- 前缀、
 /// 或用户临时换了另一家 key），表现就是「生成不了图片」。两条都试过之后，用户手上是哪家的
 /// key 都能出图，不再依赖形态判断是否精准。注意尺寸/模型必须跟着各自后端成套切换。
-fn route_chain(key: &str) -> [&'static Route; 2] {
+fn route_chain(key: &str, provider: &str) -> Vec<&'static Route> {
+    match provider {
+        "tokendance" => return vec![&TOKENDANCE],
+        "stepfun" => return vec![&STEPFUN],
+        _ => {}
+    }
     if std::ptr::eq(route_for(key), &TOKENDANCE) {
-        [&TOKENDANCE, &STEPFUN]
+        vec![&TOKENDANCE, &STEPFUN]
     } else {
-        [&STEPFUN, &TOKENDANCE]
+        vec![&STEPFUN, &TOKENDANCE]
     }
 }
 
@@ -104,9 +112,6 @@ fn env_api_key() -> Result<String, AiError> {
         .map_err(|_| AiError::MissingKey)
 }
 
-/// 内嵌的默认 key（TokenDance 网关）：全新安装、存档缺失或被设置面板清空时兜底，保证开箱即可出图。
-pub const BUILTIN_API_KEY: &str = "sk-b4da085962e5cffad4c98dbad91b7d5bacae87dfa8ade5d7";
-
 /// 读取本机 DSH 凭据里的 STEPFUN_API_KEY（开发机用；`%USERPROFILE%\.dsh\.credentials.yaml`）。
 fn dsh_credentials_key() -> Option<String> {
     let home = std::env::var_os("USERPROFILE")?;
@@ -121,34 +126,23 @@ fn dsh_credentials_key() -> Option<String> {
     })
 }
 
-/// 终极兜底 key：优先本机 DSH 凭据，否则内嵌默认 key。
-pub fn fallback_api_key() -> String {
-    dsh_credentials_key().unwrap_or_else(|| BUILTIN_API_KEY.into())
+/// 只读取用户配置或开发环境凭据，不再将失效的内置密钥写入存档。
+pub fn stored_key(store: &AppStore) -> Result<String, AiError> {
+    let data = store.load().map_err(|e| AiError::Network(e.to_string()))?;
+    if let Some(value) = data.settings.get("stepfunApiKey").and_then(|v| v.as_str()) {
+        if !value.trim().is_empty() { return Ok(value.trim().into()); }
+    }
+    env_api_key().ok().filter(|key| !key.trim().is_empty())
+        .or_else(dsh_credentials_key).ok_or(AiError::MissingKey)
 }
 
-/// key 解析链：本地设置 → 环境变量 → 内嵌兜底（DSH 凭据 / `BUILTIN_API_KEY`）。
-/// 存档里没有、或被人清空时**自动补回并写回存档**——否则全新下载的应用会在第一次生成时
-/// 直接报 [AI_MISSING_KEY]（2026-09-13 线上反馈的「无法生成图片」就是这个形态）。
-pub fn stored_key(store: &AppStore) -> Result<String, AiError> {
-    let mut data = store.load().map_err(|e| AiError::Network(e.to_string()))?;
-    if let Some(value) = data.settings.get("stepfunApiKey").and_then(|v| v.as_str()) {
-        if !value.trim().is_empty() {
-            return Ok(value.trim().into());
-        }
-    }
-    if let Ok(value) = env_api_key() {
-        return Ok(value);
-    }
-    let key = fallback_api_key();
-    let revision = data.revision;
-    if !data.settings.is_object() {
-        data.settings = serde_json::Value::Object(Default::default());
-    }
-    if let Some(object) = data.settings.as_object_mut() {
-        object.insert("stepfunApiKey".into(), serde_json::Value::String(key.clone()));
-        let _ = store.save(data, revision);
-    }
-    Ok(key)
+fn store_provider(store: &AppStore) -> Result<String, AiError> {
+    let data = store.load().map_err(|e| AiError::Network(e.to_string()))?;
+    Ok(data.settings.get("aiProvider").and_then(|v| v.as_str()).unwrap_or("auto").into())
+}
+
+fn siliconflow_error(error: AiError) -> AiError {
+    AiError::Attempts(vec![("硅基流动", error)])
 }
 
 fn client() -> Result<reqwest::Client, AiError> {
@@ -164,41 +158,64 @@ async fn checked(response: reqwest::Response) -> Result<reqwest::Response, AiErr
 }
 
 pub async fn generate_copy(system: String, user: String) -> Result<GeneratedCopy, AiError> {
-    generate_copy_with_key(system, user, env_api_key()?).await
+    generate_copy_with_key(system, user, env_api_key()?, "auto").await
 }
 
 pub async fn generate_image(prompt: String) -> Result<Vec<u8>, AiError> {
-    generate_image_with_key(prompt, env_api_key()?).await
+    generate_image_with_key(prompt, env_api_key()?, "auto").await
 }
 
 pub async fn generate_copy_with_store(
     system: String, user: String, store: &AppStore,
 ) -> Result<GeneratedCopy, AiError> {
-    generate_copy_with_key(system, user, stored_key(store)?).await
+    generate_copy_with_key(system, user, stored_key(store)?, &store_provider(store)?).await
 }
 
 pub async fn generate_image_with_store(
     prompt: String, store: &AppStore,
 ) -> Result<Vec<u8>, AiError> {
-    generate_image_with_key(prompt, stored_key(store)?).await
+    generate_image_with_key(prompt, stored_key(store)?, &store_provider(store)?).await
+}
+
+/// 卡牌专用路径不加载角色参考图，也不注入固定角色描述。
+pub async fn generate_card_image_with_store(prompt: String, store: &AppStore) -> Result<Vec<u8>, AiError> {
+    let key = stored_key(store)?;
+    let selected = store_provider(store)?;
+    let provider = selected.as_str();
+    if provider == "siliconflow" { return super::siliconflow::image(&prompt, &key).await.map_err(siliconflow_error); }
+    let mut failures = Vec::new();
+    for route in route_chain(&key, provider) {
+        match text2img_once(route, &key, &prompt, false).await {
+            Ok(bytes) => return Ok(bytes),
+            Err(error) => failures.push((route.name, error)),
+        }
+    }
+    Err(AiError::Attempts(failures))
+}
+
+pub async fn generate_card_copy_with_store(system: String, user: String, store: &AppStore)
+    -> Result<super::models::GeneratedCardCopy, AiError> {
+    let raw = generate_chat_with_key(system, user, stored_key(store)?, &store_provider(store)?).await?;
+    let json = last_json_block(&raw).ok_or(AiError::InvalidResponse)?;
+    serde_json::from_str(&json).map_err(|_| AiError::InvalidResponse)
 }
 
 pub async fn generate_item_with_store(
     system: String, user: String, store: &AppStore,
 ) -> Result<GeneratedItem, AiError> {
-    let raw = generate_chat_with_key(system, user, stored_key(store)?).await?;
+    let raw = generate_chat_with_key(system, user, stored_key(store)?, &store_provider(store)?).await?;
     extract_item(&raw).ok_or(AiError::InvalidResponse)
 }
 
 pub async fn generate_steps_with_store(
     system: String, user: String, store: &AppStore,
 ) -> Result<Vec<String>, AiError> {
-    let raw = generate_chat_with_key(system, user, stored_key(store)?).await?;
+    let raw = generate_chat_with_key(system, user, stored_key(store)?, &store_provider(store)?).await?;
     extract_steps(&raw).ok_or(AiError::InvalidResponse)
 }
 
-async fn generate_copy_with_key(system: String, user: String, key: String) -> Result<GeneratedCopy, AiError> {
-    let raw = generate_chat_with_key(system, user, key).await?;
+async fn generate_copy_with_key(system: String, user: String, key: String, provider: &str) -> Result<GeneratedCopy, AiError> {
+    let raw = generate_chat_with_key(system, user, key, provider).await?;
     extract_copy(&raw).ok_or(AiError::InvalidResponse)
 }
 
@@ -257,16 +274,20 @@ fn last_json_block(text: &str) -> Option<String> {
 /// 依次尝试所有后端：首选失败（401 / 网络不通 / 429 / 5xx）就换另一条重试，
 /// 这样无论用户拿到的是哪家的 key 都能拿到文案，不再依赖 `route_for` 的形态判断。
 /// 注意：`InvalidResponse`（模型答非所问、JSON 解析不了）不换后端，换一条也是白搭。
-async fn generate_chat_with_key(system: String, user: String, key: String) -> Result<String, AiError> {
-    let mut last = AiError::InvalidResponse;
-    for route in route_chain(&key) {
+async fn generate_chat_with_key(system: String, user: String, key: String, provider: &str) -> Result<String, AiError> {
+    if provider == "siliconflow" { return super::siliconflow::chat(system, user, &key).await.map_err(siliconflow_error); }
+    let mut failures = Vec::new();
+    for route in route_chain(&key, provider) {
         match chat_once(route, &key, &system, &user).await {
             Ok(raw) => return Ok(raw),
-            Err(AiError::InvalidResponse) => return Err(AiError::InvalidResponse),
-            Err(error) => last = error,
+            Err(AiError::InvalidResponse) => {
+                failures.push((route.name, AiError::InvalidResponse));
+                return Err(AiError::Attempts(failures));
+            },
+            Err(error) => failures.push((route.name, error)),
         }
     }
-    Err(last)
+    Err(AiError::Attempts(failures))
 }
 
 pub fn extract_steps(raw: &str) -> Option<Vec<String>> {
@@ -368,8 +389,8 @@ async fn decode_image(response: reqwest::Response) -> Result<Vec<u8>, AiError> {
 const CHARACTER_CLAUSE: &str = "A cute chibi girl with short pale-blue and white hair, a blue hairpin, big blue eyes, wearing a white dress with a blue-white bow and a white coat with blue trim,";
 
 /// 该后端的纯文生图（`/images/generations`，JSON）。
-async fn text2img_once(route: &'static Route, key: &str, prompt: &str) -> Result<Vec<u8>, AiError> {
-    let composed = format!("{CHARACTER_CLAUSE} {prompt}");
+async fn text2img_once(route: &'static Route, key: &str, prompt: &str, character: bool) -> Result<Vec<u8>, AiError> {
+    let composed = if character { format!("{CHARACTER_CLAUSE} {prompt}") } else { prompt.to_string() };
     let body = serde_json::json!({
         "model": route.image_model, "prompt": composed, "n": 1,
         // 尺寸必须用该后端支持的档位：阶跃官方 step-image-edit-2 只接受
@@ -393,7 +414,7 @@ async fn text2img_once(route: &'static Route, key: &str, prompt: &str) -> Result
 ///
 /// 这条「同一后端内部回退」是必需的：TokenDance 网关**没有** edits 端点
 /// （2026-09-13 实测 multipart 打 `gateway/v1/images/edits` → 404 Not Found），
-/// 而全新安装的用户没有自己的 key、只能落到编译期内嵌 key → 只能走网关。
+/// 因此使用网关凭据时仍需要回退到该网关的纯文生图端点。
 /// 若这里直接失败，跨后端的 `route_chain` 兜底会拿同一把 sk- key 去打阶跃官方吃 401，
 /// 结果是**图片一张都出不来**（卡牌插画、离谱道具像素图全废）。
 async fn image_once(route: &'static Route, key: &str, prompt: &str) -> Result<Vec<u8>, AiError> {
@@ -413,21 +434,25 @@ async fn image_once(route: &'static Route, key: &str, prompt: &str) -> Result<Ve
             }
         }
     }
-    text2img_once(route, key, prompt).await
+    text2img_once(route, key, prompt, true).await
 }
 
 /// 与 `generate_chat_with_key` 同样的兜底策略：首选后端失败（401 / 网络 / 429 / 5xx）就换另一条重试，
 /// 避免「key 形态判断猜错 → 生图永远失败」。
-async fn generate_image_with_key(prompt: String, key: String) -> Result<Vec<u8>, AiError> {
-    let mut last = AiError::InvalidResponse;
-    for route in route_chain(&key) {
+async fn generate_image_with_key(prompt: String, key: String, provider: &str) -> Result<Vec<u8>, AiError> {
+    if provider == "siliconflow" { return super::siliconflow::image(&prompt, &key).await.map_err(siliconflow_error); }
+    let mut failures = Vec::new();
+    for route in route_chain(&key, provider) {
         match image_once(route, &key, &prompt).await {
             Ok(bytes) => return Ok(bytes),
-            Err(AiError::InvalidResponse) => return Err(AiError::InvalidResponse),
-            Err(error) => last = error,
+            Err(AiError::InvalidResponse) => {
+                failures.push((route.name, AiError::InvalidResponse));
+                return Err(AiError::Attempts(failures));
+            },
+            Err(error) => failures.push((route.name, error)),
         }
     }
-    Err(last)
+    Err(AiError::Attempts(failures))
 }
 
 pub fn extract_copy(raw: &str) -> Option<GeneratedCopy> {
@@ -466,6 +491,22 @@ pub fn extract_item(raw: &str) -> Option<GeneratedItem> {
 #[cfg(test)]
 mod tests {
     use super::{extract_copy, extract_item, extract_steps, last_json_block};
+    #[test]
+    fn explicit_provider_does_not_send_credentials_to_other_services() {
+        let routes = super::route_chain("sk-test", "stepfun");
+        assert_eq!(routes.len(), 1);
+        assert_eq!(routes[0].name, "阶跃星辰");
+        assert_eq!(super::route_chain("other-test", "tokendance")[0].name, "TokenDance");
+    }
+    #[test]
+    fn parses_independent_card_response_with_nested_evidence() {
+        let raw = r#"{"ordinary":{"name":"书签","description":"请安静","suit":"clubs","category":"item","effect":"合拢书页后沉默8秒。","setting":"你有一枚书签。","scene":"A silver bookmark.","inspiration":[{"taskIndex":0,"quote":"读书","motif":"书"}]},"relationship":{"invalid":"discard in frontend"}}"#;
+        let parsed: crate::ai::models::GeneratedCardCopy = serde_json::from_str(&last_json_block(raw).unwrap()).unwrap();
+        assert_eq!(parsed.ordinary.inspiration[0].task_index, 0);
+        assert_eq!(parsed.ordinary.effect, "合拢书页后沉默8秒。");
+        assert!(parsed.relationship.is_some());
+        assert!(serde_json::from_str::<crate::ai::models::GeneratedCardCopy>(r#"{"name":"旧接口","description":"不能误用"}"#).is_err());
+    }
     #[test]
     fn extracts_json_with_or_without_fence() {
         assert_eq!(extract_copy(r#"{"name":"A","description":"B"}"#).unwrap().name, "A");

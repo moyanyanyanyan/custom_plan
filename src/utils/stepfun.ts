@@ -5,28 +5,6 @@
 import { isDesktop } from './desktop';
 import { invoke } from '@tauri-apps/api/core';
 
-export type AICopy = { name: string; description: string };
-
-interface RustAICopy {
-  name: string;
-  description: string;
-}
-
-/** 生成卡牌文案。失败/非桌面环境时返回 null（调用方降级）。 */
-export async function generateAICopy(sourceTasks: string[]): Promise<AICopy | null> {
-  if (!isDesktop) return null;
-  try {
-    const result = await invoke<RustAICopy | null>('generate_card_copy', { tasks: sourceTasks });
-    return result ? { name: result.name, description: result.description } : null;
-  } catch {
-    return null;
-  }
-}
-
-// 注：旧版 generateArtworkDataURL（返回 dataURL 给 canvas 处理）已随 cardImage.ts 一起删除。
-// 现在插画统一走 aiClient.generateCardArt → 原生命令 generate_card_art → save_user_asset，
-// 由 Rust 侧 prompts::card_art 组装提示词（含 AI 生成的 scene 场景描述）。
-
 /** 持久化 StepFun key 到本地设置；非桌面环境直接返回。 */
 export async function saveStepfunKey(key: string): Promise<void> {
   if (!isDesktop) return;

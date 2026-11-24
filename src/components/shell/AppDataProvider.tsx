@@ -121,7 +121,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     }).catch((reason) => {
       pending.current -= 1;
       const code = typeof reason === 'object' && reason && 'code' in reason
-        ? String((reason as { code: unknown }).code) : '';
+        ? String((reason as { code: unknown }).code) : reason instanceof Error ? reason.message : String(reason);
       if (code === 'DAILY_CARD_EXISTS') {
         setSaveStatus(pending.current ? 'pending' : 'saved');
       } else {

@@ -25,27 +25,6 @@ fn main() {
             let saved_position = position_store.load()?;
             app.manage(data::AppStore::open(data_dir)?);
             app.manage(position_store);
-            if let Ok(mut current) = app.state::<data::AppStore>().load() {
-                let latest_revision = current.revision;
-                let missing = current.settings.get("stepfunApiKey")
-                    .and_then(|v| v.as_str())
-                    .map(|s| s.is_empty())
-                    .unwrap_or(true);
-                if missing {
-                    // key 解析链（DSH 凭据 → 内嵌默认）已下沉到 ai::stepfun::stored_key，
-                    // 这里只是首次启动就把它落盘，保证用户不打开设置也能立刻用 AI。
-                    let key = crate::ai::stepfun::fallback_api_key();
-                    {
-                        if !current.settings.is_object() {
-                            current.settings = serde_json::Value::Object(Default::default());
-                        }
-                        if let Some(object) = current.settings.as_object_mut() {
-                            object.insert("stepfunApiKey".into(), serde_json::Value::String(key));
-                            let _ = app.state::<data::AppStore>().save(current, latest_revision);
-                        }
-                    }
-                }
-            }
             let avatar = app.get_webview_window("avatar").ok_or("Avatar window missing")?;
             let initial_position = placement::initialize(&avatar, saved_position)?;
             app.state::<data::AvatarPositionStore>().save(initial_position)?;

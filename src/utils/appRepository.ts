@@ -95,11 +95,19 @@ export async function listenForAppData(handler: (event: AppDataEvent) => void): 
   return () => window.removeEventListener('storage', onStorage);
 }
 
+let pendingCardClaim: Promise<unknown> = Promise.resolve();
 export async function claimDailyCard(dateKey: string, card: InventionCard, sourceId: string) {
   if (isDesktop) return invoke<AppData>('claim_daily_card', { dateKey, card, sourceId });
-  const current = await loadAppData();
-  if (current.cards.some((item) => item.dailyKey === dateKey)) throw new Error('DAILY_CARD_EXISTS');
-  return saveAppData({ ...current, cards: [...current.cards, card] }, current.revision, sourceId);
+  const claim = async () => {
+    const current = await loadAppData();
+    if (current.cards.some((item) => item.dailyKey === dateKey)) throw new Error('DAILY_CARD_EXISTS');
+    return saveAppData({ ...current, cards: [...current.cards, { ...card, dailyKey: dateKey }] }, current.revision, sourceId);
+  };
+  // 同源窗口共享领取锁，校验与写入必须在同一临界区内。
+  if (navigator.locks) return navigator.locks.request('daily-card-claim', claim);
+  const result = pendingCardClaim.then(claim, claim);
+  pendingCardClaim = result;
+  return result;
 }
 
 export async function updateStoredCard(cardId: string, patch: Partial<InventionCard>, sourceId: string) {

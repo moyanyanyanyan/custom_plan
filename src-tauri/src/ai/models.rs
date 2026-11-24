@@ -65,3 +65,29 @@ pub struct ImageResponse {
 pub struct ImageData {
     pub b64_json: Option<String>,
 }
+
+/// 卡牌单独返回普通草稿；坏关系候选不阻断普通牌，交前端核对任务原文。
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct GeneratedCardCopy {
+    pub ordinary: CardDraft,
+    #[serde(default)]
+    pub relationship: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct CardDraft {
+    pub name: String,
+    pub description: String,
+    pub suit: String,
+    pub category: String,
+    pub effect: String,
+    pub setting: String,
+    pub scene: String,
+    pub inspiration: Vec<CardEvidence>,
+}
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CardEvidence {
+    pub task_index: usize,
+    pub quote: String,
+    pub motif: String,
+}

@@ -69,6 +69,31 @@ corepack pnpm run desktop:build
 悬浮头像外圈显示今日任务进度，并通过统一数据事件与主面板同步。
 窄屏缩小面板；高度不足时允许整个面板纵向滚动，任务带本身不显示滚动条。
 
+## 幻想卡牌链路
+
+- `fantasyCards.ts`负责点数抽取、文案/证据校验、固定关系模板和堆叠身份；`cardGenerator.ts`先产生完整本地底稿。
+- `useCardGeneration`先验证文案并选择普通牌或关系牌，再生成最终插画。同步提交锁阻止重复点击；领取仍由仓库检查每日限制。
+- 卡牌文案响应为`{ordinary, relationship?}`，与史莱姆和道具响应独立。桌面`generate_card_copy`和浏览器`/api/cards/copy`均需传入程序抽取的rank。
+- 桌面提示词源在`src-tauri/src/ai/card-copy.txt`，浏览器镜像在`public/_worker.js`；修改时须同步。卡牌插画走独立文生图入口，不附带角色参考图；其他入口保持原行为。
+- 新卡version=2；旧卡没有version。sourceTasks保存生成时的完整快照，inspiration保存原文证据。description用于吐槽说明，category与原有type='daily'分开。
+- CardFace、CardDialog在收藏和揭晓共用。牌背为SVG，详情在牌外；缩略图省略正文，完整阅读不截断效果。
+- 浏览器用Web Locks串行化跨窗口领取，不支持该API时至少串行化同窗口请求；桌面继续使用原子存储。普通存储失败与重复领取分别反馈。
+- 文字降级和图片降级都可正常领取，只有领取成功才揭晓。没有新增依赖、战斗执行或SP状态系统。
+
+## 硅基流动
+
+桌面设置新增AI服务商选择。硅基流动需显式选择`siliconflow`；旧版默认`auto`仍仅识别TokenDance与阶跃星辰。不同平台的sk-密钥不能靠前缀区分。选择明确平台后仅向该平台发送请求。
+
+硅基流动接口为`https://api.siliconflow.cn/v1`，文案模型`Qwen/Qwen2.5-72B-Instruct`，插画模型`Qwen/Qwen-Image`。生图使用`image_size`，解析`images[].url`并立即下载到既有资产存储，不把临时链接当作永久资源。保留服务默认的AI水印。适配代码在`src-tauri/src/ai/siliconflow.rs`。
+
+此选择用于桌面端；浏览器Pages代理仍使用部署端的阶跃星辰配置，不读取本机密钥。
+
+## AI 认证与错误诊断
+
+桌面端按本地设置、环境变量、开发机凭据的顺序读取密钥；不再注入内置共享密钥，也不修改已有用户配置。历史存档若保留了失效密钥，需要在研究所设置中更新。HTTP 401属于认证失败，等待不会修复密钥。
+
+AI请求失败时保留首选与备用服务的名称和各自错误，后一次401不再覆盖前一次失败。文案、插画失败分别显示；本地降级成功不代表远端AI调用成功。
+
 ## 验证
 
 `pnpm test` 运行前端单元和组件测试，`pnpm run test:e2e` 自动启动预览服务并运行浏览器检查。

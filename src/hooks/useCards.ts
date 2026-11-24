@@ -9,9 +9,9 @@ export function useCards() {
   const { dateKey } = useCurrentDate();
   const claim = useCallback((card: InventionCard) => {
     // 演示/测试模式使用唯一日期键，让桌面端原子写入也不会触发每日一次限制。
-    const claimDate = isDemoMode() ? `${dateKey}-test-${Date.now()}` : dateKey;
+    const claimDate = isDemoMode() ? `${card.dailyKey}-test-${Date.now()}` : card.dailyKey;
     return claimDailyCard(claimDate, card);
-  }, [claimDailyCard, dateKey]);
+  }, [claimDailyCard]);
   const canGenerate = useCallback(() => {
     if (isDemoMode()) return true;
     return !data.cards.some((card) => card.dailyKey === dateKey);

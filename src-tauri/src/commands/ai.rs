@@ -4,10 +4,14 @@ use tauri::State;
 
 #[tauri::command]
 pub async fn generate_card_copy(
-    store: State<'_, crate::data::AppStore>, tasks: Vec<String>,
-) -> Result<crate::ai::models::GeneratedCopy, String> {
-    let (system, user) = prompts::card_copy(&tasks);
-    generate_copy_with_store(system, user, &store).await.map_err(|e| e.to_string())
+    store: State<'_, crate::data::AppStore>, tasks: Vec<String>, rank: String,
+) -> Result<crate::ai::models::GeneratedCardCopy, String> {
+    if !["2", "3", "4", "5", "6", "7", "8", "9", "10", "J"].contains(&rank.as_str())
+        || tasks.is_empty() || tasks.len() > 50 || tasks.iter().any(|t| t.chars().count() > 200) {
+        return Err("INVALID_CARD_INPUT".into());
+    }
+    let (system, user) = prompts::card_copy(&tasks, &rank);
+    crate::ai::stepfun::generate_card_copy_with_store(system, user, &store).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -22,7 +26,7 @@ pub async fn generate_card_art(
     // 中文名会被 step-image-edit-2 当标题画在图顶部（2026-09-13 实测），主题相关性改由英文 scene 承载。
     let _ = (&name, &description);
     let prompt = prompts::card_art(scene.as_deref());
-    let image = generate_image_with_store(prompt, &store)
+    let image = crate::ai::stepfun::generate_card_image_with_store(prompt, &store)
         .await
         .map_err(|e| e.to_string())?;
     Ok(base64::engine::general_purpose::STANDARD.encode(image))

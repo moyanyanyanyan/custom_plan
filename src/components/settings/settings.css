@@ -22,9 +22,10 @@
 .sound-setting { display: flex; align-items: center; gap: 8px; margin-top: 16px; font-size: 12px; }
 .sound-setting input { accent-color: var(--theme-accent); }
 .stepfun-key-setting { display: flex; flex-direction: column; align-items: stretch; gap: 7px; margin: 16px 0; font-size: 12px; }
-.stepfun-key-setting input { width: 100%; padding: 10px 12px; border: 1px solid #ffffff30; border-radius: 8px; outline: none; background: #ffffff0d; color: var(--theme-text); font: inherit; }
+.stepfun-key-setting input, .stepfun-key-setting select { width: 100%; padding: 10px 12px; border: 1px solid #ffffff30; border-radius: 8px; outline: none; background: #ffffff0d; color: var(--theme-text); font: inherit; }
+.stepfun-key-setting select option { background:var(--theme-primary); color:var(--theme-text); }
 .stepfun-key-setting input::placeholder { color: var(--theme-muted-text); }
-.stepfun-key-setting input:focus-visible { border-color: var(--theme-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-accent) 22%, transparent); }
+.stepfun-key-setting input:focus-visible, .stepfun-key-setting select:focus-visible { border-color: var(--theme-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-accent) 22%, transparent); }
 .username-setting { display: flex; flex-direction: column; gap: 7px; margin: 16px 0; font-size: 12px; }
 .username-setting input { width: 100%; padding: 10px 12px; border: 1px solid #ffffff30; border-radius: 8px; outline: none; background: #ffffff0d; color: var(--theme-text); font: inherit; }
 .username-setting input:focus-visible { border-color: var(--theme-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-accent) 22%, transparent); }

@@ -17,6 +17,7 @@ export interface AppSettings {
   panelOpacity: number;
   soundEnabled: boolean;
   stepfunApiKey: string;
+  aiProvider?: 'auto' | 'siliconflow' | 'tokendance' | 'stepfun';
   theme: ThemeSettings;
 }
 

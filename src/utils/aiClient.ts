@@ -1,3 +1,5 @@
+import type { GeneratedCardCopy } from './fantasyCards';
+import type { OrdinaryRank } from '../types/card';
 // 卡牌 AI 调用层（文案 + 插画）。
 // 桌面版：走 Tauri command，由 Rust 后端直连网关，API key 存在本地设置、不回传前端。
 // 浏览器版：走**同域** HTTP 代理（/api/cards/*，由 public/_worker.js 在 Pages 上提供）。
@@ -23,15 +25,13 @@ async function proxy<T>(path: string, body: object): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-/** 插画 prompt 由 Rust `prompts::card_art` 统一组装（画面内严禁任何文字、锁定角色设计、
- *  并消费文案模型产出的 scene 场景描述）。此处只负责把三个字段传过去，
- *  避免前后端各存一份提示词而产生漂移。 */
-export async function generateCardCopy(sourceTasks: string[]): Promise<GeneratedCopy | null> {
+/** 卡牌专用响应；花色与文案由模型创作，点数由程序指定。 */
+export async function generateCardCopy(sourceTasks: string[], rank: OrdinaryRank): Promise<GeneratedCardCopy> {
   if (isDesktop) {
     // Rust 侧签名是 Result<T, String>：失败会 reject，不会返回 null。
-    return invoke<GeneratedCopy>('generate_card_copy', { tasks: sourceTasks });
+    return invoke<GeneratedCardCopy>('generate_card_copy', { tasks: sourceTasks, rank });
   }
-  return proxy<GeneratedCopy>('/api/cards/copy', { sourceTasks });
+  return proxy<GeneratedCardCopy>('/api/cards/copy', { sourceTasks, rank });
 }
 
 export async function generateCardArt(card: {

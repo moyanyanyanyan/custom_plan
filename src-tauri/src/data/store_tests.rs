@@ -55,3 +55,24 @@ fn claims_only_one_card_per_day() {
     drop(store);
     cleanup(&root);
 }
+
+#[test]
+fn preserves_fantasy_fields_and_legacy_cards_on_reload() {
+    let root = temporary_root("fantasy-card");
+    let store = AppStore::open(root.clone()).unwrap();
+    let mut data = initialized();
+    data.cards.push(serde_json::json!({"id":"legacy","name":"旧卡","description":"原文","imagePath":"old.png"}));
+    store.save(data, 0).unwrap();
+    let card = serde_json::json!({"id":"new","version":2,"suit":"spades","rank":"A",
+        "category":"setting","type":"daily","tier":"silver","effect":"帮助小林时回复10%的黑桃SP。",
+        "setting":"你是小林的朋友。","relation":{"kind":"friendship_active","target":"小林","taskIndex":0,"quote":"帮助小林"},
+        "inspiration":[{"taskIndex":0,"quote":"帮助小林","motif":"小林"}],"sourceTasks":["帮助小林"]});
+    store.claim_card("2026-11-11", card.clone()).unwrap();
+    drop(store);
+    let reloaded = AppStore::open(root.clone()).unwrap().load().unwrap();
+    assert_eq!(reloaded.cards[0]["imagePath"], "old.png");
+    for key in ["version", "suit", "rank", "category", "type", "tier", "effect", "setting", "relation", "inspiration", "sourceTasks"] {
+        assert_eq!(reloaded.cards[1][key], card[key]);
+    }
+    cleanup(&root);
+}

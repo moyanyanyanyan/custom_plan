@@ -121,9 +121,13 @@ export function SettingsPanel({ open, onClose, onReplayGuide }: { open: boolean;
       <label className="sound-setting"><input type="checkbox" checked={draft.soundEnabled}
         onChange={(event) => setDraft({ ...draft, soundEnabled: event.target.checked })} />播放任务反馈音效</label>
       <DesktopDownloadCard />
-      {isDesktop ? <label className="stepfun-key-setting"><span>TokenDance API Key</span><input type="password" value={draft.stepfunApiKey}
-        onChange={(event) => setDraft({ ...draft, stepfunApiKey: event.target.value })} placeholder="由开发者提供，可在此覆盖" />
-        <span className="setting-hint">在 <a href="https://tokendance.space/keys" target="_blank" rel="noopener noreferrer">tokendance.space/keys</a> 创建，以 sk- 开头；仅保存在本机应用数据中。未设置时 AI 生图与文案自动降级为离线模板</span></label>
+      {isDesktop ? <><label className="stepfun-key-setting"><span>AI 服务商</span>
+        <select aria-label="AI 服务商" value={draft.aiProvider ?? 'auto'} onChange={event => setDraft({...draft, aiProvider: event.target.value as AppSettings['aiProvider']})}>
+          <option value="auto">旧版自动识别（TokenDance / 阶跃）</option><option value="siliconflow">硅基流动</option>
+          <option value="tokendance">TokenDance</option><option value="stepfun">阶跃星辰</option>
+        </select></label><label className="stepfun-key-setting"><span>API Key</span><input type="password" value={draft.stepfunApiKey}
+        onChange={event => setDraft({...draft, stepfunApiKey:event.target.value})} placeholder="填写所选平台的密钥" />
+        <span className="setting-hint">请选择创建密钥的平台。密钥仅保存在本机；硅基流动使用 Qwen 文案与物品插画模型。</span></label></>
         : <p className="setting-hint">浏览器版 AI 服务由站点提供，密钥由服务端安全保管。</p>}
       {saveError && <p role="alert">{saveError}</p>}
       {onReplayGuide && <button type="button" className="settings-replay-guide" onClick={onReplayGuide}>重新查看新手指引</button>}
